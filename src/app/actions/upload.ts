@@ -106,7 +106,7 @@ export async function uploadXML(formData: FormData) {
       .eq('name', categoryName)
       .single();
 
-    const category_id = categoryData?.id || null;
+    const category_id = (categoryData as any)?.id || null;
 
     // 4. Insertar registro real en la base de datos ligado al usuario autenticado
     const supabase = await createClient();
