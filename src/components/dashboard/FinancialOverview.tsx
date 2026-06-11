@@ -40,7 +40,7 @@ export default async function FinancialOverview() {
     .eq('user_id', user.id)
     .order('fecha', { ascending: false });
 
-  const validInvoices = invoices || [];
+  const validInvoices = (invoices as any[]) || [];
   
   // Calcular sumatorios reales
   const totalGasto = validInvoices.reduce((acc, inv) => acc + Number(inv.total), 0);

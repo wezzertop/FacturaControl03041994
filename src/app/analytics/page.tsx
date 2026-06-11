@@ -18,7 +18,7 @@ export default async function AnalyticsPage() {
     .eq('user_id', user.id)
     .order('fecha', { ascending: true });
 
-  const validInvoices = invoices || [];
+  const validInvoices = (invoices as any[]) || [];
 
   // Mapear colores de Tailwind a Hex para Recharts
   const tailwindToHex: Record<string, string> = {

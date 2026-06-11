@@ -31,7 +31,7 @@ export default async function InvoicesPage() {
             Revisa todos los comprobantes CFDI procesados y clasificados. Haz clic en una factura para ver el ticket detallado.
           </p>
         </div>
-        <ExportCSVButton invoices={invoices || []} />
+        <ExportCSVButton invoices={(invoices as any[]) || []} />
       </div>
 
       {error ? (
@@ -40,7 +40,7 @@ export default async function InvoicesPage() {
           <p className="text-sm font-medium">Error al cargar el historial. Por favor, intenta de nuevo.</p>
         </div>
       ) : (
-        <InvoiceTable invoices={invoices || []} />
+        <InvoiceTable invoices={(invoices as any[]) || []} />
       )}
     </div>
   );
