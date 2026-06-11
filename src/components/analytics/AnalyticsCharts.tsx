@@ -21,7 +21,7 @@ export function CategoryBarChart({ data }: { data: any[] }) {
         <XAxis type="number" tickFormatter={(value) => `$${value}`} stroke="#71717a" fontSize={12} />
         <YAxis dataKey="name" type="category" width={120} stroke="#71717a" fontSize={12} tick={{fill: '#a1a1aa'}} />
         <RechartsTooltip 
-          formatter={(value: number) => [formatCurrency(value), 'Gasto Total']}
+          formatter={(value: any) => [formatCurrency(Number(value) || 0), 'Gasto Total']}
           contentStyle={{ backgroundColor: '#18181b', borderColor: '#27272a', color: '#fff', borderRadius: '8px' }}
           itemStyle={{ color: '#38bdf8' }}
         />
@@ -51,7 +51,7 @@ export function TrendAreaChart({ data }: { data: any[] }) {
         <XAxis dataKey="month" stroke="#71717a" fontSize={12} />
         <YAxis tickFormatter={(value) => `$${value}`} stroke="#71717a" fontSize={12} />
         <RechartsTooltip 
-          formatter={(value: number) => [formatCurrency(value), 'Gasto Mensual']}
+          formatter={(value: any) => [formatCurrency(Number(value) || 0), 'Gasto Mensual']}
           contentStyle={{ backgroundColor: '#18181b', borderColor: '#27272a', color: '#fff', borderRadius: '8px' }}
         />
         <Area type="monotone" dataKey="value" stroke="#38bdf8" strokeWidth={3} fillOpacity={1} fill="url(#colorValue)" />

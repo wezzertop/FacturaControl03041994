@@ -5,7 +5,7 @@ import { Download } from 'lucide-react';
 import { Invoice } from '@/types/database';
 
 interface ExportCSVButtonProps {
-  invoices: Invoice[];
+  invoices: any[];
 }
 
 export default function ExportCSVButton({ invoices }: ExportCSVButtonProps) {

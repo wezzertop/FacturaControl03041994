@@ -5,7 +5,7 @@ import { X, Receipt, Building2, Calendar, FileText, CheckCircle2 } from 'lucide-
 import { Invoice } from '@/types/database';
 
 interface InvoiceDetailsDrawerProps {
-  invoice: Invoice | null;
+  invoice: any | null;
   isOpen: boolean;
   onClose: () => void;
 }
@@ -113,7 +113,7 @@ export default function InvoiceDetailsDrawer({ invoice, isOpen, onClose }: Invoi
             
             <div className="divide-y divide-gray-100 dark:divide-zinc-800/50">
               {items.length > 0 ? (
-                items.map((item, index) => (
+                items.map((item: any, index: number) => (
                   <div key={index} className="p-4 flex flex-col gap-2">
                     <p className="text-sm font-medium text-brand-carbon dark:text-zinc-200">{item.descripcion}</p>
                     <div className="flex justify-between items-center text-sm">

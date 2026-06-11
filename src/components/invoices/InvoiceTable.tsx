@@ -5,12 +5,12 @@ import { Invoice } from '@/types/database';
 import InvoiceDetailsDrawer from './InvoiceDetailsDrawer';
 
 interface InvoiceTableProps {
-  invoices: Invoice[];
+  invoices: any[];
   compact?: boolean; // Si es true, muestra menos columnas (útil para dashboard)
 }
 
 export default function InvoiceTable({ invoices, compact = false }: InvoiceTableProps) {
-  const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
+  const [selectedInvoice, setSelectedInvoice] = useState<any | null>(null);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(amount);
