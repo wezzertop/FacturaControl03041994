@@ -145,7 +145,7 @@ export async function uploadXML(formData: FormData) {
         category_id,
         items: invoiceItems,
         status: 'Vigente'
-      });
+      } as any);
 
     if (dbError) {
       console.error("Database Error:", dbError);
