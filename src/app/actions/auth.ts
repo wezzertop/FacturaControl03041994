@@ -17,7 +17,7 @@ export async function login(formData: FormData) {
   const { error } = await supabase.auth.signInWithPassword(data)
 
   if (error) {
-    return { success: false, error: error.message }
+    redirect('/login?error=Credenciales_incorrectas')
   }
 
   revalidatePath('/', 'layout')
@@ -35,7 +35,7 @@ export async function signup(formData: FormData) {
   const { error } = await supabase.auth.signUp(data)
 
   if (error) {
-    return { success: false, error: error.message }
+    redirect('/register?error=Error_al_registrar')
   }
 
   revalidatePath('/', 'layout')
