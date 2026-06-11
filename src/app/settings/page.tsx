@@ -1,0 +1,19 @@
+import React from 'react';
+import SATConnectionCards from '@/components/settings/SATConnectionCards';
+
+export default function SettingsPage() {
+  return (
+    <div className="w-full max-w-6xl mx-auto space-y-6 p-6">
+      <div className="flex items-center justify-between mb-8">
+        <div>
+          <h2 className="text-2xl font-bold text-brand-carbon dark:text-white tracking-tight">Configuración</h2>
+          <p className="text-sm text-brand-graphite dark:text-zinc-400 mt-1">
+            Gestiona tu cuenta y la conexión con el SAT.
+          </p>
+        </div>
+      </div>
+
+      <SATConnectionCards />
+    </div>
+  );
+}
