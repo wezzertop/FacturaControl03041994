@@ -12,7 +12,8 @@ import {
   UploadCloud,
   KeyRound,
   FileSignature,
-  X
+  X,
+  Wallet
 } from 'lucide-react';
 
 const navItems = [
@@ -64,6 +65,20 @@ export default function BottomNavigation() {
             <div>
               <h4 className="text-sm font-bold text-brand-carbon dark:text-white">Subir XML Manual</h4>
               <p className="text-xs text-brand-graphite dark:text-zinc-400">Carga tus archivos directamente</p>
+            </div>
+          </Link>
+
+          <Link 
+            href="/wallets" 
+            onClick={() => setIsMenuOpen(false)}
+            className="flex items-center gap-4 p-4 rounded-xl hover:bg-gray-50 dark:hover:bg-zinc-800/50 transition-colors"
+          >
+            <div className="w-10 h-10 rounded-full bg-brand-cerulean/10 flex items-center justify-center shrink-0">
+              <Wallet className="w-5 h-5 text-brand-cerulean" />
+            </div>
+            <div>
+              <h4 className="text-sm font-bold text-brand-carbon dark:text-white">Mi Cartera y Efectivo</h4>
+              <p className="text-xs text-brand-graphite dark:text-zinc-400">Controla tus cuentas y transacciones manuales</p>
             </div>
           </Link>
 

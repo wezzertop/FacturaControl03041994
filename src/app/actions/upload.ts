@@ -41,11 +41,16 @@ export async function uploadXML(formData: FormData) {
       return { success: false, error: "El CFDI no contiene nodo de Emisor." };
     }
 
+    const receptor = comprobante['cfdi:Receptor'];
+    const rfc_receptor = receptor ? (receptor['@_Rfc'] || null) : null;
+    const nombre_receptor = receptor ? (receptor['@_Nombre'] || null) : null;
+
     const rfc_emisor = emisor['@_Rfc'] || 'DESCONOCIDO';
     const nombre_emisor = emisor['@_Nombre'] || 'Proveedor Desconocido';
     const fecha = comprobante['@_Fecha'] || new Date().toISOString();
     const total = parseFloat(comprobante['@_Total'] || '0');
     const subtotal = parseFloat(comprobante['@_SubTotal'] || '0');
+    const tipo_comprobante = comprobante['@_TipoDeComprobante'] || 'I';
     
     let iva = 0;
     if (comprobante['cfdi:Impuestos'] && comprobante['cfdi:Impuestos']['@_TotalImpuestosTrasladados']) {
@@ -117,6 +122,27 @@ export async function uploadXML(formData: FormData) {
     }
     
     const userId = user.id;
+
+    // Obtener el RFC del usuario para clasificar ingreso/egreso
+    const { data: userData } = await supabaseAdmin
+      .from('users')
+      .select('rfc')
+      .eq('id', userId)
+      .single();
+
+    const userRfc = (userData as any)?.rfc?.trim().toUpperCase();
+
+    // Determinar si es nomina, ingreso o egreso
+    let invoiceType = 'egreso';
+    if (tipo_comprobante === 'N' || comprobante['cfdi:Nomina']) {
+      invoiceType = 'nomina';
+    } else if (tipo_comprobante === 'I') {
+      if (userRfc && rfc_emisor.trim().toUpperCase() === userRfc) {
+        invoiceType = 'ingreso'; // Emitida por el usuario
+      } else {
+        invoiceType = 'egreso';  // Recibida por el usuario (gasto)
+      }
+    }
     
     // EVITAR DUPLICADOS: Buscar si ya existe una factura idéntica
     const { data: existingInvoice } = await supabase
@@ -138,6 +164,9 @@ export async function uploadXML(formData: FormData) {
         user_id: userId,
         rfc_emisor, 
         nombre_emisor,
+        rfc_receptor,
+        nombre_receptor,
+        invoice_type: invoiceType,
         fecha,
         total,
         subtotal,

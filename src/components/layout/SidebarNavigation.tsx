@@ -15,7 +15,8 @@ import {
   ChevronRight,
   Zap,
   Moon,
-  Sun
+  Sun,
+  Wallet
 } from 'lucide-react';
 import { signout } from '@/app/actions/auth';
 
@@ -25,6 +26,7 @@ const navItems = [
   { name: 'Dashboard', href: '/', icon: LayoutDashboard },
   { name: 'Cargar XML', href: '/upload', icon: UploadCloud },
   { name: 'Historial', href: '/invoices', icon: FileText },
+  { name: 'Carteras', href: '/wallets', icon: Wallet },
   { name: 'Análisis de Gastos', href: '/analytics', icon: PieChart },
   { name: 'Simulación Fiscal', href: '/simulation', icon: Calculator },
   { name: 'Configuración', href: '/settings', icon: Settings },

@@ -13,7 +13,9 @@ import {
   PieChart,
   Zap,
   HeartPulse,
-  Utensils
+  Utensils,
+  Wallet,
+  ArrowUpRight
 } from 'lucide-react';
 
 // Mapeo simple de iconos
@@ -33,7 +35,7 @@ export default async function FinancialOverview() {
 
   if (!user) return null;
 
-  // Obtener datos reales
+  // 1. Obtener facturas (con categorías)
   const { data: invoices } = await supabase
     .from('invoices')
     .select('*, categories(*)')
@@ -41,51 +43,106 @@ export default async function FinancialOverview() {
     .order('fecha', { ascending: false });
 
   const validInvoices = (invoices as any[]) || [];
-  
-  // Calcular sumatorios reales
-  const totalGasto = validInvoices.reduce((acc, inv) => acc + Number(inv.total), 0);
-  const totalIva = validInvoices.reduce((acc, inv) => acc + Number(inv.iva), 0);
-  const facturasCount = validInvoices.length;
+
+  // 2. Obtener carteras
+  const { data: wallets } = await supabase
+    .from('wallets')
+    .select('*')
+    .eq('user_id', user.id);
+    
+  const validWallets = (wallets as any[]) || [];
+  const totalWalletsBalance = validWallets.reduce((acc, w) => acc + Number(w.balance), 0);
+
+  // 3. Obtener transacciones (con categorías)
+  const { data: transactions } = await supabase
+    .from('transactions')
+    .select('*, categories(*)')
+    .eq('user_id', user.id);
+
+  const validTransactions = (transactions as any[]) || [];
+
+  // Calcular sumatorios
+  // Facturas de ingreso (nómina y emitidas)
+  const invoicesIncome = validInvoices
+    .filter(inv => inv.invoice_type === 'nomina' || inv.invoice_type === 'ingreso')
+    .reduce((acc, inv) => acc + Number(inv.total), 0);
+
+  // Facturas de egreso (gastos)
+  const invoicesExpense = validInvoices
+    .filter(inv => inv.invoice_type === 'egreso')
+    .reduce((acc, inv) => acc + Number(inv.total), 0);
+
+  const invoicesIva = validInvoices
+    .filter(inv => inv.invoice_type === 'egreso')
+    .reduce((acc, inv) => acc + Number(inv.iva), 0);
+
+  // Transacciones manuales de ingreso (no vinculadas a facturas)
+  const manualIncome = validTransactions
+    .filter(tx => tx.type === 'income' && !tx.invoice_id)
+    .reduce((acc, tx) => acc + Number(tx.amount), 0);
+
+  // Transacciones manuales de gasto (no vinculadas a facturas, ej. efectivo)
+  const manualExpense = validTransactions
+    .filter(tx => tx.type === 'expense' && !tx.invoice_id)
+    .reduce((acc, tx) => acc + Number(tx.amount), 0);
+
+  // Totales consolidados
+  const totalIngreso = invoicesIncome + manualIncome;
+  const totalGasto = invoicesExpense + manualExpense;
+  const facturasCount = validInvoices.filter(inv => inv.invoice_type === 'egreso').length;
 
   const KPICards = [
     { 
-      title: 'Gastos Totales', 
+      title: 'Ingresos Totales (Nómina / Efectivo)', 
+      amount: `$${totalIngreso.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 
+      icon: ArrowUpRight,
+      color: 'text-emerald-500',
+      bg: 'bg-emerald-500/10'
+    },
+    { 
+      title: 'Gastos Totales (Facturas / Efectivo)', 
       amount: `$${totalGasto.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 
       icon: DollarSign,
       color: 'text-brand-cerulean',
       bg: 'bg-brand-cerulean/10'
     },
     { 
-      title: 'IVA Acreditable', 
-      amount: `$${totalIva.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 
-      icon: Receipt,
-      color: 'text-emerald-500',
-      bg: 'bg-emerald-500/10'
-    },
-    { 
-      title: 'Facturas Procesadas', 
-      amount: `${facturasCount} / 30`, 
-      subtitle: 'Plan Gratuito', 
-      icon: CreditCard,
-      color: 'text-brand-graphite dark:text-zinc-400',
-      bg: 'bg-gray-200 dark:bg-zinc-800'
+      title: 'Disponible en Carteras', 
+      amount: `$${totalWalletsBalance.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 
+      icon: Wallet,
+      color: 'text-purple-500',
+      bg: 'bg-purple-500/10'
     },
   ];
 
-  // Tomar los últimos 5 movimientos
-  const latestTransactions = validInvoices.slice(0, 5);
+  // Tomar los últimos 5 gastos de facturas
+  const latestTransactions = validInvoices
+    .filter(inv => inv.invoice_type === 'egreso')
+    .slice(0, 5);
 
-  // Agrupar por categoría para la Dona
+  // Agrupar por categoría para la Dona (XML + Efectivo)
   const categoryTotals: Record<string, { value: number; color: string }> = {};
-  validInvoices.forEach(inv => {
+  
+  // Agregar gastos XML
+  validInvoices.filter(inv => inv.invoice_type === 'egreso').forEach(inv => {
     const catName = inv.categories?.name || 'Otros';
-    // Mapear color de background a color puro o mantener la clase de tailwind
     const catColor = inv.categories?.color || 'bg-gray-300 dark:bg-zinc-700';
     
     if (!categoryTotals[catName]) {
       categoryTotals[catName] = { value: 0, color: catColor };
     }
     categoryTotals[catName].value += Number(inv.total);
+  });
+
+  // Agregar gastos en efectivo / manuales
+  validTransactions.filter(tx => tx.type === 'expense' && !tx.invoice_id).forEach(tx => {
+    const catName = tx.categories?.name || 'Otros';
+    const catColor = tx.categories?.color || 'bg-gray-300 dark:bg-zinc-700';
+    
+    if (!categoryTotals[catName]) {
+      categoryTotals[catName] = { value: 0, color: catColor };
+    }
+    categoryTotals[catName].value += Number(tx.amount);
   });
 
   const donutData = Object.entries(categoryTotals)
@@ -102,14 +159,23 @@ export default async function FinancialOverview() {
     donutData.push({ label: 'Sin Datos', value: 0, percentage: '0%', color: 'bg-gray-200 dark:bg-zinc-800' });
   }
 
-  // Agrupar por día de la semana para la tendencia
+  // Agrupar por día de la semana para la tendencia (Gastos XML + Efectivo)
   const weekDays = [0, 0, 0, 0, 0, 0, 0];
-  validInvoices.forEach(inv => {
+  
+  validInvoices.filter(inv => inv.invoice_type === 'egreso').forEach(inv => {
     const d = new Date(inv.fecha);
     const day = d.getDay();
     const shiftedDay = day === 0 ? 6 : day - 1; // Lunes = 0, Domingo = 6
     weekDays[shiftedDay] += Number(inv.total);
   });
+
+  validTransactions.filter(tx => tx.type === 'expense' && !tx.invoice_id).forEach(tx => {
+    const d = new Date(tx.date);
+    const day = d.getDay();
+    const shiftedDay = day === 0 ? 6 : day - 1; // Lunes = 0, Domingo = 6
+    weekDays[shiftedDay] += Number(tx.amount);
+  });
+
   const maxDay = Math.max(...weekDays, 1);
   const trendHeights = weekDays.map(val => (val / maxDay) * 100);
 
@@ -119,28 +185,20 @@ export default async function FinancialOverview() {
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div>
           <h2 className="text-2xl font-bold text-brand-carbon dark:text-white tracking-tight">Resumen Financiero</h2>
-          <p className="text-sm text-brand-graphite dark:text-zinc-400 mt-1">Tu panorama de gastos consolidado en tiempo real.</p>
+          <p className="text-sm text-brand-graphite dark:text-zinc-400 mt-1">Tu panorama de gastos y carteras consolidado en tiempo real.</p>
         </div>
-        <button className="px-4 py-2 bg-brand-carbon dark:bg-white text-white dark:text-brand-carbon text-sm font-medium rounded-lg hover:opacity-90 transition-opacity">
-          Descargar Reporte
-        </button>
       </div>
-
+ 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {KPICards.map((kpi, i) => {
           const Icon = kpi.icon;
           return (
-            <div key={i} className="bg-brand-white dark:bg-brand-graphite border border-gray-200 dark:border-zinc-800 rounded-xl p-5 relative overflow-hidden group hover:border-gray-300 dark:hover:border-zinc-700 transition-colors">
+            <div key={i} className="bg-brand-white dark:bg-brand-graphite border border-gray-200 dark:border-zinc-800 rounded-xl p-5 relative overflow-hidden group hover:border-gray-300 dark:hover:border-zinc-700 transition-colors shadow-sm">
               <div className="flex justify-between items-start mb-4">
                 <div className={`p-2.5 rounded-lg ${kpi.bg}`}>
                   <Icon className={`w-5 h-5 ${kpi.color}`} />
                 </div>
-                {kpi.subtitle && (
-                  <span className="text-xs font-medium px-2 py-1 rounded-full bg-gray-100 dark:bg-zinc-800 text-brand-graphite dark:text-zinc-400">
-                    {kpi.subtitle}
-                  </span>
-                )}
               </div>
               
               <div>
@@ -158,9 +216,9 @@ export default async function FinancialOverview() {
       {/* Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Weekly Trend Line Chart */}
-        <div className="bg-brand-white dark:bg-brand-graphite border border-gray-200 dark:border-zinc-800 rounded-xl p-6">
+        <div className="bg-brand-white dark:bg-brand-graphite border border-gray-200 dark:border-zinc-800 rounded-xl p-6 shadow-sm">
           <div className="flex items-center justify-between mb-6">
-            <h3 className="text-base font-semibold text-brand-carbon dark:text-white">Tendencia Semanal</h3>
+            <h3 className="text-base font-semibold text-brand-carbon dark:text-white">Tendencia Semanal de Gastos</h3>
             <TrendingUp className="w-4 h-4 text-brand-graphite dark:text-zinc-500" />
           </div>
           <div className="h-48 flex items-end justify-between gap-2">
@@ -183,7 +241,7 @@ export default async function FinancialOverview() {
         </div>
 
         {/* Expense Distribution Donut Chart */}
-        <div className="bg-brand-white dark:bg-brand-graphite border border-gray-200 dark:border-zinc-800 rounded-xl p-6">
+        <div className="bg-brand-white dark:bg-brand-graphite border border-gray-200 dark:border-zinc-800 rounded-xl p-6 shadow-sm">
           <div className="flex items-center justify-between mb-6">
             <h3 className="text-base font-semibold text-brand-carbon dark:text-white">Distribución de Gastos</h3>
             <PieChart className="w-4 h-4 text-brand-graphite dark:text-zinc-500" />
@@ -216,12 +274,9 @@ export default async function FinancialOverview() {
       </div>
 
       {/* Recent Transactions Table */}
-      <div className="lg:col-span-2 bg-brand-white dark:bg-brand-graphite border border-gray-200 dark:border-zinc-800 rounded-xl p-6">
+      <div className="lg:col-span-2 bg-brand-white dark:bg-brand-graphite border border-gray-200 dark:border-zinc-800 rounded-xl p-6 shadow-sm">
         <div className="flex items-center justify-between mb-6">
-          <h3 className="text-base font-semibold text-brand-carbon dark:text-white">Últimos Movimientos</h3>
-          <button className="text-sm font-medium text-brand-cerulean hover:text-blue-500 transition-colors">
-            Ver todos
-          </button>
+          <h3 className="text-base font-semibold text-brand-carbon dark:text-white">Últimos Gastos de Facturas (XML)</h3>
         </div>
         
         <div className="mx--6">
