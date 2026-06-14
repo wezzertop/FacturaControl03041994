@@ -45,12 +45,12 @@ export default function InvoiceDetailsDrawer({ invoice, isOpen, onClose }: Invoi
     <>
       {/* Overlay oscuro */}
       <div 
-        className="fixed inset-0 bg-brand-carbon/40 dark:bg-black/60 backdrop-blur-sm z-40 transition-opacity"
+        className="fixed inset-0 bg-brand-carbon/40 dark:bg-black/60 backdrop-blur-sm z-[60] transition-opacity"
         onClick={onClose}
       />
 
       {/* Panel lateral */}
-      <div className={`fixed top-0 right-0 h-full w-full max-w-md bg-brand-white dark:bg-brand-graphite shadow-2xl z-50 transform transition-transform duration-300 ease-in-out border-l border-gray-200 dark:border-zinc-800 flex flex-col overflow-hidden`}>
+      <div className={`fixed top-0 right-0 h-full w-full max-w-md bg-brand-white dark:bg-brand-graphite shadow-2xl z-[60] transform transition-transform duration-300 ease-in-out border-l border-gray-200 dark:border-zinc-800 flex flex-col overflow-hidden`}>
         
         {/* Header del Panel */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-zinc-800 bg-gray-50/50 dark:bg-zinc-900/50">

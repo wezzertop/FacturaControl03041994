@@ -774,8 +774,8 @@ export default function WalletsManager({
 
       {/* Visor de Comprobantes de Transferencia */}
       {viewingVoucherUrl && (
-        <div className="fixed inset-0 bg-brand-carbon/60 dark:bg-black/85 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
-          <div className="bg-white dark:bg-zinc-900 border-t sm:border border-gray-200 dark:border-zinc-800 rounded-t-2xl sm:rounded-2xl shadow-xl overflow-hidden max-w-sm w-full p-6 pb-8 sm:pb-6 relative animate-slide-up sm:animate-none max-h-[85vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-brand-carbon/60 dark:bg-black/85 backdrop-blur-sm z-[60] flex items-end sm:items-center justify-center p-0 sm:p-4">
+          <div className="bg-white dark:bg-zinc-900 border-t sm:border border-gray-200 dark:border-zinc-800 rounded-t-2xl sm:rounded-2xl shadow-xl overflow-hidden max-w-sm w-full p-6 pb-12 sm:pb-6 relative animate-slide-up sm:animate-none max-h-[85vh] overflow-y-auto">
             {/* Grab Handle for Mobile Bottom Sheet */}
             <div className="w-12 h-1.5 bg-gray-250 dark:bg-zinc-800 rounded-full mx-auto mb-4 sm:hidden" />
             
@@ -797,8 +797,8 @@ export default function WalletsManager({
 
       {/* Modal: Nueva Cartera */}
       {showWalletModal && (
-        <div className="fixed inset-0 bg-brand-carbon/55 dark:bg-black/75 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
-          <div className="bg-brand-white dark:bg-brand-graphite border-t sm:border border-gray-200 dark:border-zinc-800 w-full sm:max-w-sm rounded-t-2xl sm:rounded-2xl shadow-xl overflow-hidden p-6 pb-8 sm:p-6 relative animate-slide-up sm:animate-none max-h-[90vh] overflow-y-auto custom-scrollbar">
+        <div className="fixed inset-0 bg-brand-carbon/55 dark:bg-black/75 backdrop-blur-sm z-[60] flex items-end sm:items-center justify-center p-0 sm:p-4">
+          <div className="bg-brand-white dark:bg-brand-graphite border-t sm:border border-gray-200 dark:border-zinc-800 w-full sm:max-w-sm rounded-t-2xl sm:rounded-2xl shadow-xl overflow-hidden p-6 pb-12 sm:p-6 relative animate-slide-up sm:animate-none max-h-[90vh] overflow-y-auto custom-scrollbar">
             {/* Grab Handle for Mobile Bottom Sheet */}
             <div className="w-12 h-1.5 bg-gray-200 dark:bg-zinc-800 rounded-full mx-auto mb-4 sm:hidden" />
 
@@ -852,8 +852,8 @@ export default function WalletsManager({
 
       {/* Modal: Registrar Transacción Manual */}
       {showTxModal && (
-        <div className="fixed inset-0 bg-brand-carbon/55 dark:bg-black/75 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
-          <div className="bg-brand-white dark:bg-brand-graphite border-t sm:border border-gray-200 dark:border-zinc-800 w-full sm:max-w-sm rounded-t-2xl sm:rounded-2xl shadow-xl overflow-hidden p-6 pb-8 sm:p-6 relative animate-slide-up sm:animate-none max-h-[90vh] overflow-y-auto custom-scrollbar">
+        <div className="fixed inset-0 bg-brand-carbon/55 dark:bg-black/75 backdrop-blur-sm z-[60] flex items-end sm:items-center justify-center p-0 sm:p-4">
+          <div className="bg-brand-white dark:bg-brand-graphite border-t sm:border border-gray-200 dark:border-zinc-800 w-full sm:max-w-sm rounded-t-2xl sm:rounded-2xl shadow-xl overflow-hidden p-6 pb-12 sm:p-6 relative animate-slide-up sm:animate-none max-h-[90vh] overflow-y-auto custom-scrollbar">
             {/* Grab Handle for Mobile Bottom Sheet */}
             <div className="w-12 h-1.5 bg-gray-250 dark:bg-zinc-800 rounded-full mx-auto mb-4 sm:hidden" />
 
@@ -982,8 +982,8 @@ export default function WalletsManager({
 
       {/* Modal: Vincular Factura XML */}
       {showLinkModal && selectedInvoice && (
-        <div className="fixed inset-0 bg-brand-carbon/55 dark:bg-black/75 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
-          <div className="bg-brand-white dark:bg-brand-graphite border-t sm:border border-gray-200 dark:border-zinc-800 w-full sm:max-w-sm rounded-t-2xl sm:rounded-2xl shadow-xl overflow-hidden p-6 pb-8 sm:p-6 relative animate-slide-up sm:animate-none max-h-[90vh] overflow-y-auto custom-scrollbar">
+        <div className="fixed inset-0 bg-brand-carbon/55 dark:bg-black/75 backdrop-blur-sm z-[60] flex items-end sm:items-center justify-center p-0 sm:p-4">
+          <div className="bg-brand-white dark:bg-brand-graphite border-t sm:border border-gray-200 dark:border-zinc-800 w-full sm:max-w-sm rounded-t-2xl sm:rounded-2xl shadow-xl overflow-hidden p-6 pb-12 sm:p-6 relative animate-slide-up sm:animate-none max-h-[90vh] overflow-y-auto custom-scrollbar">
             {/* Grab Handle for Mobile Bottom Sheet */}
             <div className="w-12 h-1.5 bg-gray-250 dark:bg-zinc-800 rounded-full mx-auto mb-4 sm:hidden" />
 
