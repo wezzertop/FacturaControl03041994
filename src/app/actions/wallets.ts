@@ -2,6 +2,13 @@
 
 import { revalidatePath } from 'next/cache';
 import { createClient } from '@/utils/supabase/server';
+import { createClient as createSupabaseClient } from '@supabase/supabase-js';
+import { Database } from '@/types/database';
+
+const supabaseAdmin = createSupabaseClient<Database>(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
 
 /**
  * Obtiene todas las carteras del usuario.
@@ -175,12 +182,43 @@ export async function createTransaction(data: {
   category_id?: string | null;
   date?: string;
   invoice_id?: string | null;
+  voucher_base64?: string | null;
+  voucher_name?: string | null;
 }) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) {
     return { success: false, error: 'Usuario no autenticado' };
+  }
+
+  let voucherUrl: string | null = null;
+
+  if (data.voucher_base64 && data.voucher_name) {
+    try {
+      const base64Data = data.voucher_base64.split(';base64,').pop();
+      if (base64Data) {
+        const buffer = Buffer.from(base64Data, 'base64');
+        const fileExt = data.voucher_name.split('.').pop();
+        const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+
+        const { error: uploadError } = await supabaseAdmin
+          .storage
+          .from('comprobantes')
+          .upload(fileName, buffer, {
+            contentType: `image/${fileExt === 'png' ? 'png' : 'jpeg'}`,
+            upsert: false
+          });
+
+        if (uploadError) {
+          console.error('Error al subir comprobante:', uploadError);
+        } else {
+          voucherUrl = fileName;
+        }
+      }
+    } catch (err) {
+      console.error('Failed to parse and upload voucher:', err);
+    }
   }
 
   const { error } = await supabase
@@ -193,7 +231,8 @@ export async function createTransaction(data: {
       concept: data.concept,
       category_id: data.category_id || null,
       invoice_id: data.invoice_id || null,
-      date: data.date || new Date().toISOString()
+      date: data.date || new Date().toISOString(),
+      voucher_url: voucherUrl
     } as any);
 
   if (error) {
@@ -204,6 +243,26 @@ export async function createTransaction(data: {
   revalidatePath('/wallets');
   revalidatePath('/');
   return { success: true };
+}
+
+/**
+ * Obtiene la URL firmada para visualizar un comprobante de transacción.
+ */
+export async function getVoucherUrl(filePath: string) {
+  const { data: { user } } = await (await createClient()).auth.getUser();
+  if (!user) return null;
+
+  const { data, error } = await supabaseAdmin
+    .storage
+    .from('comprobantes')
+    .createSignedUrl(filePath, 60);
+
+  if (error) {
+    console.error('Error al generar URL firmada:', error);
+    return null;
+  }
+
+  return data.signedUrl;
 }
 
 /**

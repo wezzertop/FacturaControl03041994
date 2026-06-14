@@ -3,11 +3,13 @@
 import React, { useState, useTransition } from 'react';
 import { 
   Wallet, Plus, Trash2, ArrowUpRight, ArrowDownLeft, Calendar, 
-  DollarSign, Tag, Receipt, Building2, CheckCircle2, X, PlusCircle 
+  DollarSign, Tag, Receipt, Building2, CheckCircle2, X, PlusCircle,
+  FileImage, Eye, RefreshCw, Upload
 } from 'lucide-react';
+import { createWorker } from 'tesseract.js';
 import { 
   createWallet, deleteWallet, createTransaction, 
-  deleteTransaction, linkInvoiceToWallet 
+  deleteTransaction, linkInvoiceToWallet, getVoucherUrl 
 } from '@/app/actions/wallets';
 
 interface WalletsManagerProps {
@@ -27,6 +29,12 @@ export default function WalletsManager({
   const [transactions, setTransactions] = useState(initialTransactions);
   const [unlinkedInvoices, setUnlinkedInvoices] = useState(initialUnlinkedInvoices);
   const [isPending, startTransition] = useTransition();
+
+  // Estados de OCR y Comprobantes
+  const [isOcrLoading, setIsOcrLoading] = useState(false);
+  const [ocrProgress, setOcrProgress] = useState('');
+  const [voucherFile, setVoucherFile] = useState<File | null>(null);
+  const [viewingVoucherUrl, setViewingVoucherUrl] = useState<string | null>(null);
 
   // Modales
   const [showWalletModal, setShowWalletModal] = useState(false);
@@ -65,6 +73,119 @@ export default function WalletsManager({
     });
   };
 
+  // Convertir archivo a Base64
+  const getBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = error => reject(error);
+    });
+  };
+
+  // Parser de texto extraído del comprobante de transferencia BBVA
+  const parseBBVATransfer = (text: string) => {
+    const result = {
+      amount: '',
+      concept: '',
+      origin: '',
+      reference: ''
+    };
+
+    // 1. Extraer Monto ($5,000.00 o $ 5,000.00 o similar)
+    const amountMatch = text.match(/\$\s*([0-9,]+\.[0-9]{2})/);
+    if (amountMatch) {
+      result.amount = amountMatch[1].replace(/,/g, '');
+    }
+
+    // 2. Extraer Concepto
+    const conceptMatch = text.match(/Concepto\s+(.+)/i);
+    if (conceptMatch) {
+      result.concept = conceptMatch[1].trim();
+    }
+
+    // 3. Extraer Referencia
+    const referenceMatch = text.match(/Referencia\s+(\d+)/i);
+    if (referenceMatch) {
+      result.reference = referenceMatch[1].trim();
+    }
+
+    // 4. Extraer Origen
+    const originMatch = text.match(/Origen\s+(.+)/i);
+    if (originMatch) {
+      result.origin = originMatch[1].trim();
+    }
+
+    return result;
+  };
+
+  // Procesamiento OCR de la imagen de comprobante
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    await processVoucher(file);
+  };
+
+  const processVoucher = async (file: File) => {
+    setIsOcrLoading(true);
+    setOcrProgress('Cargando motor de lectura...');
+    try {
+      const worker = await createWorker('spa');
+      setOcrProgress('Escaneando comprobante...');
+      const { data: { text } } = await worker.recognize(file);
+      await worker.terminate();
+
+      console.log('OCR Raw Text:', text);
+      const parsedData = parseBBVATransfer(text);
+      console.log('Parsed Data:', parsedData);
+
+      // Guardar el archivo temporalmente
+      setVoucherFile(file);
+
+      // Pre-llenar el formulario de transacción
+      if (parsedData.amount) {
+        setTxAmount(parsedData.amount);
+      }
+      
+      let finalConcept = parsedData.concept || 'Transferencia BBVA';
+      if (parsedData.reference) {
+        finalConcept += ` (Ref: ${parsedData.reference})`;
+      }
+      setTxConcept(finalConcept);
+      setTxType('expense');
+
+      // Intentar mapear cuenta de origen (BBVA o los últimos dígitos)
+      if (parsedData.origin) {
+        const originClean = parsedData.origin.toLowerCase();
+        const matchedWallet = wallets.find(w => {
+          const nameLower = w.name.toLowerCase();
+          const lastDigitsMatch = originClean.match(/\d{4}$/);
+          if (lastDigitsMatch && nameLower.includes(lastDigitsMatch[0])) {
+            return true;
+          }
+          return nameLower.includes('bbva') || nameLower.includes('ahorro') || nameLower.includes('tarjeta');
+        });
+
+        if (matchedWallet) {
+          setTxWalletId(matchedWallet.id);
+        } else if (wallets.length > 0) {
+          setTxWalletId(wallets[0].id);
+        }
+      } else if (wallets.length > 0) {
+        setTxWalletId(wallets[0].id);
+      }
+
+      setTxCategoryId('');
+      setShowTxModal(true);
+    } catch (err) {
+      console.error('Error during OCR processing:', err);
+      alert('Hubo un error al leer la imagen. Puedes registrar el movimiento a mano.');
+    } finally {
+      setIsOcrLoading(false);
+      setOcrProgress('');
+    }
+  };
+
   // Crear Cartera
   const handleCreateWallet = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -76,7 +197,6 @@ export default function WalletsManager({
       const res = await createWallet(newWalletName, initialBal);
       if (res.success && res.wallet) {
         setWallets([...wallets, res.wallet]);
-        // Si había saldo inicial, insertamos la transacción localmente para simular el trigger de la DB
         if (initialBal > 0) {
           const newTx = {
             id: Math.random().toString(),
@@ -89,7 +209,6 @@ export default function WalletsManager({
           };
           setTransactions([newTx, ...transactions]);
         }
-        // Actualizar balance de cartera recién creada en el estado local si tenía saldo
         const updatedWallet = { ...res.wallet, balance: initialBal };
         setWallets(prev => prev.map(w => w.id === res.wallet.id ? updatedWallet : w));
         
@@ -118,7 +237,7 @@ export default function WalletsManager({
     });
   };
 
-  // Registrar Transacción Manual (Efectivo)
+  // Registrar Transacción Manual (con comprobante si aplica)
   const handleCreateTransaction = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!txWalletId || !txAmount || !txConcept) return;
@@ -127,19 +246,33 @@ export default function WalletsManager({
     if (isNaN(amountNum) || amountNum <= 0) return;
 
     startTransition(async () => {
+      let voucher_base64: string | null = null;
+      let voucher_name: string | null = null;
+
+      if (voucherFile) {
+        try {
+          voucher_base64 = await getBase64(voucherFile);
+          voucher_name = voucherFile.name;
+        } catch (err) {
+          console.error('Error al convertir comprobante a base64:', err);
+        }
+      }
+
       const res = await createTransaction({
         wallet_id: txWalletId,
         type: txType,
         amount: amountNum,
         concept: txConcept,
-        category_id: txCategoryId || null
+        category_id: txCategoryId || null,
+        voucher_base64,
+        voucher_name
       });
 
       if (res.success) {
-        // Encontrar nombres para actualizar el estado local
         const selectedWallet = wallets.find(w => w.id === txWalletId);
         const selectedCategory = categories.find(c => c.id === txCategoryId);
 
+        // Mapear localmente para actualizar estado inmediato sin recarga
         const newTx = {
           id: Math.random().toString(),
           wallet_id: txWalletId,
@@ -148,12 +281,12 @@ export default function WalletsManager({
           concept: txConcept,
           date: new Date().toISOString(),
           wallets: { name: selectedWallet?.name || 'Cartera' },
-          categories: selectedCategory ? { name: selectedCategory.name, color: selectedCategory.color } : null
+          categories: selectedCategory ? { name: selectedCategory.name, color: selectedCategory.color } : null,
+          voucher_url: voucherFile ? 'comprobante_cargado' : null // marcador temporal local
         };
 
         setTransactions([newTx, ...transactions]);
 
-        // Simular trigger localmente
         setWallets(prev => prev.map(w => {
           if (w.id === txWalletId) {
             const diff = txType === 'income' ? amountNum : -amountNum;
@@ -166,6 +299,7 @@ export default function WalletsManager({
         setTxAmount('');
         setTxConcept('');
         setTxCategoryId('');
+        setVoucherFile(null);
       } else {
         alert(res.error);
       }
@@ -180,7 +314,6 @@ export default function WalletsManager({
       const res = await deleteTransaction(id);
       if (res.success) {
         setTransactions(transactions.filter(t => t.id !== id));
-        // Simular trigger localmente
         setWallets(prev => prev.map(w => {
           if (w.id === walletId) {
             const diff = type === 'income' ? -amount : amount;
@@ -202,10 +335,8 @@ export default function WalletsManager({
     startTransition(async () => {
       const res = await linkInvoiceToWallet(selectedInvoice.id, linkWalletId);
       if (res.success) {
-        // Eliminar factura de la lista de pendientes
         setUnlinkedInvoices(unlinkedInvoices.filter(inv => inv.id !== selectedInvoice.id));
         
-        // Agregar la transacción al historial local
         const targetWallet = wallets.find(w => w.id === linkWalletId);
         const isIncome = selectedInvoice.invoice_type === 'nomina' || selectedInvoice.invoice_type === 'ingreso';
         const type = isIncome ? 'income' : 'expense';
@@ -221,12 +352,12 @@ export default function WalletsManager({
           concept: `${prefix}: ${selectedInvoice.nombre_emisor}`,
           date: selectedInvoice.fecha,
           wallets: { name: targetWallet?.name || 'Cartera' },
-          categories: selectedInvoice.categories ? { name: selectedInvoice.categories.name, color: selectedInvoice.categories.color } : null
+          categories: selectedInvoice.categories ? { name: selectedInvoice.categories.name, color: selectedInvoice.categories.color } : null,
+          voucher_url: null
         };
 
         setTransactions([newTx, ...transactions]);
 
-        // Simular trigger localmente
         setWallets(prev => prev.map(w => {
           if (w.id === linkWalletId) {
             const diff = type === 'income' ? Number(selectedInvoice.total) : -Number(selectedInvoice.total);
@@ -240,6 +371,23 @@ export default function WalletsManager({
         setLinkWalletId('');
       } else {
         alert(res.error);
+      }
+    });
+  };
+
+  // Abrir visor de comprobantes
+  const handleViewVoucher = async (filePath: string) => {
+    if (filePath === 'comprobante_cargado') {
+      alert("El comprobante se cargó con éxito. Estará disponible para visualización completa una vez que refresques la página.");
+      return;
+    }
+    
+    startTransition(async () => {
+      const url = await getVoucherUrl(filePath);
+      if (url) {
+        setViewingVoucherUrl(url);
+      } else {
+        alert("No se pudo obtener la imagen del comprobante.");
       }
     });
   };
@@ -267,7 +415,7 @@ export default function WalletsManager({
               Suma total de todas tus carteras activas en pesos mexicanos (MXN).
             </p>
           </div>
-          <div className="flex gap-3 w-full md:w-auto">
+          <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
             <button 
               onClick={() => {
                 if (wallets.length === 0) {
@@ -275,16 +423,17 @@ export default function WalletsManager({
                   return;
                 }
                 setTxWalletId(wallets[0].id);
+                setVoucherFile(null);
                 setShowTxModal(true);
               }}
-              className="flex-1 md:flex-none bg-brand-carbon dark:bg-white text-white dark:text-brand-carbon px-4 py-2.5 rounded-lg text-sm font-semibold hover:opacity-90 active:scale-95 transition-all flex items-center justify-center gap-2"
+              className="w-full sm:w-auto bg-brand-carbon dark:bg-white text-white dark:text-brand-carbon px-4 py-2.5 rounded-lg text-sm font-semibold hover:opacity-90 active:scale-95 transition-all flex items-center justify-center gap-2"
             >
               <PlusCircle className="w-4 h-4" />
-              Registrar Efectivo
+              Registrar Movimiento
             </button>
             <button 
               onClick={() => setShowWalletModal(true)}
-              className="flex-1 md:flex-none border border-gray-200 dark:border-zinc-800 bg-brand-white dark:bg-brand-graphite text-brand-carbon dark:text-zinc-300 px-4 py-2.5 rounded-lg text-sm font-semibold hover:bg-gray-50 dark:hover:bg-zinc-800/80 active:scale-95 transition-all flex items-center justify-center gap-2"
+              className="w-full sm:w-auto border border-gray-200 dark:border-zinc-800 bg-brand-white dark:bg-brand-graphite text-brand-carbon dark:text-zinc-300 px-4 py-2.5 rounded-lg text-sm font-semibold hover:bg-gray-50 dark:hover:bg-zinc-800/80 active:scale-95 transition-all flex items-center justify-center gap-2"
             >
               <Wallet className="w-4 h-4" />
               Nueva Cuenta
@@ -293,7 +442,42 @@ export default function WalletsManager({
         </div>
       </div>
 
-      {/* 2. Grid de Carteras */}
+      {/* 2. Zona de Escaneo de Comprobantes (BBVA OCR) */}
+      <div className="border border-gray-200 dark:border-zinc-800 rounded-2xl bg-white dark:bg-zinc-900/50 p-6 shadow-sm">
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+          <div className="space-y-1">
+            <h3 className="font-bold text-brand-carbon dark:text-white text-base flex items-center gap-2">
+              <FileImage className="w-5 h-5 text-brand-cerulean" />
+              Escáner de Transferencias (OCR)
+            </h3>
+            <p className="text-xs text-brand-graphite dark:text-zinc-400">
+              Sube la captura de pantalla de tu transferencia bancaria (BBVA) y el sistema la registrará automáticamente.
+            </p>
+          </div>
+          
+          <div className="w-full md:w-auto">
+            {isOcrLoading ? (
+              <div className="flex items-center gap-3 bg-brand-cerulean/10 text-brand-cerulean px-6 py-4 rounded-xl border border-brand-cerulean/30 min-w-[240px] justify-center">
+                <RefreshCw className="w-5 h-5 animate-spin" />
+                <span className="text-xs font-bold">{ocrProgress}</span>
+              </div>
+            ) : (
+              <label className="flex items-center gap-3 bg-brand-cerulean hover:bg-blue-500 text-white px-6 py-3.5 rounded-xl text-xs font-bold cursor-pointer transition-all shadow-sm shadow-brand-cerulean/20 w-full md:w-auto justify-center active:scale-98">
+                <Upload className="w-4 h-4" />
+                Subir captura de transferencia
+                <input 
+                  type="file" 
+                  accept="image/*" 
+                  className="hidden" 
+                  onChange={handleFileUpload}
+                />
+              </label>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* 3. Grid de Carteras */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-bold text-brand-carbon dark:text-white flex items-center gap-2">
@@ -352,7 +536,6 @@ export default function WalletsManager({
             );
           })}
 
-          {/* Tarjeta Agregar Nueva */}
           <div 
             onClick={() => setShowWalletModal(true)}
             className="border-2 border-dashed border-gray-200 dark:border-zinc-800 rounded-xl p-5 flex flex-col items-center justify-center h-36 hover:border-brand-cerulean hover:bg-brand-cerulean/5 dark:hover:bg-brand-cerulean/5 transition-all cursor-pointer text-brand-graphite dark:text-zinc-400 hover:text-brand-cerulean group"
@@ -363,7 +546,7 @@ export default function WalletsManager({
         </div>
       </div>
 
-      {/* 3. Panel de Reconciliación (Doble Columna) */}
+      {/* 4. Panel de Reconciliación (Doble Columna) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         
         {/* Columna Izquierda: Historial de Transacciones */}
@@ -395,7 +578,7 @@ export default function WalletsManager({
                       </div>
                       
                       <div className="min-w-0">
-                        <p className="text-sm font-bold text-brand-carbon dark:text-white truncate max-w-[200px] sm:max-w-[280px]">
+                        <p className="text-sm font-bold text-brand-carbon dark:text-white truncate max-w-[170px] sm:max-w-[280px]">
                           {tx.concept}
                         </p>
                         <div className="flex flex-wrap items-center gap-1.5 mt-1 text-[11px] text-brand-graphite dark:text-zinc-500 font-medium">
@@ -419,6 +602,16 @@ export default function WalletsManager({
                         {isIncome ? '+' : '-'}{formatCurrency(Number(tx.amount))}
                       </p>
                       
+                      {tx.voucher_url && (
+                        <button 
+                          onClick={() => handleViewVoucher(tx.voucher_url)}
+                          className="p-1.5 rounded bg-brand-cerulean/10 text-brand-cerulean hover:bg-brand-cerulean/20 transition-colors"
+                          title="Ver Comprobante"
+                        >
+                          <Eye className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+
                       <button 
                         onClick={() => handleDeleteTransaction(tx.id, tx.wallet_id, tx.type, Number(tx.amount))}
                         className="p-1 rounded text-brand-graphite dark:text-zinc-500 hover:text-red-500 dark:hover:text-red-400 hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors"
@@ -433,7 +626,7 @@ export default function WalletsManager({
           </div>
         </div>
 
-        {/* Columna Derecha: Reconciliación de Facturas del SAT (Consolidar) */}
+        {/* Columna Derecha: Reconciliación de Facturas del SAT */}
         <div className="lg:col-span-5 space-y-4">
           <div className="flex justify-between items-center">
             <h3 className="text-lg font-bold text-brand-carbon dark:text-white flex items-center gap-2">
@@ -529,8 +722,28 @@ export default function WalletsManager({
       </div>
 
       {/* ========================================================================= */}
-      {/* 4. MODALES */}
+      {/* 5. MODALES */}
       {/* ========================================================================= */}
+
+      {/* Visor de Comprobantes de Transferencia */}
+      {viewingVoucherUrl && (
+        <div className="fixed inset-0 bg-brand-carbon/60 dark:bg-black/85 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl shadow-xl overflow-hidden max-w-sm w-full p-5 relative">
+            <button 
+              onClick={() => setViewingVoucherUrl(null)}
+              className="absolute top-4 right-4 text-brand-graphite dark:text-zinc-400 hover:text-brand-carbon dark:hover:text-white p-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-zinc-800 z-10"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            <h3 className="text-sm font-bold text-brand-carbon dark:text-white mb-4">
+              Comprobante de Transferencia
+            </h3>
+            <div className="relative aspect-[9/16] w-full rounded-lg overflow-hidden border border-gray-200 dark:border-zinc-850">
+              <img src={viewingVoucherUrl} alt="Comprobante de Transferencia" className="object-contain w-full h-full" />
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Modal: Nueva Cartera */}
       {showWalletModal && (
@@ -556,7 +769,7 @@ export default function WalletsManager({
                   placeholder="Ej. Efectivo, Nómina Santander, Crédito BBVA"
                   value={newWalletName}
                   onChange={(e) => setNewWalletName(e.target.value)}
-                  className="w-full bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-lg px-3 py-2 text-sm text-brand-carbon dark:text-white placeholder:text-zinc-600 focus:outline-none focus:border-brand-cerulean transition-colors"
+                  className="w-full bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-lg px-3 py-2 text-sm text-brand-carbon dark:text-white placeholder:text-zinc-650 focus:outline-none focus:border-brand-cerulean transition-colors"
                 />
               </div>
 
@@ -568,7 +781,7 @@ export default function WalletsManager({
                   placeholder="0.00"
                   value={newWalletBalance}
                   onChange={(e) => setNewWalletBalance(e.target.value)}
-                  className="w-full bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-lg px-3 py-2 text-sm text-brand-carbon dark:text-white placeholder:text-zinc-600 focus:outline-none focus:border-brand-cerulean transition-colors"
+                  className="w-full bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-lg px-3 py-2 text-sm text-brand-carbon dark:text-white placeholder:text-zinc-650 focus:outline-none focus:border-brand-cerulean transition-colors"
                 />
               </div>
 
@@ -589,15 +802,35 @@ export default function WalletsManager({
         <div className="fixed inset-0 bg-brand-carbon/55 dark:bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-brand-white dark:bg-brand-graphite border border-gray-200 dark:border-zinc-800 w-full max-w-sm rounded-2xl shadow-xl overflow-hidden p-6 relative">
             <button 
-              onClick={() => setShowTxModal(false)}
+              onClick={() => {
+                setShowTxModal(false);
+                setVoucherFile(null);
+              }}
               className="absolute top-4 right-4 text-brand-graphite dark:text-zinc-400 hover:text-brand-carbon dark:hover:text-white p-1 rounded-full hover:bg-gray-100 dark:hover:bg-zinc-800"
             >
               <X className="w-5 h-5" />
             </button>
 
-            <h3 className="text-lg font-bold text-brand-carbon dark:text-white mb-6">
-              Registrar Movimiento Manual
+            <h3 className="text-lg font-bold text-brand-carbon dark:text-white mb-4">
+              Registrar Movimiento
             </h3>
+
+            {voucherFile && (
+              <div className="mb-4 bg-brand-cerulean/10 border border-brand-cerulean/20 text-brand-cerulean rounded-xl p-3 flex items-center gap-3">
+                <FileImage className="w-5 h-5 shrink-0" />
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-bold truncate">{voucherFile.name}</p>
+                  <p className="text-[10px] opacity-80">Comprobante detectado por OCR</p>
+                </div>
+                <button 
+                  type="button" 
+                  onClick={() => setVoucherFile(null)} 
+                  className="p-1 rounded-full hover:bg-brand-cerulean/20 text-brand-cerulean shrink-0"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            )}
 
             <form onSubmit={handleCreateTransaction} className="space-y-4">
               <div className="flex bg-gray-100 dark:bg-zinc-900 p-1 rounded-lg">
@@ -659,7 +892,7 @@ export default function WalletsManager({
                   placeholder="Ej. Tacos cena, Propinas, Copias papelería"
                   value={txConcept}
                   onChange={(e) => setTxConcept(e.target.value)}
-                  className="w-full bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-lg px-3 py-2 text-sm text-brand-carbon dark:text-white placeholder:text-zinc-600 focus:outline-none focus:border-brand-cerulean transition-colors"
+                  className="w-full bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-lg px-3 py-2 text-sm text-brand-carbon dark:text-white placeholder:text-zinc-650 focus:outline-none focus:border-brand-cerulean transition-colors"
                 />
               </div>
 
