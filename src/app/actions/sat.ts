@@ -189,6 +189,35 @@ export async function syncSAT() {
       return { success: false, error: 'Usuario no autenticado' };
     }
 
+    // --- LIMPIEZA DE DUPLICADOS EXISTENTES ---
+    const { data: userInvoices } = await supabase
+      .from('invoices')
+      .select('id, rfc_emisor, fecha, total')
+      .eq('user_id', user.id);
+
+    if (userInvoices && userInvoices.length > 0) {
+      const groups: { [key: string]: string[] } = {};
+      userInvoices.forEach((inv: any) => {
+        const fechaStr = new Date(inv.fecha).toISOString();
+        const key = `${inv.rfc_emisor}_${fechaStr}_${inv.total}`;
+        if (!groups[key]) {
+          groups[key] = [];
+        }
+        groups[key].push(inv.id);
+      });
+
+      for (const key of Object.keys(groups)) {
+        const ids = groups[key];
+        if (ids.length > 1) {
+          const idsToDelete = ids.slice(1);
+          await supabaseAdmin
+            .from('invoices')
+            .delete()
+            .in('id', idsToDelete);
+        }
+      }
+    }
+
     // Obtener el RFC conectado
     let rfc = '';
     let isDbConnection = true;
@@ -226,7 +255,7 @@ export async function syncSAT() {
         rfc_receptor: rfc,
         nombre_receptor: 'USUARIO FACTURACONTROL',
         invoice_type: 'egreso',
-        fecha: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(), // Hace 3 días
+        fecha: '2026-06-10T14:30:00Z',
         total: 1254.00,
         subtotal: 1081.03,
         iva: 172.97,
@@ -240,7 +269,7 @@ export async function syncSAT() {
         rfc_receptor: rfc,
         nombre_receptor: 'USUARIO FACTURACONTROL',
         invoice_type: 'egreso',
-        fecha: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(), // Hace 1 día
+        fecha: '2026-06-12T09:15:00Z',
         total: 850.00,
         subtotal: 735.30,
         iva: 114.70,
@@ -254,7 +283,7 @@ export async function syncSAT() {
         rfc_receptor: rfc,
         nombre_receptor: 'USUARIO FACTURACONTROL',
         invoice_type: 'nomina',
-        fecha: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(), // Hace 5 días
+        fecha: '2026-06-08T08:00:00Z',
         total: 24500.00,
         subtotal: 24500.00,
         iva: 0.00,
