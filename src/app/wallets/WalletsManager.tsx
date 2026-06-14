@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useTransition } from 'react';
+import React, { useState, useTransition, useEffect } from 'react';
 import { 
   Wallet, Plus, Trash2, ArrowUpRight, ArrowDownLeft, Calendar, 
   DollarSign, Tag, Receipt, Building2, CheckCircle2, X, PlusCircle,
@@ -29,6 +29,29 @@ export default function WalletsManager({
   const [transactions, setTransactions] = useState(initialTransactions);
   const [unlinkedInvoices, setUnlinkedInvoices] = useState(initialUnlinkedInvoices);
   const [isPending, startTransition] = useTransition();
+
+  // Trigger por URL params (Bottom Navigation móvil)
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('triggerOcr') === 'true') {
+        const fileInput = document.getElementById('ocr-file-input');
+        if (fileInput) {
+          (fileInput as HTMLInputElement).click();
+          // Limpiar URL
+          window.history.replaceState({}, document.title, window.location.pathname);
+        }
+      } else if (params.get('triggerTx') === 'true') {
+        if (wallets.length > 0) {
+          setTxWalletId(wallets[0].id);
+          setVoucherFile(null);
+          setShowTxModal(true);
+          // Limpiar URL
+          window.history.replaceState({}, document.title, window.location.pathname);
+        }
+      }
+    }
+  }, [wallets]);
 
   // Estados de OCR y Comprobantes
   const [isOcrLoading, setIsOcrLoading] = useState(false);
@@ -426,6 +449,7 @@ export default function WalletsManager({
           </div>
           <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
             <button 
+              id="trigger-tx-modal-btn"
               onClick={() => {
                 if (wallets.length === 0) {
                   alert("Primero crea una cartera para registrar transacciones.");
@@ -475,6 +499,7 @@ export default function WalletsManager({
                 <Upload className="w-4 h-4" />
                 Subir captura de transferencia
                 <input 
+                  id="ocr-file-input"
                   type="file" 
                   accept="image/*" 
                   className="hidden" 
