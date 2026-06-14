@@ -1,5 +1,5 @@
 import React from 'react';
-import SATConnectionCards from '@/components/settings/SATConnectionCards';
+import RFCManager from '@/components/settings/RFCManager';
 
 export default function SettingsPage() {
   return (
@@ -8,12 +8,12 @@ export default function SettingsPage() {
         <div>
           <h2 className="text-2xl font-bold text-brand-carbon dark:text-white tracking-tight">Configuración</h2>
           <p className="text-sm text-brand-graphite dark:text-zinc-400 mt-1">
-            Gestiona tu cuenta y la conexión con el SAT.
+            Gestiona tu identidad fiscal y perfil del usuario.
           </p>
         </div>
       </div>
 
-      <SATConnectionCards />
+      <RFCManager />
     </div>
   );
 }

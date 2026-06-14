@@ -1,6 +1,5 @@
 import FinancialOverview from "@/components/dashboard/FinancialOverview";
 import XMLDragAndDrop from "@/components/upload/XMLDragAndDrop";
-import SATConnectionCards from "@/components/settings/SATConnectionCards";
 
 export default function Home() {
   return (
@@ -17,12 +16,6 @@ export default function Home() {
           <p className="text-sm text-brand-graphite dark:text-brand-smoke mt-1">Sube tus archivos XML directamente.</p>
         </div>
         <XMLDragAndDrop />
-      </section>
-
-      <div className="h-px bg-gray-200 dark:bg-zinc-800 w-full" />
-
-      <section>
-        <SATConnectionCards />
       </section>
     </div>
   );
