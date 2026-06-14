@@ -5,6 +5,11 @@
 -- 1. Agregar columna user_id a la tabla de categorías
 ALTER TABLE public.categories ADD COLUMN IF NOT EXISTS user_id UUID REFERENCES public.users(id) ON DELETE CASCADE;
 
+-- 1b. Eliminar restricción de unicidad global en 'name' para soportar categorías personalizadas por usuario
+ALTER TABLE public.categories DROP CONSTRAINT IF EXISTS categories_name_key;
+ALTER TABLE public.categories DROP CONSTRAINT IF EXISTS categories_name_user_id_key;
+ALTER TABLE public.categories ADD CONSTRAINT categories_name_user_id_key UNIQUE (name, user_id);
+
 -- 2. Habilitar y actualizar RLS de la tabla categories
 ALTER TABLE public.categories ENABLE ROW LEVEL SECURITY;
 

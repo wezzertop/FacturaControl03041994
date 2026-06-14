@@ -4,9 +4,9 @@ import React, { useState, useTransition, useEffect } from 'react';
 import { 
   Tag, Plus, Trash2, CheckCircle2, AlertCircle, RefreshCw, 
   ShoppingCart, Fuel, Zap, HeartPulse, Utensils, MoreHorizontal, 
-  Tv, GraduationCap, Gift, PiggyBank, Eye
+  Tv, GraduationCap, Gift, PiggyBank, Eye, Edit2
 } from 'lucide-react';
-import { createCategory, deleteCategory } from '@/app/actions/categories';
+import { createCategory, deleteCategory, updateCategory } from '@/app/actions/categories';
 
 // Mapeo simple de iconos para previsualización
 const IconMap: Record<string, any> = {
@@ -50,9 +50,15 @@ export default function CategoryManager({ initialCategories }: CategoryManagerPr
   const [name, setName] = useState('');
   const [selectedColor, setSelectedColor] = useState('bg-brand-cerulean');
   const [selectedIcon, setSelectedIcon] = useState('ShoppingCart');
+  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [isPending, startTransition] = useTransition();
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  // Sincronizar categorías cuando cambian las props iniciales (ej. después de clonar)
+  useEffect(() => {
+    setCategories(initialCategories);
+  }, [initialCategories]);
 
   // Limpiar mensajes después de 4 segundos
   useEffect(() => {
@@ -73,15 +79,49 @@ export default function CategoryManager({ initialCategories }: CategoryManagerPr
     setSuccessMessage(null);
 
     startTransition(async () => {
-      const res = await createCategory(name, selectedColor, selectedIcon);
-      if (res.success && res.category) {
-        setCategories([...categories, res.category as Category]);
-        setSuccessMessage(`Categoría "${name}" creada correctamente.`);
-        setName('');
+      if (editingCategory) {
+        const res = await updateCategory(editingCategory.id, name, selectedColor, selectedIcon);
+        if (res.success && res.category) {
+          setCategories(categories.map(c => c.id === editingCategory.id ? (res.category as Category) : c));
+          setSuccessMessage(`Categoría "${name}" actualizada correctamente.`);
+          setEditingCategory(null);
+          setName('');
+          setSelectedColor('bg-brand-cerulean');
+          setSelectedIcon('ShoppingCart');
+        } else {
+          setErrorMessage(res.error || 'No se pudo actualizar la categoría.');
+        }
       } else {
-        setErrorMessage(res.error || 'No se pudo crear la categoría.');
+        const res = await createCategory(name, selectedColor, selectedIcon);
+        if (res.success && res.category) {
+          setCategories([...categories, res.category as Category]);
+          setSuccessMessage(`Categoría "${name}" creada correctamente.`);
+          setName('');
+          setSelectedColor('bg-brand-cerulean');
+          setSelectedIcon('ShoppingCart');
+        } else {
+          setErrorMessage(res.error || 'No se pudo crear la categoría.');
+        }
       }
     });
+  };
+
+  const handleStartEdit = (cat: Category) => {
+    setEditingCategory(cat);
+    setName(cat.name);
+    setSelectedColor(cat.color);
+    setSelectedIcon(cat.icon);
+    setErrorMessage(null);
+    setSuccessMessage(null);
+  };
+
+  const handleCancelEdit = () => {
+    setEditingCategory(null);
+    setName('');
+    setSelectedColor('bg-brand-cerulean');
+    setSelectedIcon('ShoppingCart');
+    setErrorMessage(null);
+    setSuccessMessage(null);
   };
 
   const handleDelete = async (id: string, catName: string) => {
@@ -92,6 +132,9 @@ export default function CategoryManager({ initialCategories }: CategoryManagerPr
       if (res.success) {
         setCategories(categories.filter(c => c.id !== id));
         setSuccessMessage(`Categoría eliminada.`);
+        if (editingCategory?.id === id) {
+          handleCancelEdit();
+        }
       } else {
         setErrorMessage(res.error || 'No se pudo eliminar la categoría.');
       }
@@ -124,7 +167,9 @@ export default function CategoryManager({ initialCategories }: CategoryManagerPr
 
         {/* Create Form */}
         <form onSubmit={handleSubmit} className="space-y-4 pb-6 border-b border-gray-150 dark:border-zinc-800/80">
-          <h4 className="text-xs font-bold uppercase tracking-wider text-brand-graphite dark:text-zinc-500">Crear Nueva Categoría</h4>
+          <h4 className="text-xs font-bold uppercase tracking-wider text-brand-graphite dark:text-zinc-550">
+            {editingCategory ? 'Editar Categoría' : 'Crear Nueva Categoría'}
+          </h4>
           
           <div className="grid grid-cols-1 gap-4">
             {/* Name input */}
@@ -184,14 +229,31 @@ export default function CategoryManager({ initialCategories }: CategoryManagerPr
             </div>
           </div>
 
-          <button 
-            type="submit"
-            disabled={isPending || !name.trim()}
-            className="w-full bg-brand-carbon dark:bg-white text-white dark:text-brand-carbon py-2.5 rounded-lg text-sm font-semibold hover:opacity-90 active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
-          >
-            {isPending ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
-            Agregar Categoría
-          </button>
+          <div className="flex gap-3">
+            {editingCategory && (
+              <button 
+                type="button"
+                onClick={handleCancelEdit}
+                className="flex-1 bg-gray-100 dark:bg-zinc-800 text-brand-graphite dark:text-zinc-300 py-2.5 rounded-lg text-sm font-semibold hover:bg-gray-250 dark:hover:bg-zinc-700/80 active:scale-95 transition-all"
+              >
+                Cancelar
+              </button>
+            )}
+            <button 
+              type="submit"
+              disabled={isPending || !name.trim()}
+              className="flex-1 bg-brand-carbon dark:bg-white text-white dark:text-brand-carbon py-2.5 rounded-lg text-sm font-semibold hover:opacity-90 active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+            >
+              {isPending ? (
+                <RefreshCw className="w-4 h-4 animate-spin" />
+              ) : editingCategory ? (
+                <Edit2 className="w-4 h-4" />
+              ) : (
+                <Plus className="w-4 h-4" />
+              )}
+              {editingCategory ? 'Guardar Cambios' : 'Agregar Categoría'}
+            </button>
+          </div>
         </form>
 
         {/* Categories List */}
@@ -223,14 +285,26 @@ export default function CategoryManager({ initialCategories }: CategoryManagerPr
                   </div>
 
                   {!isSystem && (
-                    <button 
-                      onClick={() => handleDelete(cat.id, cat.name)}
-                      disabled={isPending}
-                      className="p-1.5 rounded-lg text-brand-graphite dark:text-zinc-400 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 active:scale-95 transition-all"
-                      title="Eliminar Categoría"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                    <div className="flex items-center gap-1 shrink-0">
+                      <button 
+                        type="button"
+                        onClick={() => handleStartEdit(cat)}
+                        disabled={isPending}
+                        className="p-1.5 rounded-lg text-brand-graphite dark:text-zinc-400 hover:text-brand-cerulean dark:hover:text-brand-cerulean/80 hover:bg-brand-cerulean/10 active:scale-95 transition-all"
+                        title="Editar Categoría"
+                      >
+                        <Edit2 className="w-4 h-4" />
+                      </button>
+                      <button 
+                        type="button"
+                        onClick={() => handleDelete(cat.id, cat.name)}
+                        disabled={isPending}
+                        className="p-1.5 rounded-lg text-brand-graphite dark:text-zinc-400 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 active:scale-95 transition-all"
+                        title="Eliminar Categoría"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
                   )}
                 </div>
               );
