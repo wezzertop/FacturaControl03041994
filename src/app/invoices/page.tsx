@@ -22,7 +22,7 @@ export default async function InvoicesPage() {
     .order('fecha', { ascending: false });
 
   return (
-    <div className="w-full max-w-6xl mx-auto space-y-6 p-6">
+    <div className="w-full max-w-6xl mx-auto space-y-6 p-4 sm:p-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
         <div>

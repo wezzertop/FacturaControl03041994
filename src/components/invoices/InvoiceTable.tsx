@@ -56,21 +56,21 @@ export default function InvoiceTable({ invoices, compact = false }: InvoiceTable
                   <p className="font-bold text-brand-carbon dark:text-white text-base">
                     {formatCurrency(inv.total)}
                   </p>
-                  <p className="text-[10px] text-brand-graphite dark:text-zinc-500 mt-1">{formatDate(inv.fecha)}</p>
+                  <p className="text-[11px] text-brand-graphite dark:text-zinc-550 mt-1">{formatDate(inv.fecha)}</p>
                 </div>
               </div>
               
               <div className="flex items-center justify-between border-t border-gray-100 dark:border-zinc-800/80 pt-3">
                 {inv.categories ? (
-                  <span className={`inline-flex items-center px-2 py-1 rounded-md text-[10px] font-medium text-white ${inv.categories.color}`}>
+                  <span className={`inline-flex items-center px-2.5 py-1 rounded-md text-[11px] font-bold text-white ${inv.categories.color}`}>
                     {inv.categories.name}
                   </span>
                 ) : (
-                  <span className="inline-flex items-center px-2 py-1 rounded-md text-[10px] font-medium bg-gray-100 text-gray-800 dark:bg-zinc-800 dark:text-zinc-300">
+                  <span className="inline-flex items-center px-2.5 py-1 rounded-md text-[11px] font-bold bg-gray-150 text-gray-800 dark:bg-zinc-800 dark:text-zinc-300">
                     Sin clasificar
                   </span>
                 )}
-                <span className="inline-flex items-center px-2 py-1 rounded-md bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-[10px] font-bold uppercase tracking-wider">
+                <span className="inline-flex items-center px-2.5 py-1 rounded-md bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-[11px] font-bold uppercase tracking-wider">
                   {inv.status}
                 </span>
               </div>

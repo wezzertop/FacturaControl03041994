@@ -247,7 +247,7 @@ export default async function FinancialOverview() {
             <PieChart className="w-4 h-4 text-brand-graphite dark:text-zinc-500" />
           </div>
           
-          <div className="flex items-center justify-between h-48">
+          <div className="flex flex-col sm:flex-row items-center justify-center sm:justify-between gap-6 min-h-[12rem] py-2">
             <div className="relative w-32 h-32 flex-shrink-0">
               <div className="absolute inset-0 rounded-full border-[12px] border-transparent border-t-brand-cerulean border-r-blue-400 border-b-emerald-500 border-l-gray-300 dark:border-l-zinc-700 transform rotate-45" />
               <div className="absolute inset-0 flex items-center justify-center flex-col">
@@ -258,12 +258,12 @@ export default async function FinancialOverview() {
               </div>
             </div>
 
-            <div className="flex-1 ml-8 space-y-3">
+            <div className="flex-1 w-full sm:ml-8 space-y-3">
               {donutData.map((item, i) => (
                 <div key={i} className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                      <div className={`w-2 h-2 rounded-full ${item.color}`} />
-                    <span className="text-sm text-brand-carbon dark:text-zinc-300 truncate max-w-[100px]">{item.label}</span>
+                    <span className="text-sm text-brand-carbon dark:text-zinc-300 truncate max-w-[150px]">{item.label}</span>
                   </div>
                   <span className="text-sm font-medium text-brand-carbon dark:text-white">{item.percentage}</span>
                 </div>

@@ -80,7 +80,7 @@ export default function XMLDragAndDrop() {
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
-        className={`relative group rounded-xl border-2 border-dashed transition-all duration-300 p-12 text-center overflow-hidden
+        className={`relative group rounded-xl border-2 border-dashed transition-all duration-300 p-6 sm:p-12 text-center overflow-hidden
           ${isDragging 
             ? 'border-brand-cerulean bg-brand-cerulean/10 scale-[1.02]' 
             : 'border-gray-300 dark:border-zinc-800 bg-brand-white dark:bg-zinc-900/50 hover:border-gray-400 dark:hover:border-zinc-700 hover:bg-gray-50 dark:hover:bg-zinc-900'
@@ -95,10 +95,10 @@ export default function XMLDragAndDrop() {
           </div>
           
           <div>
-            <p className="text-xl font-medium text-brand-carbon dark:text-zinc-100 mb-2">
+            <p className="text-lg sm:text-xl font-medium text-brand-carbon dark:text-zinc-100 mb-2">
               Arrastra tus archivos XML aquí
             </p>
-            <p className="text-sm text-brand-graphite dark:text-zinc-400 mb-6">
+            <p className="text-xs sm:text-sm text-brand-graphite dark:text-zinc-400 mb-4 sm:mb-6">
               o haz clic para explorar tu equipo
             </p>
           </div>

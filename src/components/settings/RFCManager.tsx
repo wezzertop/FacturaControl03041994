@@ -114,7 +114,7 @@ export default function RFCManager() {
               placeholder="Ej. ABCD123456EF7"
               value={rfc}
               onChange={(e) => setRfc(e.target.value)}
-              className="w-full bg-brand-smoke dark:bg-brand-carbon border border-gray-200 dark:border-zinc-800 rounded-lg px-3 py-2 text-sm text-brand-carbon dark:text-white placeholder:text-gray-400 dark:placeholder:text-zinc-650 focus:outline-none focus:border-brand-cerulean focus:ring-1 focus:ring-brand-cerulean transition-all uppercase font-mono tracking-wider"
+              className="w-full bg-brand-smoke dark:bg-brand-carbon border border-gray-200 dark:border-zinc-800 rounded-lg px-3 py-2 text-base md:text-sm text-brand-carbon dark:text-white placeholder:text-gray-400 dark:placeholder:text-zinc-650 focus:outline-none focus:border-brand-cerulean focus:ring-1 focus:ring-brand-cerulean transition-all uppercase font-mono tracking-wider"
             />
           </div>
 

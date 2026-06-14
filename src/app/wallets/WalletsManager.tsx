@@ -774,11 +774,14 @@ export default function WalletsManager({
 
       {/* Visor de Comprobantes de Transferencia */}
       {viewingVoucherUrl && (
-        <div className="fixed inset-0 bg-brand-carbon/60 dark:bg-black/85 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl shadow-xl overflow-hidden max-w-sm w-full p-5 relative">
+        <div className="fixed inset-0 bg-brand-carbon/60 dark:bg-black/85 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+          <div className="bg-white dark:bg-zinc-900 border-t sm:border border-gray-200 dark:border-zinc-800 rounded-t-2xl sm:rounded-2xl shadow-xl overflow-hidden max-w-sm w-full p-6 pb-8 sm:pb-6 relative animate-slide-up sm:animate-none max-h-[85vh] overflow-y-auto">
+            {/* Grab Handle for Mobile Bottom Sheet */}
+            <div className="w-12 h-1.5 bg-gray-250 dark:bg-zinc-800 rounded-full mx-auto mb-4 sm:hidden" />
+            
             <button 
               onClick={() => setViewingVoucherUrl(null)}
-              className="absolute top-4 right-4 text-brand-graphite dark:text-zinc-400 hover:text-brand-carbon dark:hover:text-white p-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-zinc-800 z-10"
+              className="absolute top-4 right-4 text-brand-graphite dark:text-zinc-400 hover:text-brand-carbon dark:hover:text-white p-2 rounded-full hover:bg-gray-100 dark:hover:bg-zinc-800 z-10"
             >
               <X className="w-5 h-5" />
             </button>
@@ -794,11 +797,14 @@ export default function WalletsManager({
 
       {/* Modal: Nueva Cartera */}
       {showWalletModal && (
-        <div className="fixed inset-0 bg-brand-carbon/55 dark:bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-brand-white dark:bg-brand-graphite border border-gray-200 dark:border-zinc-800 w-full max-w-sm rounded-2xl shadow-xl overflow-hidden p-6 relative">
+        <div className="fixed inset-0 bg-brand-carbon/55 dark:bg-black/75 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+          <div className="bg-brand-white dark:bg-brand-graphite border-t sm:border border-gray-200 dark:border-zinc-800 w-full sm:max-w-sm rounded-t-2xl sm:rounded-2xl shadow-xl overflow-hidden p-6 pb-8 sm:p-6 relative animate-slide-up sm:animate-none max-h-[90vh] overflow-y-auto custom-scrollbar">
+            {/* Grab Handle for Mobile Bottom Sheet */}
+            <div className="w-12 h-1.5 bg-gray-200 dark:bg-zinc-800 rounded-full mx-auto mb-4 sm:hidden" />
+
             <button 
               onClick={() => setShowWalletModal(false)}
-              className="absolute top-4 right-4 text-brand-graphite dark:text-zinc-400 hover:text-brand-carbon dark:hover:text-white p-1 rounded-full hover:bg-gray-100 dark:hover:bg-zinc-800"
+              className="absolute top-4 right-4 text-brand-graphite dark:text-zinc-400 hover:text-brand-carbon dark:hover:text-white p-2 rounded-full hover:bg-gray-100 dark:hover:bg-zinc-800"
             >
               <X className="w-5 h-5" />
             </button>
@@ -816,7 +822,7 @@ export default function WalletsManager({
                   placeholder="Ej. Efectivo, Nómina Santander, Crédito BBVA"
                   value={newWalletName}
                   onChange={(e) => setNewWalletName(e.target.value)}
-                  className="w-full bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-lg px-3 py-2 text-sm text-brand-carbon dark:text-white placeholder:text-zinc-650 focus:outline-none focus:border-brand-cerulean transition-colors"
+                  className="w-full bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-lg px-3 py-2.5 md:py-2 text-base md:text-sm text-brand-carbon dark:text-white placeholder:text-zinc-650 focus:outline-none focus:border-brand-cerulean transition-colors"
                 />
               </div>
 
@@ -828,14 +834,14 @@ export default function WalletsManager({
                   placeholder="0.00"
                   value={newWalletBalance}
                   onChange={(e) => setNewWalletBalance(e.target.value)}
-                  className="w-full bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-lg px-3 py-2 text-sm text-brand-carbon dark:text-white placeholder:text-zinc-650 focus:outline-none focus:border-brand-cerulean transition-colors"
+                  className="w-full bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-lg px-3 py-2.5 md:py-2 text-base md:text-sm text-brand-carbon dark:text-white placeholder:text-zinc-650 focus:outline-none focus:border-brand-cerulean transition-colors"
                 />
               </div>
 
               <button 
                 type="submit"
                 disabled={isPending}
-                className="w-full bg-brand-carbon dark:bg-white text-white dark:text-brand-carbon py-2.5 rounded-lg text-sm font-semibold hover:opacity-90 active:scale-95 transition-all disabled:opacity-50"
+                className="w-full bg-brand-carbon dark:bg-white text-white dark:text-brand-carbon py-3 md:py-2.5 rounded-lg text-sm font-semibold hover:opacity-90 active:scale-95 transition-all disabled:opacity-50 min-h-[44px]"
               >
                 {isPending ? 'Creando...' : 'Crear Cartera'}
               </button>
@@ -846,14 +852,17 @@ export default function WalletsManager({
 
       {/* Modal: Registrar Transacción Manual */}
       {showTxModal && (
-        <div className="fixed inset-0 bg-brand-carbon/55 dark:bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-brand-white dark:bg-brand-graphite border border-gray-200 dark:border-zinc-800 w-full max-w-sm rounded-2xl shadow-xl overflow-hidden p-6 relative">
+        <div className="fixed inset-0 bg-brand-carbon/55 dark:bg-black/75 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+          <div className="bg-brand-white dark:bg-brand-graphite border-t sm:border border-gray-200 dark:border-zinc-800 w-full sm:max-w-sm rounded-t-2xl sm:rounded-2xl shadow-xl overflow-hidden p-6 pb-8 sm:p-6 relative animate-slide-up sm:animate-none max-h-[90vh] overflow-y-auto custom-scrollbar">
+            {/* Grab Handle for Mobile Bottom Sheet */}
+            <div className="w-12 h-1.5 bg-gray-250 dark:bg-zinc-800 rounded-full mx-auto mb-4 sm:hidden" />
+
             <button 
               onClick={() => {
                 setShowTxModal(false);
                 setVoucherFile(null);
               }}
-              className="absolute top-4 right-4 text-brand-graphite dark:text-zinc-400 hover:text-brand-carbon dark:hover:text-white p-1 rounded-full hover:bg-gray-100 dark:hover:bg-zinc-800"
+              className="absolute top-4 right-4 text-brand-graphite dark:text-zinc-400 hover:text-brand-carbon dark:hover:text-white p-2 rounded-full hover:bg-gray-100 dark:hover:bg-zinc-800"
             >
               <X className="w-5 h-5" />
             </button>
@@ -910,7 +919,7 @@ export default function WalletsManager({
                 <select 
                   value={txWalletId}
                   onChange={(e) => setTxWalletId(e.target.value)}
-                  className="w-full bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-lg px-3 py-2 text-sm text-brand-carbon dark:text-white focus:outline-none focus:border-brand-cerulean transition-colors"
+                  className="w-full bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-lg px-3 py-2.5 md:py-2 text-base md:text-sm text-brand-carbon dark:text-white focus:outline-none focus:border-brand-cerulean transition-colors"
                 >
                   {wallets.map(w => (
                     <option key={w.id} value={w.id}>{w.name} ({formatCurrency(Number(w.balance))})</option>
@@ -927,7 +936,7 @@ export default function WalletsManager({
                   placeholder="0.00"
                   value={txAmount}
                   onChange={(e) => setTxAmount(e.target.value)}
-                  className="w-full bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-lg px-3 py-2 text-sm text-brand-carbon dark:text-white placeholder:text-zinc-600 focus:outline-none focus:border-brand-cerulean transition-colors"
+                  className="w-full bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-lg px-3 py-2.5 md:py-2 text-base md:text-sm text-brand-carbon dark:text-white placeholder:text-zinc-600 focus:outline-none focus:border-brand-cerulean transition-colors"
                 />
               </div>
 
@@ -939,7 +948,7 @@ export default function WalletsManager({
                   placeholder="Ej. Tacos cena, Propinas, Copias papelería"
                   value={txConcept}
                   onChange={(e) => setTxConcept(e.target.value)}
-                  className="w-full bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-lg px-3 py-2 text-sm text-brand-carbon dark:text-white placeholder:text-zinc-650 focus:outline-none focus:border-brand-cerulean transition-colors"
+                  className="w-full bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-lg px-3 py-2.5 md:py-2 text-base md:text-sm text-brand-carbon dark:text-white placeholder:text-zinc-650 focus:outline-none focus:border-brand-cerulean transition-colors"
                 />
               </div>
 
@@ -949,7 +958,7 @@ export default function WalletsManager({
                   <select 
                     value={txCategoryId}
                     onChange={(e) => setTxCategoryId(e.target.value)}
-                    className="w-full bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-lg px-3 py-2 text-sm text-brand-carbon dark:text-white focus:outline-none focus:border-brand-cerulean transition-colors"
+                    className="w-full bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-lg px-3 py-2.5 md:py-2 text-base md:text-sm text-brand-carbon dark:text-white focus:outline-none focus:border-brand-cerulean transition-colors"
                   >
                     <option value="">Selecciona Categoría...</option>
                     {categories.map(c => (
@@ -962,7 +971,7 @@ export default function WalletsManager({
               <button 
                 type="submit"
                 disabled={isPending}
-                className="w-full bg-brand-carbon dark:bg-white text-white dark:text-brand-carbon py-2.5 rounded-lg text-sm font-semibold hover:opacity-90 active:scale-95 transition-all disabled:opacity-50"
+                className="w-full bg-brand-carbon dark:bg-white text-white dark:text-brand-carbon py-3 md:py-2.5 rounded-lg text-sm font-semibold hover:opacity-90 active:scale-95 transition-all disabled:opacity-50 min-h-[44px]"
               >
                 {isPending ? 'Registrando...' : 'Registrar Movimiento'}
               </button>
@@ -973,15 +982,18 @@ export default function WalletsManager({
 
       {/* Modal: Vincular Factura XML */}
       {showLinkModal && selectedInvoice && (
-        <div className="fixed inset-0 bg-brand-carbon/55 dark:bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-brand-white dark:bg-brand-graphite border border-gray-200 dark:border-zinc-800 w-full max-w-sm rounded-2xl shadow-xl overflow-hidden p-6 relative">
+        <div className="fixed inset-0 bg-brand-carbon/55 dark:bg-black/75 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+          <div className="bg-brand-white dark:bg-brand-graphite border-t sm:border border-gray-200 dark:border-zinc-800 w-full sm:max-w-sm rounded-t-2xl sm:rounded-2xl shadow-xl overflow-hidden p-6 pb-8 sm:p-6 relative animate-slide-up sm:animate-none max-h-[90vh] overflow-y-auto custom-scrollbar">
+            {/* Grab Handle for Mobile Bottom Sheet */}
+            <div className="w-12 h-1.5 bg-gray-250 dark:bg-zinc-800 rounded-full mx-auto mb-4 sm:hidden" />
+
             <button 
               onClick={() => {
                 setShowLinkModal(false);
                 setSelectedInvoice(null);
                 setIgnoreBalanceEffect(false);
               }}
-              className="absolute top-4 right-4 text-brand-graphite dark:text-zinc-400 hover:text-brand-carbon dark:hover:text-white p-1 rounded-full hover:bg-gray-100 dark:hover:bg-zinc-800"
+              className="absolute top-4 right-4 text-brand-graphite dark:text-zinc-400 hover:text-brand-carbon dark:hover:text-white p-2 rounded-full hover:bg-gray-100 dark:hover:bg-zinc-800"
             >
               <X className="w-5 h-5" />
             </button>
@@ -1020,7 +1032,7 @@ export default function WalletsManager({
                 <select 
                   value={linkWalletId}
                   onChange={(e) => setLinkWalletId(e.target.value)}
-                  className="w-full bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-lg px-3 py-2 text-sm text-brand-carbon dark:text-white focus:outline-none focus:border-brand-cerulean transition-colors"
+                  className="w-full bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-lg px-3 py-2.5 md:py-2 text-base md:text-sm text-brand-carbon dark:text-white focus:outline-none focus:border-brand-cerulean transition-colors"
                 >
                   {wallets.map(w => (
                     <option key={w.id} value={w.id}>{w.name} ({formatCurrency(Number(w.balance))})</option>
@@ -1044,7 +1056,7 @@ export default function WalletsManager({
               <button 
                 type="submit"
                 disabled={isPending}
-                className="w-full bg-brand-carbon dark:bg-white text-white dark:text-brand-carbon py-2.5 rounded-lg text-sm font-semibold hover:opacity-90 active:scale-95 transition-all disabled:opacity-50"
+                className="w-full bg-brand-carbon dark:bg-white text-white dark:text-brand-carbon py-3 md:py-2.5 rounded-lg text-sm font-semibold hover:opacity-90 active:scale-95 transition-all disabled:opacity-50 min-h-[44px]"
               >
                 {isPending ? 'Vinculando...' : 'Confirmar Conciliación'}
               </button>
