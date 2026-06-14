@@ -130,7 +130,7 @@ export async function getTransactions(walletId?: string) {
 
   let query = supabase
     .from('transactions')
-    .select('*, wallets(name), categories(name, color, icon)')
+    .select('*, wallets(name), categories(name, color, icon), invoices(total)')
     .eq('user_id', user.id)
     .order('date', { ascending: false });
 
@@ -317,7 +317,7 @@ export async function getUnlinkedInvoices() {
  * Vincula una factura XML (ej. nómina o gasto) a una cartera.
  * Esto crea una transacción automática que suma o resta saldo en la cartera.
  */
-export async function linkInvoiceToWallet(invoiceId: string, walletId: string) {
+export async function linkInvoiceToWallet(invoiceId: string, walletId: string, ignoreBalanceEffect: boolean = false) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
@@ -361,8 +361,8 @@ export async function linkInvoiceToWallet(invoiceId: string, walletId: string) {
       user_id: user.id,
       wallet_id: walletId,
       type,
-      amount: Number(invoiceData.total),
-      concept,
+      amount: ignoreBalanceEffect ? 0 : Number(invoiceData.total),
+      concept: ignoreBalanceEffect ? `${concept} (Sin afectar saldo)` : concept,
       category_id: invoiceData.category_id || null,
       invoice_id: invoiceId,
       date: invoiceData.fecha

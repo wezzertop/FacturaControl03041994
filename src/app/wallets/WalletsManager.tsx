@@ -53,6 +53,7 @@ export default function WalletsManager({
 
   const [selectedInvoice, setSelectedInvoice] = useState<any | null>(null);
   const [linkWalletId, setLinkWalletId] = useState('');
+  const [ignoreBalanceEffect, setIgnoreBalanceEffect] = useState(false);
 
   // Filtros
   const [activeWalletFilter, setActiveWalletFilter] = useState<string | null>(null);
@@ -333,7 +334,7 @@ export default function WalletsManager({
     if (!selectedInvoice || !linkWalletId) return;
 
     startTransition(async () => {
-      const res = await linkInvoiceToWallet(selectedInvoice.id, linkWalletId);
+      const res = await linkInvoiceToWallet(selectedInvoice.id, linkWalletId, ignoreBalanceEffect);
       if (res.success) {
         setUnlinkedInvoices(unlinkedInvoices.filter(inv => inv.id !== selectedInvoice.id));
         
@@ -344,15 +345,20 @@ export default function WalletsManager({
           ? (selectedInvoice.invoice_type === 'nomina' ? 'Depósito de Nómina' : 'Ingreso Facturado')
           : 'Pago Facturado';
 
+        const finalConcept = ignoreBalanceEffect 
+          ? `${prefix}: ${selectedInvoice.nombre_emisor} (Sin afectar saldo)`
+          : `${prefix}: ${selectedInvoice.nombre_emisor}`;
+
         const newTx = {
           id: Math.random().toString(),
           wallet_id: linkWalletId,
           type,
-          amount: Number(selectedInvoice.total),
-          concept: `${prefix}: ${selectedInvoice.nombre_emisor}`,
+          amount: ignoreBalanceEffect ? 0 : Number(selectedInvoice.total),
+          concept: finalConcept,
           date: selectedInvoice.fecha,
           wallets: { name: targetWallet?.name || 'Cartera' },
           categories: selectedInvoice.categories ? { name: selectedInvoice.categories.name, color: selectedInvoice.categories.color } : null,
+          invoices: { total: selectedInvoice.total },
           voucher_url: null
         };
 
@@ -360,7 +366,9 @@ export default function WalletsManager({
 
         setWallets(prev => prev.map(w => {
           if (w.id === linkWalletId) {
-            const diff = type === 'income' ? Number(selectedInvoice.total) : -Number(selectedInvoice.total);
+            const diff = ignoreBalanceEffect
+              ? 0
+              : (type === 'income' ? Number(selectedInvoice.total) : -Number(selectedInvoice.total));
             return { ...w, balance: Number(w.balance) + diff };
           }
           return w;
@@ -369,6 +377,7 @@ export default function WalletsManager({
         setShowLinkModal(false);
         setSelectedInvoice(null);
         setLinkWalletId('');
+        setIgnoreBalanceEffect(false);
       } else {
         alert(res.error);
       }
@@ -598,9 +607,22 @@ export default function WalletsManager({
                     </div>
 
                     <div className="flex items-center gap-3 shrink-0">
-                      <p className={`font-bold text-sm ${isIncome ? 'text-emerald-600 dark:text-emerald-400' : 'text-brand-carbon dark:text-white'}`}>
-                        {isIncome ? '+' : '-'}{formatCurrency(Number(tx.amount))}
-                      </p>
+                      <div className="text-right">
+                        <p className={`font-bold text-sm ${
+                          Number(tx.amount) === 0
+                            ? 'text-gray-400 dark:text-zinc-500 line-through'
+                            : isIncome
+                              ? 'text-emerald-600 dark:text-emerald-400'
+                              : 'text-brand-carbon dark:text-white'
+                        }`}>
+                          {Number(tx.amount) === 0 ? '' : (isIncome ? '+' : '-')}{formatCurrency(Number(tx.amount) === 0 && tx.invoices?.total ? Number(tx.invoices.total) : Number(tx.amount))}
+                        </p>
+                        {Number(tx.amount) === 0 && (
+                          <span className="text-[9px] font-semibold text-brand-graphite dark:text-zinc-500 block">
+                            Sin afectar saldo
+                          </span>
+                        )}
+                      </div>
                       
                       {tx.voucher_url && (
                         <button 
@@ -932,6 +954,7 @@ export default function WalletsManager({
               onClick={() => {
                 setShowLinkModal(false);
                 setSelectedInvoice(null);
+                setIgnoreBalanceEffect(false);
               }}
               className="absolute top-4 right-4 text-brand-graphite dark:text-zinc-400 hover:text-brand-carbon dark:hover:text-white p-1 rounded-full hover:bg-gray-100 dark:hover:bg-zinc-800"
             >
@@ -978,6 +1001,19 @@ export default function WalletsManager({
                     <option key={w.id} value={w.id}>{w.name} ({formatCurrency(Number(w.balance))})</option>
                   ))}
                 </select>
+              </div>
+
+              <div className="flex items-center gap-2 py-1">
+                <input 
+                  type="checkbox" 
+                  id="ignoreBalanceEffect"
+                  checked={ignoreBalanceEffect}
+                  onChange={(e) => setIgnoreBalanceEffect(e.target.checked)}
+                  className="w-4 h-4 rounded border-gray-300 dark:border-zinc-850 text-brand-cerulean focus:ring-brand-cerulean bg-gray-50 dark:bg-zinc-900 cursor-pointer"
+                />
+                <label htmlFor="ignoreBalanceEffect" className="text-xs font-semibold text-brand-graphite dark:text-zinc-400 cursor-pointer select-none">
+                  No afectar el saldo de la cartera (solo registrar)
+                </label>
               </div>
 
               <button 
