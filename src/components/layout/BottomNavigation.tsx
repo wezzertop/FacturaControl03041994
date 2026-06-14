@@ -157,57 +157,109 @@ export default function BottomNavigation() {
       </div>
 
       {/* Barra de Navegación Inferior Estilo Premium */}
-      <div className="fixed bottom-0 left-0 w-full bg-white/90 dark:bg-zinc-900/90 backdrop-blur-md border-t border-gray-150 dark:border-zinc-800 flex justify-between items-center px-8 pb-safe pt-2.5 h-[68px] z-50 md:hidden shadow-[0_-4px_24px_-4px_rgba(0,0,0,0.06)]">
+      <div className="fixed bottom-0 left-0 w-full bg-white/90 dark:bg-zinc-900/90 backdrop-blur-md border-t border-gray-150 dark:border-zinc-800 grid grid-cols-5 px-2 pb-safe pt-2.5 h-[68px] z-50 md:hidden shadow-[0_-4px_24px_-4px_rgba(0,0,0,0.06)]">
         
-        {/* Izquierda (Inicio e Historial) */}
-        <div className="flex gap-10">
-          {navItems.slice(0, 2).map((item) => {
-            const isActive = pathname === item.href;
-            const Icon = item.icon;
-            return (
-              <Link key={item.name} href={item.href} className="flex flex-col items-center justify-center gap-1 min-w-[48px] active:scale-95 transition-transform">
-                <Icon 
-                  className={`w-5 h-5 transition-colors ${isActive ? 'text-brand-cerulean' : 'text-brand-graphite dark:text-zinc-500'}`} 
-                  strokeWidth={isActive ? 2.5 : 2}
-                />
-                <span className={`text-[10px] font-bold tracking-tight transition-colors ${isActive ? 'text-brand-cerulean font-extrabold' : 'text-brand-graphite dark:text-zinc-500'}`}>
-                  {item.name}
-                </span>
-              </Link>
-            );
-          })}
+        {/* 1. Inicio */}
+        {(() => {
+          const item = navItems[0];
+          const isActive = pathname === item.href;
+          const Icon = item.icon;
+          return (
+            <Link 
+              href={item.href} 
+              onClick={() => setIsMenuOpen(false)}
+              className="flex flex-col items-center justify-center gap-1 active:scale-95 transition-transform"
+            >
+              <Icon 
+                className={`w-5 h-5 transition-colors ${isActive ? 'text-brand-cerulean' : 'text-brand-graphite dark:text-zinc-500'}`} 
+                strokeWidth={isActive ? 2.5 : 2}
+              />
+              <span className={`text-[10px] font-bold tracking-tight transition-colors ${isActive ? 'text-brand-cerulean font-extrabold' : 'text-brand-graphite dark:text-zinc-500'}`}>
+                {item.name}
+              </span>
+            </Link>
+          );
+        })()}
+
+        {/* 2. Historial */}
+        {(() => {
+          const item = navItems[1];
+          const isActive = pathname === item.href;
+          const Icon = item.icon;
+          return (
+            <Link 
+              href={item.href} 
+              onClick={() => setIsMenuOpen(false)}
+              className="flex flex-col items-center justify-center gap-1 active:scale-95 transition-transform"
+            >
+              <Icon 
+                className={`w-5 h-5 transition-colors ${isActive ? 'text-brand-cerulean' : 'text-brand-graphite dark:text-zinc-500'}`} 
+                strokeWidth={isActive ? 2.5 : 2}
+              />
+              <span className={`text-[10px] font-bold tracking-tight transition-colors ${isActive ? 'text-brand-cerulean font-extrabold' : 'text-brand-graphite dark:text-zinc-500'}`}>
+                {item.name}
+              </span>
+            </Link>
+          );
+        })()}
+
+        {/* 3. Espacio Central Reservado para el FAB */}
+        <div className="relative flex items-center justify-center">
+          <div className="absolute -top-7">
+            <button 
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+              className={`w-13 h-13 rounded-full flex items-center justify-center shadow-lg shadow-brand-cerulean/25 text-white active:scale-95 hover:scale-105 transition-all duration-300 ${
+                isMenuOpen ? 'bg-zinc-850 dark:bg-white text-white dark:text-zinc-900 rotate-45' : 'bg-brand-cerulean text-white'
+              }`}
+            >
+              <Plus className="w-5 h-5" strokeWidth={3.5} />
+            </button>
+          </div>
         </div>
 
-        {/* FAB Central Flotante */}
-        <div className="absolute left-1/2 -translate-x-1/2 -top-5">
-          <button 
-            onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className={`w-13 h-13 rounded-full flex items-center justify-center shadow-lg shadow-brand-cerulean/25 text-white active:scale-95 hover:scale-105 transition-all duration-300 ${
-              isMenuOpen ? 'bg-zinc-850 dark:bg-white text-white dark:text-zinc-900 rotate-45' : 'bg-brand-cerulean text-white'
-            }`}
-          >
-            <Plus className="w-5 h-5" strokeWidth={3.5} />
-          </button>
-        </div>
+        {/* 4. Análisis */}
+        {(() => {
+          const item = navItems[2];
+          const isActive = pathname === item.href;
+          const Icon = item.icon;
+          return (
+            <Link 
+              href={item.href} 
+              onClick={() => setIsMenuOpen(false)}
+              className="flex flex-col items-center justify-center gap-1 active:scale-95 transition-transform"
+            >
+              <Icon 
+                className={`w-5 h-5 transition-colors ${isActive ? 'text-brand-cerulean' : 'text-brand-graphite dark:text-zinc-500'}`} 
+                strokeWidth={isActive ? 2.5 : 2}
+              />
+              <span className={`text-[10px] font-bold tracking-tight transition-colors ${isActive ? 'text-brand-cerulean font-extrabold' : 'text-brand-graphite dark:text-zinc-500'}`}>
+                {item.name}
+              </span>
+            </Link>
+          );
+        })()}
 
-        {/* Derecha (Análisis y Ajustes) */}
-        <div className="flex gap-10">
-          {navItems.slice(2, 4).map((item) => {
-            const isActive = pathname === item.href;
-            const Icon = item.icon;
-            return (
-              <Link key={item.name} href={item.href} className="flex flex-col items-center justify-center gap-1 min-w-[48px] active:scale-95 transition-transform">
-                <Icon 
-                  className={`w-5 h-5 transition-colors ${isActive ? 'text-brand-cerulean' : 'text-brand-graphite dark:text-zinc-500'}`} 
-                  strokeWidth={isActive ? 2.5 : 2}
-                />
-                <span className={`text-[10px] font-bold tracking-tight transition-colors ${isActive ? 'text-brand-cerulean font-extrabold' : 'text-brand-graphite dark:text-zinc-500'}`}>
-                  {item.name}
-                </span>
-              </Link>
-            );
-          })}
-        </div>
+        {/* 5. Ajustes */}
+        {(() => {
+          const item = navItems[3];
+          const isActive = pathname === item.href;
+          const Icon = item.icon;
+          return (
+            <Link 
+              href={item.href} 
+              onClick={() => setIsMenuOpen(false)}
+              className="flex flex-col items-center justify-center gap-1 active:scale-95 transition-transform"
+            >
+              <Icon 
+                className={`w-5 h-5 transition-colors ${isActive ? 'text-brand-cerulean' : 'text-brand-graphite dark:text-zinc-500'}`} 
+                strokeWidth={isActive ? 2.5 : 2}
+              />
+              <span className={`text-[10px] font-bold tracking-tight transition-colors ${isActive ? 'text-brand-cerulean font-extrabold' : 'text-brand-graphite dark:text-zinc-500'}`}>
+                {item.name}
+              </span>
+            </Link>
+          );
+        })()}
 
       </div>
     </>
