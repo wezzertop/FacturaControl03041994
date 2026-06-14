@@ -4,6 +4,7 @@ import "./globals.css";
 import SidebarNavigation from "@/components/layout/SidebarNavigation";
 import BottomNavigation from "@/components/layout/BottomNavigation";
 import { ThemeProvider } from "@/components/ThemeProvider";
+import { createClient } from "@/utils/supabase/server";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -20,11 +21,14 @@ export const metadata: Metadata = {
   description: "Controla tus finanzas personales conectando con el SAT.",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
   return (
     <html
       lang="es"
@@ -38,11 +42,11 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <SidebarNavigation />
-          <main className="flex-1 overflow-y-auto custom-scrollbar pb-24 md:pb-0">
+          {user && <SidebarNavigation />}
+          <main className={user ? "flex-1 overflow-y-auto custom-scrollbar pb-24 md:pb-0" : "flex-1 overflow-y-auto"}>
             {children}
           </main>
-          <BottomNavigation />
+          {user && <BottomNavigation />}
         </ThemeProvider>
       </body>
     </html>
