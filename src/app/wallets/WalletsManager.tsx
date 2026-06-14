@@ -4,13 +4,41 @@ import React, { useState, useTransition, useEffect } from 'react';
 import { 
   Wallet, Plus, Trash2, ArrowUpRight, ArrowDownLeft, Calendar, 
   DollarSign, Tag, Receipt, Building2, CheckCircle2, X, PlusCircle,
-  FileImage, Eye, RefreshCw, Upload
+  FileImage, Eye, RefreshCw, Upload,
+  ShoppingCart, Fuel, Zap, HeartPulse, Utensils, MoreHorizontal,
+  Tv, GraduationCap, Gift, PiggyBank
 } from 'lucide-react';
 import { createWorker } from 'tesseract.js';
 import { 
   createWallet, deleteWallet, createTransaction, 
   deleteTransaction, linkInvoiceToWallet, getVoucherUrl 
 } from '@/app/actions/wallets';
+import { createCategory } from '@/app/actions/categories';
+
+// Mapeo simple de iconos para la creación de categorías en la modal
+const InlineIconMap: Record<string, any> = {
+  ShoppingCart,
+  Fuel,
+  Zap,
+  HeartPulse,
+  Utensils,
+  MoreHorizontal,
+  Tv,
+  GraduationCap,
+  Gift,
+  PiggyBank
+};
+
+// Paleta de colores Tailwind
+const ColorPalette = [
+  { class: 'bg-brand-cerulean', name: 'Cerúleo' },
+  { class: 'bg-blue-400', name: 'Azul Claro' },
+  { class: 'bg-emerald-500', name: 'Verde' },
+  { class: 'bg-red-400', name: 'Rojo' },
+  { class: 'bg-orange-400', name: 'Naranja' },
+  { class: 'bg-purple-500', name: 'Púrpura' },
+  { class: 'bg-gray-400', name: 'Gris' },
+];
 
 interface WalletsManagerProps {
   initialWallets: any[];
@@ -73,6 +101,19 @@ export default function WalletsManager({
   const [txAmount, setTxAmount] = useState('');
   const [txConcept, setTxConcept] = useState('');
   const [txCategoryId, setTxCategoryId] = useState('');
+
+  // Categorías locales e inline form
+  const [localCategories, setLocalCategories] = useState(categories);
+  const [showInlineCategoryForm, setShowInlineCategoryForm] = useState(false);
+  const [inlineCatName, setInlineCatName] = useState('');
+  const [inlineCatColor, setInlineCatColor] = useState('bg-brand-cerulean');
+  const [inlineCatIcon, setInlineCatIcon] = useState('ShoppingCart');
+  const [inlineError, setInlineError] = useState<string | null>(null);
+  const [inlinePending, setInlinePending] = useState(false);
+
+  useEffect(() => {
+    setLocalCategories(categories);
+  }, [categories]);
 
   const [selectedInvoice, setSelectedInvoice] = useState<any | null>(null);
   const [linkWalletId, setLinkWalletId] = useState('');
@@ -261,6 +302,33 @@ export default function WalletsManager({
     });
   };
 
+  // Crear Categoría Inline desde el Modal
+  const handleCreateInlineCategory = async () => {
+    if (!inlineCatName.trim()) return;
+    setInlineError(null);
+    setInlinePending(true);
+
+    try {
+      const res = await createCategory(inlineCatName, inlineCatColor, inlineCatIcon);
+      if (res.success && res.category) {
+        const newCat = res.category;
+        setLocalCategories((prev) => [...prev, newCat]);
+        setTxCategoryId(newCat.id);
+        setShowInlineCategoryForm(false);
+        setInlineCatName('');
+        setInlineCatColor('bg-brand-cerulean');
+        setInlineCatIcon('ShoppingCart');
+      } else {
+        setInlineError(res.error || 'No se pudo crear la categoría.');
+      }
+    } catch (err) {
+      console.error(err);
+      setInlineError('Ocurrió un error al crear la categoría. Asegúrate de ejecutar la migración.');
+    } finally {
+      setInlinePending(false);
+    }
+  };
+
   // Registrar Transacción Manual (con comprobante si aplica)
   const handleCreateTransaction = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -294,7 +362,7 @@ export default function WalletsManager({
 
       if (res.success) {
         const selectedWallet = wallets.find(w => w.id === txWalletId);
-        const selectedCategory = categories.find(c => c.id === txCategoryId);
+        const selectedCategory = localCategories.find(c => c.id === txCategoryId);
 
         // Mapear localmente para actualizar estado inmediato sin recarga
         const newTx = {
@@ -953,19 +1021,117 @@ export default function WalletsManager({
               </div>
 
               {txType === 'expense' && (
-                <div className="space-y-1">
-                  <label className="text-xs font-semibold text-brand-graphite dark:text-zinc-400">Categoría (Opcional)</label>
-                  <select 
-                    value={txCategoryId}
-                    onChange={(e) => setTxCategoryId(e.target.value)}
-                    className="w-full bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-lg px-3 py-2.5 md:py-2 text-base md:text-sm text-brand-carbon dark:text-white focus:outline-none focus:border-brand-cerulean transition-colors"
-                  >
-                    <option value="">Selecciona Categoría...</option>
-                    {categories.map(c => (
-                      <option key={c.id} value={c.id}>{c.name}</option>
-                    ))}
-                  </select>
-                </div>
+                <>
+                  {showInlineCategoryForm ? (
+                    <div className="bg-gray-50 dark:bg-zinc-900/40 border border-gray-150 dark:border-zinc-800 rounded-xl p-3.5 space-y-3.5 animate-in fade-in duration-200">
+                      <div className="flex justify-between items-center">
+                        <span className="text-[11px] font-bold uppercase tracking-wider text-brand-graphite dark:text-zinc-400">Nueva Categoría</span>
+                        <button 
+                          type="button" 
+                          onClick={() => {
+                            setShowInlineCategoryForm(false);
+                            setInlineError(null);
+                          }}
+                          className="text-[10px] text-brand-graphite dark:text-zinc-550 hover:text-red-500 dark:hover:text-red-400 font-bold"
+                        >
+                          Cancelar
+                        </button>
+                      </div>
+
+                      {inlineError && (
+                        <p className="text-[10px] text-red-500 dark:text-red-400 bg-red-50 dark:bg-red-950/20 border border-red-100 dark:border-red-900/30 rounded-lg p-2 font-medium">
+                          {inlineError}
+                        </p>
+                      )}
+
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-semibold text-brand-graphite dark:text-zinc-400">Nombre de la Categoría</label>
+                        <input 
+                          type="text"
+                          required
+                          maxLength={30}
+                          placeholder="Ej. Mascotas, Suscripciones"
+                          value={inlineCatName}
+                          onChange={(e) => setInlineCatName(e.target.value)}
+                          className="w-full bg-white dark:bg-brand-carbon border border-gray-200 dark:border-zinc-800 rounded-lg px-2.5 py-1.5 text-xs text-brand-carbon dark:text-white placeholder:text-gray-400 focus:outline-none focus:border-brand-cerulean focus:ring-1 focus:ring-brand-cerulean transition-colors"
+                        />
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-semibold text-brand-graphite dark:text-zinc-400 block">Color de Etiqueta</label>
+                        <div className="flex flex-wrap gap-2">
+                          {ColorPalette.map((color) => (
+                            <button
+                              key={color.class}
+                              type="button"
+                              onClick={() => setInlineCatColor(color.class)}
+                              className={`w-5 h-5 rounded-full ${color.class} transition-all hover:scale-110 active:scale-95 ${
+                                inlineCatColor === color.class ? 'ring-2 ring-brand-carbon dark:ring-white scale-110' : 'opacity-80'
+                              }`}
+                              title={color.name}
+                            />
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-semibold text-brand-graphite dark:text-zinc-400 block">Icono</label>
+                        <div className="flex flex-wrap gap-1.5">
+                          {Object.keys(InlineIconMap).map((iconName) => {
+                            const Icon = InlineIconMap[iconName];
+                            return (
+                              <button
+                                key={iconName}
+                                type="button"
+                                onClick={() => setInlineCatIcon(iconName)}
+                                className={`p-1.5 rounded-md border transition-all hover:bg-gray-100 dark:hover:bg-zinc-800 ${
+                                  inlineCatIcon === iconName 
+                                    ? 'border-brand-cerulean bg-brand-cerulean/10 text-brand-cerulean font-bold' 
+                                    : 'border-gray-200 dark:border-zinc-800 text-brand-graphite dark:text-zinc-400'
+                                }`}
+                              >
+                                <Icon className="w-3.5 h-3.5" />
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      <button 
+                        type="button"
+                        disabled={inlinePending || !inlineCatName.trim()}
+                        onClick={handleCreateInlineCategory}
+                        className="w-full bg-brand-carbon dark:bg-white text-white dark:text-brand-carbon py-2 rounded-lg text-xs font-semibold hover:opacity-90 active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center gap-1.5"
+                      >
+                        {inlinePending ? <RefreshCw className="w-3 h-3 animate-spin" /> : <Plus className="w-3 h-3" />}
+                        Guardar Categoría
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="space-y-1">
+                      <div className="flex justify-between items-center">
+                        <label className="text-xs font-semibold text-brand-graphite dark:text-zinc-400">Categoría (Opcional)</label>
+                        <button 
+                          type="button"
+                          onClick={() => setShowInlineCategoryForm(true)}
+                          className="text-[11px] font-bold text-brand-cerulean hover:underline active:scale-95 transition-all"
+                        >
+                          + Crear Nueva
+                        </button>
+                      </div>
+                      <select 
+                        value={txCategoryId}
+                        onChange={(e) => setTxCategoryId(e.target.value)}
+                        className="w-full bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-lg px-3 py-2.5 md:py-2 text-base md:text-sm text-brand-carbon dark:text-white focus:outline-none focus:border-brand-cerulean transition-colors"
+                      >
+                        <option value="">Selecciona Categoría...</option>
+                        {localCategories.map(c => (
+                          <option key={c.id} value={c.id}>{c.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+                </>
               )}
 
               <button 

@@ -37,6 +37,7 @@ export default async function AnalyticsPage() {
     'bg-emerald-500': '#10b981',
     'bg-red-400': '#f87171',
     'bg-orange-400': '#fb923c',
+    'bg-purple-500': '#a855f7',
     'bg-gray-400': '#9ca3af',
   };
 

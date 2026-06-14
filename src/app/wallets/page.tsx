@@ -1,6 +1,7 @@
 import React from 'react';
 import { createClient } from '@/utils/supabase/server';
 import { getWallets, getTransactions, getUnlinkedInvoices } from '@/app/actions/wallets';
+import { getCategories } from '@/app/actions/categories';
 import WalletsManager from './WalletsManager';
 
 export const dynamic = 'force-dynamic';
@@ -17,11 +18,8 @@ export default async function WalletsPage() {
   // 3. Obtener facturas no vinculadas
   const unlinkedInvoices = await getUnlinkedInvoices();
 
-  // 4. Obtener todas las categorías para transacciones manuales
-  const { data: categories } = await supabase
-    .from('categories')
-    .select('*')
-    .order('name');
+  // 4. Obtener todas las categorías para transacciones manuales (globales + personalizadas)
+  const categories = await getCategories();
 
   return (
     <div className="w-full max-w-6xl mx-auto p-4 md:p-8 space-y-8 pb-24 md:pb-8">
