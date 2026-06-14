@@ -4,9 +4,17 @@ import React, { useState, useCallback } from 'react';
 import { UploadCloud, File, CheckCircle2, AlertCircle, XCircle } from 'lucide-react';
 import { uploadXML } from '@/app/actions/upload';
 
+interface UploadedFile {
+  id: string;
+  name: string;
+  progress: number;
+  status: 'uploading' | 'success' | 'error';
+  errorMessage?: string;
+}
+
 export default function XMLDragAndDrop() {
   const [isDragging, setIsDragging] = useState(false);
-  const [uploadedFiles, setUploadedFiles] = useState<{ name: string; progress: number; status: 'uploading' | 'success' | 'error' }[]>([]);
+  const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -19,8 +27,11 @@ export default function XMLDragAndDrop() {
   }, []);
 
   const processUpload = async (file: File) => {
+    // Generar un ID único para evitar colisiones entre archivos con el mismo nombre
+    const fileId = `${file.name}-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+    
     // 1. Agregar a la lista como subiendo
-    setUploadedFiles(prev => [...prev, { name: file.name, progress: 20, status: 'uploading' }]);
+    setUploadedFiles(prev => [...prev, { id: fileId, name: file.name, progress: 20, status: 'uploading' }]);
 
     const formData = new FormData();
     formData.append('file', file);
@@ -28,18 +39,17 @@ export default function XMLDragAndDrop() {
     // 2. Llamar a la Server Action
     const result = await uploadXML(formData);
 
-    // 3. Actualizar estado basado en la respuesta real
+    // 3. Actualizar estado basado en la respuesta real (SIN redirección automática)
     if (result.success) {
-      setUploadedFiles(prev => prev.map(f => f.name === file.name ? { ...f, progress: 100, status: 'success' } : f));
-      
-      // Redirigir al historial después de 1.5 segundos para que el usuario vea la palomita verde
-      setTimeout(() => {
-        window.location.href = '/invoices';
-      }, 1500);
-      
+      setUploadedFiles(prev => prev.map(f => f.id === fileId ? { ...f, progress: 100, status: 'success' } : f));
     } else {
       console.error("Error al subir:", result.error);
-      setUploadedFiles(prev => prev.map(f => f.name === file.name ? { ...f, progress: 100, status: 'error' } : f));
+      setUploadedFiles(prev => prev.map(f => f.id === fileId ? { 
+        ...f, 
+        progress: 100, 
+        status: 'error', 
+        errorMessage: result.error || 'Error desconocido' 
+      } : f));
     }
   };
 
@@ -57,6 +67,11 @@ export default function XMLDragAndDrop() {
       Array.from(e.target.files).forEach(processUpload);
     }
   };
+
+  // Determinar el estado general de las descargas en lote
+  const isUploadingAny = uploadedFiles.some(f => f.status === 'uploading');
+  const hasSuccessfulUpload = uploadedFiles.some(f => f.status === 'success');
+  const totalSuccessCount = uploadedFiles.filter(f => f.status === 'success').length;
 
   return (
     <div className="w-full max-w-3xl mx-auto space-y-6">
@@ -102,7 +117,7 @@ export default function XMLDragAndDrop() {
       </div>
 
       {/* Trust Message */}
-      <div className="flex items-start gap-3 p-4 rounded-lg bg-emerald-50 dark:bg-zinc-900/80 border border-emerald-100 dark:border-zinc-800">
+      <div className="flex items-start gap-3 p-4 rounded-lg bg-emerald-50/5 dark:bg-zinc-900/80 border border-emerald-100/10 dark:border-zinc-800">
         <AlertCircle className="w-5 h-5 text-emerald-600 dark:text-emerald-500 shrink-0 mt-0.5" />
         <div>
           <h4 className="text-sm font-medium text-brand-carbon dark:text-zinc-200 mb-1">Tus datos están seguros</h4>
@@ -112,42 +127,80 @@ export default function XMLDragAndDrop() {
         </div>
       </div>
 
+      {/* Success Banner (Show only when all uploads are complete and at least one succeeded) */}
+      {!isUploadingAny && hasSuccessfulUpload && (
+        <div className="bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900/30 rounded-xl p-4 flex flex-col sm:flex-row justify-between items-center gap-4 animate-in fade-in slide-in-from-top-2 duration-300">
+          <div className="flex items-center gap-3">
+            <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+            <p className="text-sm font-semibold text-emerald-800 dark:text-emerald-400">
+              {totalSuccessCount === 1 
+                ? '¡Factura procesada con éxito!' 
+                : `¡Se cargaron ${totalSuccessCount} facturas con éxito de forma paralela!`}
+            </p>
+          </div>
+          <a 
+            href="/invoices" 
+            className="w-full sm:w-auto text-center bg-emerald-600 hover:bg-emerald-500 text-white px-5 py-2 rounded-lg text-xs font-bold transition-all shadow-sm active:scale-95 whitespace-nowrap"
+          >
+            Ver en Historial
+          </a>
+        </div>
+      )}
+
       {/* Upload Progress List */}
       {uploadedFiles.length > 0 && (
         <div className="space-y-3 mt-8">
-          <h3 className="text-sm font-medium text-brand-carbon dark:text-zinc-300 mb-4">Archivos Cargados</h3>
-          {uploadedFiles.map((file, index) => (
-            <div 
-              key={`${file.name}-${index}`}
-              className="flex items-center p-4 rounded-lg bg-brand-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 animate-in fade-in slide-in-from-bottom-2 duration-300"
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-medium text-brand-carbon dark:text-zinc-300">Archivos Procesados</h3>
+            <button 
+              onClick={() => setUploadedFiles([])}
+              className="text-xs text-brand-graphite dark:text-zinc-500 hover:text-brand-carbon dark:hover:text-white hover:underline transition-all"
             >
-              <div className="p-2 rounded-md bg-brand-smoke dark:bg-brand-carbon mr-4">
-                <File className="w-5 h-5 text-brand-graphite dark:text-zinc-500" />
-              </div>
-              
-              <div className="flex-1 min-w-0 mr-4">
-                <p className="text-sm font-medium text-brand-carbon dark:text-zinc-200 truncate">{file.name}</p>
-                <div className="w-full bg-brand-smoke dark:bg-brand-carbon rounded-full h-1.5 mt-2 overflow-hidden">
-                  <div 
-                    className={`h-full rounded-full transition-all duration-300 ${file.status === 'success' ? 'bg-emerald-500' : 'bg-brand-cerulean'}`}
-                    style={{ width: `${file.progress}%` }}
-                  />
+              Limpiar lista
+            </button>
+          </div>
+          
+          <div className="space-y-2.5 max-h-96 overflow-y-auto pr-1 custom-scrollbar">
+            {uploadedFiles.map((file) => (
+              <div 
+                key={file.id}
+                className="flex items-center p-4 rounded-lg bg-brand-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 animate-in fade-in slide-in-from-bottom-2 duration-300"
+              >
+                <div className="p-2 rounded-md bg-brand-smoke dark:bg-brand-carbon mr-4">
+                  <File className="w-5 h-5 text-brand-graphite dark:text-zinc-500" />
+                </div>
+                
+                <div className="flex-1 min-w-0 mr-4">
+                  <p className="text-sm font-medium text-brand-carbon dark:text-zinc-200 truncate">{file.name}</p>
+                  
+                  {file.status === 'error' && file.errorMessage && (
+                    <p className="text-xs text-red-500 mt-1 font-medium">{file.errorMessage}</p>
+                  )}
+                  
+                  {file.status === 'uploading' && (
+                    <div className="w-full bg-brand-smoke dark:bg-brand-carbon rounded-full h-1.5 mt-2 overflow-hidden">
+                      <div 
+                        className="h-full rounded-full transition-all duration-300 bg-brand-cerulean"
+                        style={{ width: `${file.progress}%` }}
+                      />
+                    </div>
+                  )}
+                </div>
+                
+                <div className="w-8 flex justify-end shrink-0">
+                  {file.status === 'success' && (
+                    <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-500 animate-in zoom-in duration-300" />
+                  )}
+                  {file.status === 'error' && (
+                    <XCircle className="w-5 h-5 text-red-500 animate-in zoom-in duration-300" />
+                  )}
+                  {file.status === 'uploading' && (
+                    <span className="text-xs font-medium text-brand-graphite dark:text-zinc-500">{Math.round(file.progress)}%</span>
+                  )}
                 </div>
               </div>
-              
-              <div className="w-8 flex justify-end shrink-0">
-                {file.status === 'success' && (
-                  <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-500 animate-in zoom-in duration-300" />
-                )}
-                {file.status === 'error' && (
-                  <XCircle className="w-5 h-5 text-red-500 animate-in zoom-in duration-300" />
-                )}
-                {file.status === 'uploading' && (
-                  <span className="text-xs font-medium text-brand-graphite dark:text-zinc-500">{Math.round(file.progress)}%</span>
-                )}
-              </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       )}
     </div>
