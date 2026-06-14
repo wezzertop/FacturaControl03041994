@@ -33,30 +33,7 @@ export async function getWallets() {
     return [];
   }
 
-  // Si no hay carteras, creamos una por defecto
-  if (wallets.length === 0) {
-    const defaultWallet = {
-      user_id: user.id,
-      name: 'Efectivo',
-      balance: 0.00,
-      currency: 'MXN'
-    };
-
-    const { data: newWallet, error: createError } = await supabase
-      .from('wallets')
-      .insert(defaultWallet as any)
-      .select()
-      .single();
-
-    if (createError) {
-      console.error('Error al crear cartera por defecto:', createError);
-      return [];
-    }
-
-    return [newWallet];
-  }
-
-  return wallets;
+  return wallets || [];
 }
 
 /**
