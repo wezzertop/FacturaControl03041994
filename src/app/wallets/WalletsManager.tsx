@@ -6,11 +6,11 @@ import {
   DollarSign, Tag, Receipt, Building2, CheckCircle2, X, PlusCircle,
   FileImage, Eye, RefreshCw, Upload,
   ShoppingCart, Fuel, Zap, HeartPulse, Utensils, MoreHorizontal,
-  Tv, GraduationCap, Gift, PiggyBank
+  Tv, GraduationCap, Gift, PiggyBank, CreditCard, Coins, Edit
 } from 'lucide-react';
 import { createWorker } from 'tesseract.js';
 import { 
-  createWallet, deleteWallet, createTransaction, 
+  createWallet, updateWallet, deleteWallet, createTransaction, 
   deleteTransaction, linkInvoiceToWallet, getVoucherUrl 
 } from '@/app/actions/wallets';
 import { createCategory } from '@/app/actions/categories';
@@ -95,6 +95,9 @@ export default function WalletsManager({
   // Estados de formularios
   const [newWalletName, setNewWalletName] = useState('');
   const [newWalletBalance, setNewWalletBalance] = useState('');
+  const [editingWallet, setEditingWallet] = useState<any | null>(null);
+  const [walletType, setWalletType] = useState<'cash' | 'debit' | 'credit'>('debit');
+  const [creditLimit, setCreditLimit] = useState('');
 
   const [txWalletId, setTxWalletId] = useState('');
   const [txType, setTxType] = useState<'income' | 'expense'>('expense');
@@ -257,33 +260,101 @@ export default function WalletsManager({
     if (!newWalletName.trim()) return;
 
     const initialBal = parseFloat(newWalletBalance) || 0;
+    const limitNum = parseFloat(creditLimit) || 0;
 
     startTransition(async () => {
-      const res = await createWallet(newWalletName, initialBal);
+      const res = await createWallet(newWalletName, walletType, initialBal, limitNum);
       if (res.success && res.wallet) {
-        setWallets([...wallets, res.wallet]);
-        if (initialBal > 0) {
+        const createdWallet = res.wallet;
+        setWallets([...wallets, createdWallet]);
+        
+        if (initialBal !== 0) {
+          const isCredit = walletType === 'credit';
           const newTx = {
             id: Math.random().toString(),
-            wallet_id: res.wallet.id,
-            type: 'income',
-            amount: initialBal,
-            concept: 'Saldo inicial',
+            wallet_id: createdWallet.id,
+            type: isCredit ? 'expense' : (initialBal > 0 ? 'income' : 'expense'),
+            amount: Math.abs(initialBal),
+            concept: isCredit ? 'Deuda inicial' : 'Saldo inicial',
             date: new Date().toISOString(),
             wallets: { name: newWalletName }
           };
           setTransactions([newTx, ...transactions]);
         }
-        const updatedWallet = { ...res.wallet, balance: initialBal };
-        setWallets(prev => prev.map(w => w.id === res.wallet.id ? updatedWallet : w));
         
+        // El trigger recalcula balance
+        const updatedWallet = { ...createdWallet, balance: walletType === 'credit' ? -Math.abs(initialBal) : initialBal };
+        setWallets(prev => prev.map(w => w.id === createdWallet.id ? updatedWallet : w));
+
         setShowWalletModal(false);
         setNewWalletName('');
         setNewWalletBalance('');
+        setWalletType('debit');
+        setCreditLimit('');
       } else {
         alert(res.error || 'Error al crear la cartera');
       }
     });
+  };
+
+  // Actualizar Cartera
+  const handleUpdateWallet = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingWallet || !newWalletName.trim()) return;
+
+    const targetBal = parseFloat(newWalletBalance) || 0;
+    const limitNum = parseFloat(creditLimit) || 0;
+
+    startTransition(async () => {
+      const res = await updateWallet(editingWallet.id, newWalletName, walletType, limitNum, targetBal);
+      if (res.success && res.wallet) {
+        const updated = res.wallet;
+        
+        const currentBal = Number(editingWallet.balance);
+        const diff = targetBal - currentBal;
+        if (diff !== 0) {
+          const newTx = {
+            id: Math.random().toString(),
+            wallet_id: updated.id,
+            type: diff > 0 ? 'income' : 'expense',
+            amount: Math.abs(diff),
+            concept: 'Ajuste de saldo manual',
+            date: new Date().toISOString(),
+            wallets: { name: newWalletName }
+          };
+          setTransactions([newTx, ...transactions]);
+        }
+
+        setWallets(prev => prev.map(w => w.id === updated.id ? updated : w));
+        
+        setShowWalletModal(false);
+        setEditingWallet(null);
+        setNewWalletName('');
+        setNewWalletBalance('');
+        setWalletType('debit');
+        setCreditLimit('');
+      } else {
+        alert(res.error || 'Error al actualizar la cartera');
+      }
+    });
+  };
+
+  const handleCloseWalletModal = () => {
+    setShowWalletModal(false);
+    setEditingWallet(null);
+    setNewWalletName('');
+    setNewWalletBalance('');
+    setWalletType('debit');
+    setCreditLimit('');
+  };
+
+  const handleOpenNewWalletModal = () => {
+    setEditingWallet(null);
+    setNewWalletName('');
+    setNewWalletBalance('');
+    setWalletType('debit');
+    setCreditLimit('');
+    setShowWalletModal(true);
   };
 
   // Eliminar Cartera
@@ -533,7 +604,7 @@ export default function WalletsManager({
               Registrar Movimiento
             </button>
             <button 
-              onClick={() => setShowWalletModal(true)}
+              onClick={() => handleOpenNewWalletModal()}
               className="w-full sm:w-auto border border-gray-200 dark:border-zinc-800 bg-brand-white dark:bg-brand-graphite text-brand-carbon dark:text-zinc-300 px-4 py-2.5 rounded-lg text-sm font-semibold hover:bg-gray-50 dark:hover:bg-zinc-800/80 active:scale-95 transition-all flex items-center justify-center gap-2"
             >
               <Wallet className="w-4 h-4" />
@@ -599,6 +670,21 @@ export default function WalletsManager({
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {wallets.map((wallet) => {
             const isActive = activeWalletFilter === wallet.id;
+            
+            // Elegir icono según el tipo
+            let WalletIcon = Wallet;
+            let typeLabel = 'Cuenta';
+            if (wallet.type === 'cash') {
+              WalletIcon = Coins;
+              typeLabel = 'Efectivo';
+            } else if (wallet.type === 'credit') {
+              WalletIcon = CreditCard;
+              typeLabel = 'Crédito';
+            } else if (wallet.type === 'debit') {
+              WalletIcon = Building2;
+              typeLabel = 'Débito / Ahorro';
+            }
+
             return (
               <div 
                 key={wallet.id}
@@ -610,36 +696,78 @@ export default function WalletsManager({
                 }`}
               >
                 <div className="flex justify-between items-start">
-                  <div>
-                    <h4 className="font-bold text-brand-carbon dark:text-white text-base">
-                      {wallet.name}
-                    </h4>
-                    <span className="text-[10px] uppercase font-semibold text-brand-graphite dark:text-zinc-500">
-                      {wallet.currency}
-                    </span>
+                  <div className="flex gap-2.5 items-start">
+                    <div className={`p-2 rounded-lg ${isActive ? 'bg-brand-cerulean/10 text-brand-cerulean' : 'bg-gray-100 dark:bg-zinc-800 text-brand-graphite dark:text-zinc-400'}`}>
+                      <WalletIcon className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-brand-carbon dark:text-white text-sm line-clamp-1">
+                        {wallet.name}
+                      </h4>
+                      <span className="text-[9px] uppercase font-bold tracking-wider text-brand-graphite dark:text-zinc-500 block">
+                        {typeLabel} ({wallet.currency})
+                      </span>
+                    </div>
                   </div>
-                  <button 
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDeleteWallet(wallet.id, wallet.name);
-                    }}
-                    className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg text-brand-graphite dark:text-zinc-400 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 transition-all"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
+                  <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        // Abrir modal de edición
+                        setEditingWallet(wallet);
+                        setNewWalletName(wallet.name);
+                        setNewWalletBalance(wallet.balance.toString());
+                        setWalletType(wallet.type || 'debit');
+                        setCreditLimit(wallet.credit_limit ? wallet.credit_limit.toString() : '0');
+                        setShowWalletModal(true);
+                      }}
+                      className="p-1.5 rounded-lg text-brand-graphite dark:text-zinc-400 hover:text-brand-cerulean dark:hover:text-brand-cerulean/80 hover:bg-brand-cerulean/10 transition-all"
+                      title="Editar Cartera"
+                    >
+                      <Edit className="w-4 h-4" />
+                    </button>
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteWallet(wallet.id, wallet.name);
+                      }}
+                      className="p-1.5 rounded-lg text-brand-graphite dark:text-zinc-400 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 transition-all"
+                      title="Eliminar Cartera"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
                 </div>
 
-                <div className="mt-4">
-                  <p className="text-2xl font-black text-brand-carbon dark:text-white tracking-tight">
-                    {formatCurrency(Number(wallet.balance))}
-                  </p>
+                <div className="mt-2.5">
+                  {wallet.type === 'credit' ? (
+                    <div className="space-y-1">
+                      <div className="flex justify-between items-baseline">
+                        <span className="text-[10px] text-brand-graphite dark:text-zinc-400 font-semibold uppercase">Deuda</span>
+                        <span className="text-lg font-black text-red-500 tracking-tight">
+                          {formatCurrency(Math.abs(Number(wallet.balance)))}
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center text-[9px] text-brand-graphite dark:text-zinc-500 font-semibold">
+                        <span>Disp: {formatCurrency(Number(wallet.credit_limit) + Number(wallet.balance))}</span>
+                        <span>Lím: {formatCurrency(Number(wallet.credit_limit))}</span>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-0.5">
+                      <span className="text-[10px] text-brand-graphite dark:text-zinc-400 font-semibold uppercase">Saldo Disponible</span>
+                      <p className="text-xl font-black text-emerald-600 dark:text-emerald-400 tracking-tight">
+                        {formatCurrency(Number(wallet.balance))}
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
             );
           })}
 
           <div 
-            onClick={() => setShowWalletModal(true)}
+            onClick={() => handleOpenNewWalletModal()}
             className="border-2 border-dashed border-gray-200 dark:border-zinc-800 rounded-xl p-5 flex flex-col items-center justify-center h-36 hover:border-brand-cerulean hover:bg-brand-cerulean/5 dark:hover:bg-brand-cerulean/5 transition-all cursor-pointer text-brand-graphite dark:text-zinc-400 hover:text-brand-cerulean group"
           >
             <Plus className="w-8 h-8 mb-2 group-hover:scale-110 transition-transform" />
@@ -685,11 +813,11 @@ export default function WalletsManager({
                         </p>
                         <div className="flex flex-wrap items-center gap-1.5 mt-1 text-[11px] text-brand-graphite dark:text-zinc-500 font-medium">
                           <span>{tx.wallets?.name || 'Cuenta'}</span>
-                          <span>•</span>
+                          <span>â€¢</span>
                           <span>{formatDate(tx.date)}</span>
                           {tx.categories && (
                             <>
-                              <span>•</span>
+                              <span>â€¢</span>
                               <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold text-white ${tx.categories.color}`}>
                                 {tx.categories.name}
                               </span>
@@ -856,14 +984,14 @@ export default function WalletsManager({
             <h3 className="text-sm font-bold text-brand-carbon dark:text-white mb-4">
               Comprobante de Transferencia
             </h3>
-            <div className="relative aspect-[9/16] w-full rounded-lg overflow-hidden border border-gray-200 dark:border-zinc-850">
+            <div className="relative aspect-[9/16] w-full rounded-lg overflow-hidden border border-gray-200 dark:border-zinc-800">
               <img src={viewingVoucherUrl} alt="Comprobante de Transferencia" className="object-contain w-full h-full" />
             </div>
           </div>
         </div>
       )}
 
-      {/* Modal: Nueva Cartera */}
+      {/* Modal: Crear / Editar Cartera */}
       {showWalletModal && (
         <div className="fixed inset-0 bg-brand-carbon/55 dark:bg-black/75 backdrop-blur-sm z-[60] flex items-end sm:items-center justify-center p-0 sm:p-4">
           <div className="bg-brand-white dark:bg-brand-graphite border-t sm:border border-gray-200 dark:border-zinc-800 w-full sm:max-w-sm rounded-t-2xl sm:rounded-2xl shadow-xl overflow-hidden p-6 pb-12 sm:p-6 relative animate-slide-up sm:animate-none max-h-[90vh] overflow-y-auto custom-scrollbar">
@@ -871,17 +999,30 @@ export default function WalletsManager({
             <div className="w-12 h-1.5 bg-gray-200 dark:bg-zinc-800 rounded-full mx-auto mb-4 sm:hidden" />
 
             <button 
-              onClick={() => setShowWalletModal(false)}
+              onClick={() => handleCloseWalletModal()}
               className="absolute top-4 right-4 text-brand-graphite dark:text-zinc-400 hover:text-brand-carbon dark:hover:text-white p-2 rounded-full hover:bg-gray-100 dark:hover:bg-zinc-800"
             >
               <X className="w-5 h-5" />
             </button>
 
             <h3 className="text-lg font-bold text-brand-carbon dark:text-white mb-6">
-              Crear Cartera o Cuenta
+              {editingWallet ? 'Editar Cartera' : 'Crear Cartera o Cuenta'}
             </h3>
 
-            <form onSubmit={handleCreateWallet} className="space-y-4">
+            <form onSubmit={editingWallet ? handleUpdateWallet : handleCreateWallet} className="space-y-4">
+              <div className="space-y-1">
+                <label className="text-xs font-semibold text-brand-graphite dark:text-zinc-400">Tipo de Cuenta</label>
+                <select 
+                  value={walletType}
+                  onChange={(e) => setWalletType(e.target.value as any)}
+                  className="w-full bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-lg px-3 py-2.5 md:py-2 text-base md:text-sm text-brand-carbon dark:text-white focus:outline-none focus:border-brand-cerulean transition-colors"
+                >
+                  <option value="debit">Tarjeta de Débito / Nómina</option>
+                  <option value="cash">Efectivo</option>
+                  <option value="credit">Tarjeta de Crédito</option>
+                </select>
+              </div>
+
               <div className="space-y-1">
                 <label className="text-xs font-semibold text-brand-graphite dark:text-zinc-400">Nombre de la Cuenta</label>
                 <input 
@@ -894,8 +1035,27 @@ export default function WalletsManager({
                 />
               </div>
 
+              {walletType === 'credit' && (
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-brand-graphite dark:text-zinc-400">Límite de Crédito ($)</label>
+                  <input 
+                    type="number"
+                    step="0.01"
+                    required
+                    placeholder="0.00"
+                    value={creditLimit}
+                    onChange={(e) => setCreditLimit(e.target.value)}
+                    className="w-full bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-lg px-3 py-2.5 md:py-2 text-base md:text-sm text-brand-carbon dark:text-white placeholder:text-zinc-650 focus:outline-none focus:border-brand-cerulean transition-colors"
+                  />
+                </div>
+              )}
+
               <div className="space-y-1">
-                <label className="text-xs font-semibold text-brand-graphite dark:text-zinc-400">Saldo Inicial ($)</label>
+                <label className="text-xs font-semibold text-brand-graphite dark:text-zinc-400">
+                  {editingWallet 
+                    ? (walletType === 'credit' ? 'Deuda Actual ($)' : 'Saldo Actual ($)') 
+                    : (walletType === 'credit' ? 'Deuda Inicial ($)' : 'Saldo Inicial ($)')}
+                </label>
                 <input 
                   type="number"
                   step="0.01"
@@ -911,7 +1071,7 @@ export default function WalletsManager({
                 disabled={isPending}
                 className="w-full bg-brand-carbon dark:bg-white text-white dark:text-brand-carbon py-3 md:py-2.5 rounded-lg text-sm font-semibold hover:opacity-90 active:scale-95 transition-all disabled:opacity-50 min-h-[44px]"
               >
-                {isPending ? 'Creando...' : 'Crear Cartera'}
+                {isPending ? 'Guardando...' : (editingWallet ? 'Guardar Cambios' : 'Crear Cartera')}
               </button>
             </form>
           </div>
@@ -1023,7 +1183,7 @@ export default function WalletsManager({
               {txType === 'expense' && (
                 <>
                   {showInlineCategoryForm ? (
-                    <div className="bg-gray-50 dark:bg-zinc-900/40 border border-gray-150 dark:border-zinc-800 rounded-xl p-3.5 space-y-3.5 animate-in fade-in duration-200">
+                    <div className="bg-gray-50 dark:bg-zinc-900/40 border border-gray-200 dark:border-zinc-800 rounded-xl p-3.5 space-y-3.5 animate-in fade-in duration-200">
                       <div className="flex justify-between items-center">
                         <span className="text-[11px] font-bold uppercase tracking-wider text-brand-graphite dark:text-zinc-400">Nueva Categoría</span>
                         <button 
@@ -1032,7 +1192,7 @@ export default function WalletsManager({
                             setShowInlineCategoryForm(false);
                             setInlineError(null);
                           }}
-                          className="text-[10px] text-brand-graphite dark:text-zinc-550 hover:text-red-500 dark:hover:text-red-400 font-bold"
+                          className="text-[10px] text-brand-graphite dark:text-zinc-500 hover:text-red-500 dark:hover:text-red-400 font-bold"
                         >
                           Cancelar
                         </button>
@@ -1212,7 +1372,7 @@ export default function WalletsManager({
                   id="ignoreBalanceEffect"
                   checked={ignoreBalanceEffect}
                   onChange={(e) => setIgnoreBalanceEffect(e.target.checked)}
-                  className="w-4 h-4 rounded border-gray-300 dark:border-zinc-850 text-brand-cerulean focus:ring-brand-cerulean bg-gray-50 dark:bg-zinc-900 cursor-pointer"
+                  className="w-4 h-4 rounded border-gray-300 dark:border-zinc-800 text-brand-cerulean focus:ring-brand-cerulean bg-gray-50 dark:bg-zinc-900 cursor-pointer"
                 />
                 <label htmlFor="ignoreBalanceEffect" className="text-xs font-semibold text-brand-graphite dark:text-zinc-400 cursor-pointer select-none">
                   No afectar el saldo de la cartera (solo registrar)
@@ -1234,3 +1394,6 @@ export default function WalletsManager({
     </div>
   );
 }
+
+
+

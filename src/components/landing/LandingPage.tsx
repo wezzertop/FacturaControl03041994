@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState } from 'react';
 import Link from 'next/link';
@@ -162,7 +162,7 @@ export default function LandingPage() {
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center space-y-8">
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-brand-cerulean/20 bg-brand-cerulean/5 text-brand-cerulean text-xs font-bold uppercase tracking-wider animate-pulse">
-            <Zap className="w-3.5 h-3.5" /> Fase Beta Abierta • 100% Gratis
+            <Zap className="w-3.5 h-3.5" /> Fase Beta Abierta â€¢ 100% Gratis
           </div>
           
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight text-brand-carbon dark:text-white max-w-4xl mx-auto leading-[1.1]">
@@ -213,7 +213,7 @@ export default function LandingPage() {
               return (
                 <div 
                   key={i} 
-                  className="bg-brand-smoke dark:bg-zinc-900/50 border border-gray-150 dark:border-zinc-800/80 rounded-2xl p-6 relative group overflow-hidden hover:border-brand-cerulean/30 dark:hover:border-brand-cerulean/30 transition-all shadow-sm"
+                  className="bg-brand-smoke dark:bg-zinc-900/50 border border-gray-200 dark:border-zinc-800/80 rounded-2xl p-6 relative group overflow-hidden hover:border-brand-cerulean/30 dark:hover:border-brand-cerulean/30 transition-all shadow-sm"
                 >
                   <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${feat.color} flex items-center justify-center mb-6 text-white shadow-md`}>
                     <Icon className="w-6 h-6" />
@@ -271,15 +271,15 @@ export default function LandingPage() {
 
               {/* KPI Cards Grid */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div className="bg-zinc-900/40 border border-zinc-850 p-4 rounded-xl space-y-2">
+                <div className="bg-zinc-900/40 border border-zinc-800 p-4 rounded-xl space-y-2">
                   <span className="text-[9px] font-bold text-zinc-500 uppercase">Ingresos Totales</span>
                   <div className="text-lg font-black text-emerald-400">$34,500.00</div>
                 </div>
-                <div className="bg-zinc-900/40 border border-zinc-850 p-4 rounded-xl space-y-2">
+                <div className="bg-zinc-900/40 border border-zinc-800 p-4 rounded-xl space-y-2">
                   <span className="text-[9px] font-bold text-zinc-500 uppercase">Gastos Totales</span>
                   <div className="text-lg font-black text-brand-cerulean">$12,840.50</div>
                 </div>
-                <div className="bg-zinc-900/40 border border-zinc-850 p-4 rounded-xl space-y-2">
+                <div className="bg-zinc-900/40 border border-zinc-800 p-4 rounded-xl space-y-2">
                   <span className="text-[9px] font-bold text-zinc-500 uppercase">Disponible en Cuentas</span>
                   <div className="text-lg font-black text-purple-400">$21,659.50</div>
                 </div>
@@ -288,7 +288,7 @@ export default function LandingPage() {
               {/* Two Column Grid */}
               <div className="grid grid-cols-1 sm:grid-cols-12 gap-4">
                 {/* Chart Mock */}
-                <div className="sm:col-span-8 bg-zinc-900/40 border border-zinc-850 p-4 rounded-xl space-y-4">
+                <div className="sm:col-span-8 bg-zinc-900/40 border border-zinc-800 p-4 rounded-xl space-y-4">
                   <div className="flex justify-between items-center text-[10px] font-bold uppercase text-zinc-400">
                     <span>Tendencia Semanal</span>
                     <TrendingUp className="w-3.5 h-3.5 text-zinc-500" />
@@ -305,7 +305,7 @@ export default function LandingPage() {
                 </div>
 
                 {/* Categories Mock */}
-                <div className="sm:col-span-4 bg-zinc-900/40 border border-zinc-850 p-4 rounded-xl space-y-3">
+                <div className="sm:col-span-4 bg-zinc-900/40 border border-zinc-800 p-4 rounded-xl space-y-3">
                   <span className="text-[10px] font-bold uppercase text-zinc-400 block">Categorías</span>
                   <div className="space-y-2.5">
                     <div className="flex justify-between text-[11px]">
@@ -374,12 +374,12 @@ export default function LandingPage() {
               </div>
               <div>
                 <h3 className="text-lg font-bold text-brand-carbon dark:text-white">Plan Pro Ilimitado</h3>
-                <p className="text-xs text-brand-graphite dark:text-zinc-550 mt-2">Para control fiscal y automatización de gastos total.</p>
+                <p className="text-xs text-brand-graphite dark:text-zinc-500 mt-2">Para control fiscal y automatización de gastos total.</p>
                 <div className="my-6 flex items-baseline gap-2">
                   <span className="text-4xl font-black text-brand-carbon dark:text-white">$0</span>
                   <span className="text-xs text-emerald-600 dark:text-emerald-400 font-bold bg-emerald-500/10 px-2 py-0.5 rounded">Gratis por Lanzamiento</span>
                 </div>
-                <ul className="space-y-3 text-xs text-brand-graphite dark:text-zinc-400 border-t border-gray-150 dark:border-zinc-800 pt-6">
+                <ul className="space-y-3 text-xs text-brand-graphite dark:text-zinc-400 border-t border-gray-200 dark:border-zinc-800 pt-6">
                   <li className="flex items-center gap-2.5 font-bold text-brand-carbon dark:text-zinc-200"><Check className="w-4 h-4 text-brand-cerulean shrink-0" /> Carga de XML ilimitada (Ingresos/Egresos)</li>
                   <li className="flex items-center gap-2.5"><Check className="w-4 h-4 text-brand-cerulean shrink-0" /> Clasificación inteligente por RFC fiscal</li>
                   <li className="flex items-center gap-2.5"><Check className="w-4 h-4 text-brand-cerulean shrink-0" /> Escáner OCR de comprobantes sin límites</li>
@@ -413,7 +413,7 @@ export default function LandingPage() {
               return (
                 <div 
                   key={index} 
-                  className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-850 rounded-xl overflow-hidden shadow-sm transition-all"
+                  className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl overflow-hidden shadow-sm transition-all"
                 >
                   <button 
                     onClick={() => toggleFaq(index)}
@@ -435,7 +435,7 @@ export default function LandingPage() {
       </section>
 
       {/* Footer */}
-      <footer className="bg-brand-carbon text-zinc-550 py-12 border-t border-zinc-900 transition-colors duration-300">
+      <footer className="bg-brand-carbon text-zinc-500 py-12 border-t border-zinc-900 transition-colors duration-300">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center gap-6">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-lg bg-brand-cerulean/25 flex items-center justify-center">
@@ -460,3 +460,6 @@ export default function LandingPage() {
     </div>
   );
 }
+
+
+

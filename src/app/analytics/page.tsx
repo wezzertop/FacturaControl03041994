@@ -1,174 +1,161 @@
-import React from 'react';
-import { createClient } from '@/utils/supabase/server';
-import { CategoryBarChart, TrendAreaChart } from '@/components/analytics/AnalyticsCharts';
-import { TrendingUp, PieChart, Target, CalendarDays } from 'lucide-react';
+﻿import React from "react";
+import { createClient } from "@/utils/supabase/server";
+import { CategoryBarChart, TrendAreaChart } from "@/components/analytics/AnalyticsCharts";
+import { CalendarDays, PieChart, Target, TrendingUp } from "lucide-react";
+import PageShell from "@/components/layout/PageShell";
 
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
+
+interface CategoryValue {
+  name?: string | null;
+  color?: string | null;
+}
+
+interface InvoiceAnalyticsRow {
+  invoice_type?: string | null;
+  total?: number | string | null;
+  fecha?: string | null;
+  categories?: CategoryValue | null;
+}
+
+interface TransactionAnalyticsRow {
+  type?: string | null;
+  amount?: number | string | null;
+  date?: string | null;
+  invoice_id?: string | number | null;
+  categories?: CategoryValue | null;
+}
+
+const formatCurrency = (amount: number) => {
+  return new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" }).format(amount);
+};
 
 export default async function AnalyticsPage() {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
   if (!user) {
-    return <div className="p-8 text-center">No autenticado</div>;
+    return <div className="p-8 text-center text-sm text-slate-500">No autenticado</div>;
   }
 
-  // 1. Obtener todas las facturas del usuario con su categoría
-  const { data: invoices } = await supabase
-    .from('invoices')
-    .select('*, categories(name, color)')
-    .eq('user_id', user.id)
-    .order('fecha', { ascending: true });
+  const [invoicesResponse, transactionsResponse] = await Promise.all([
+    supabase
+      .from("invoices")
+      .select("*, categories(name, color)")
+      .eq("user_id", user.id)
+      .order("fecha", { ascending: true }),
+    supabase.from("transactions").select("*, categories(name, color)").eq("user_id", user.id),
+  ]);
 
-  const validInvoices = (invoices as any[]) || [];
+  const validInvoices = (invoicesResponse.data || []) as InvoiceAnalyticsRow[];
+  const validTransactions = (transactionsResponse.data || []) as TransactionAnalyticsRow[];
 
-  // 2. Obtener transacciones de gasto manuales
-  const { data: transactions } = await supabase
-    .from('transactions')
-    .select('*, categories(name, color)')
-    .eq('user_id', user.id);
-
-  const validTransactions = (transactions as any[]) || [];
-
-  // Mapear colores de Tailwind a Hex para Recharts
   const tailwindToHex: Record<string, string> = {
-    'bg-brand-cerulean': '#38bdf8',
-    'bg-blue-400': '#60a5fa',
-    'bg-emerald-500': '#10b981',
-    'bg-red-400': '#f87171',
-    'bg-orange-400': '#fb923c',
-    'bg-purple-500': '#a855f7',
-    'bg-gray-400': '#9ca3af',
+    "bg-brand-cerulean": "#007EA7",
+    "bg-blue-400": "#60a5fa",
+    "bg-emerald-500": "#10b981",
+    "bg-red-400": "#f87171",
+    "bg-orange-400": "#fb923c",
+    "bg-purple-500": "#a855f7",
+    "bg-gray-400": "#9ca3af",
+    "bg-slate-400": "#94a3b8",
   };
 
-  // 1. Agrupar por Categoría (Gastos facturados + Gastos manuales)
-  const categoryMap = new Map<string, { name: string, value: number, hexColor: string }>();
-  
-  // Agregar gastos XML
-  validInvoices.filter(inv => inv.invoice_type === 'egreso').forEach(inv => {
-    const catName = inv.categories?.name || 'Otros';
-    const twColor = inv.categories?.color || 'bg-gray-400';
-    const hexColor = tailwindToHex[twColor] || '#9ca3af';
-
-    if (!categoryMap.has(catName)) {
-      categoryMap.set(catName, { name: catName, value: 0, hexColor });
+  const categoryMap = new Map<string, { name: string; value: number; hexColor: string }>();
+  const addCategoryAmount = (categoryName: string, tailwindColor: string, amount: number) => {
+    const hexColor = tailwindToHex[tailwindColor] || "#94a3b8";
+    if (!categoryMap.has(categoryName)) {
+      categoryMap.set(categoryName, { name: categoryName, value: 0, hexColor });
     }
-    const current = categoryMap.get(catName)!;
-    current.value += Number(inv.total);
-  });
+    categoryMap.get(categoryName)!.value += amount;
+  };
 
-  // Agregar gastos en efectivo / manuales
-  validTransactions.filter(tx => tx.type === 'expense' && !tx.invoice_id).forEach(tx => {
-    const catName = tx.categories?.name || 'Otros';
-    const twColor = tx.categories?.color || 'bg-gray-400';
-    const hexColor = tailwindToHex[twColor] || '#9ca3af';
+  validInvoices
+    .filter((invoice) => invoice.invoice_type === "egreso")
+    .forEach((invoice) => addCategoryAmount(invoice.categories?.name || "Otros", invoice.categories?.color || "bg-slate-400", Number(invoice.total)));
 
-    if (!categoryMap.has(catName)) {
-      categoryMap.set(catName, { name: catName, value: 0, hexColor });
-    }
-    const current = categoryMap.get(catName)!;
-    current.value += Number(tx.amount);
-  });
+  validTransactions
+    .filter((transaction) => transaction.type === "expense" && !transaction.invoice_id)
+    .forEach((transaction) => addCategoryAmount(transaction.categories?.name || "Otros", transaction.categories?.color || "bg-slate-400", Number(transaction.amount)));
 
   const categoryData = Array.from(categoryMap.values()).sort((a, b) => b.value - a.value);
 
-  // 2. Agrupar por Mes (Tendencia de gastos XML + Efectivo)
   const monthMap = new Map<string, number>();
   const monthNames = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
-
-  // Gastos de facturas
-  validInvoices.filter(inv => inv.invoice_type === 'egreso').forEach(inv => {
-    const d = new Date(inv.fecha);
-    const monthKey = `${monthNames[d.getMonth()]} ${d.getFullYear().toString().substring(2)}`;
-    monthMap.set(monthKey, (monthMap.get(monthKey) || 0) + Number(inv.total));
-  });
-
-  // Gastos manuales
-  validTransactions.filter(tx => tx.type === 'expense' && !tx.invoice_id).forEach(tx => {
-    const d = new Date(tx.date);
-    const monthKey = `${monthNames[d.getMonth()]} ${d.getFullYear().toString().substring(2)}`;
-    monthMap.set(monthKey, (monthMap.get(monthKey) || 0) + Number(tx.amount));
-  });
-
-  const trendData = Array.from(monthMap.entries()).map(([month, value]) => ({ month, value }));
-
-  // Métricas clave (Gastos totales)
-  const totalGasto = categoryData.reduce((sum, c) => sum + c.value, 0);
-  const avgMensual = trendData.length > 0 ? totalGasto / trendData.length : 0;
-  const topCategory = categoryData.length > 0 ? categoryData[0].name : 'N/A';
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(amount);
+  const addMonthAmount = (dateValue: string, amount: number) => {
+    const date = new Date(dateValue);
+    const monthKey = `${monthNames[date.getMonth()]} ${date.getFullYear().toString().slice(2)}`;
+    monthMap.set(monthKey, (monthMap.get(monthKey) || 0) + amount);
   };
 
+  validInvoices
+    .filter((invoice) => invoice.invoice_type === "egreso")
+    .forEach((invoice) => addMonthAmount(invoice.fecha || new Date().toISOString(), Number(invoice.total)));
+
+  validTransactions
+    .filter((transaction) => transaction.type === "expense" && !transaction.invoice_id)
+    .forEach((transaction) => addMonthAmount(transaction.date || new Date().toISOString(), Number(transaction.amount)));
+
+  const trendData = Array.from(monthMap.entries()).map(([month, value]) => ({ month, value }));
+  const totalGasto = categoryData.reduce((sum, category) => sum + category.value, 0);
+  const avgMensual = trendData.length > 0 ? totalGasto / trendData.length : 0;
+  const topCategory = categoryData.length > 0 ? categoryData[0].name : "Sin datos";
+
+  const metrics = [
+    { title: "Gasto total", value: formatCurrency(totalGasto), icon: TrendingUp, tone: "text-brand-cerulean bg-brand-cerulean/10" },
+    { title: "Promedio mensual", value: formatCurrency(avgMensual), icon: CalendarDays, tone: "text-emerald-600 bg-emerald-500/10 dark:text-emerald-400" },
+    { title: "Mayor categoría", value: topCategory, icon: Target, tone: "text-amber-600 bg-amber-500/10 dark:text-amber-400" },
+  ];
+
   return (
-    <div className="w-full max-w-6xl mx-auto space-y-6 p-4 pb-24 sm:p-6 md:pb-6">
-      <div className="mb-8">
-        <h2 className="text-2xl font-bold text-brand-carbon dark:text-white tracking-tight">Análisis de Gastos</h2>
-        <p className="text-sm text-brand-graphite dark:text-zinc-400 mt-1">
-          Visualiza a dónde va tu dinero y descubre tendencias en tus hábitos de consumo sumando facturas y efectivo.
-        </p>
-      </div>
-
-      {/* Tarjetas de Métricas */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <div className="bg-white dark:bg-brand-graphite border border-gray-200 dark:border-zinc-800 rounded-xl p-5 shadow-sm">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="p-2 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-lg">
-              <TrendingUp className="w-5 h-5" />
+    <PageShell
+      eyebrow="Análisis"
+      title="Análisis de gastos"
+      description="Visualiza a dónde va tu dinero y detecta tendencias combinando facturas y movimientos en efectivo."
+    >
+      <section className="grid grid-cols-1 gap-4 md:grid-cols-3">
+        {metrics.map((metric) => {
+          const Icon = metric.icon;
+          return (
+            <div key={metric.title} className="surface-card rounded-lg p-5">
+              <div className="mb-4 flex items-center gap-3">
+                <div className={`grid h-10 w-10 place-items-center rounded-lg ${metric.tone}`}>
+                  <Icon className="h-5 w-5" />
+                </div>
+                <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400">{metric.title}</h3>
+              </div>
+              <p className="truncate text-2xl font-semibold text-slate-950 dark:text-white">{metric.value}</p>
             </div>
-            <h3 className="text-sm font-medium text-brand-graphite dark:text-zinc-400">Gasto Total Acumulado</h3>
-          </div>
-          <p className="text-2xl font-bold text-brand-carbon dark:text-white">{formatCurrency(totalGasto)}</p>
-        </div>
+          );
+        })}
+      </section>
 
-        <div className="bg-white dark:bg-brand-graphite border border-gray-200 dark:border-zinc-800 rounded-xl p-5 shadow-sm">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="p-2 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 rounded-lg">
-              <CalendarDays className="w-5 h-5" />
-            </div>
-            <h3 className="text-sm font-medium text-brand-graphite dark:text-zinc-400">Promedio Mensual</h3>
-          </div>
-          <p className="text-2xl font-bold text-brand-carbon dark:text-white">{formatCurrency(avgMensual)}</p>
-        </div>
-
-        <div className="bg-white dark:bg-brand-graphite border border-gray-200 dark:border-zinc-800 rounded-xl p-5 shadow-sm">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="p-2 bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400 rounded-lg">
-              <Target className="w-5 h-5" />
-            </div>
-            <h3 className="text-sm font-medium text-brand-graphite dark:text-zinc-400">Categoría Mayor Gasto</h3>
-          </div>
-          <p className="text-xl font-bold text-brand-carbon dark:text-white truncate">{topCategory}</p>
-        </div>
-      </div>
-
-      {/* Gráficas */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        
-        {/* Gráfica de Barras por Categoría */}
-        <div className="bg-white dark:bg-brand-graphite border border-gray-200 dark:border-zinc-800 rounded-xl p-6 shadow-sm">
-          <div className="flex items-center gap-2 mb-6">
-            <PieChart className="w-5 h-5 text-brand-graphite dark:text-zinc-400" />
-            <h3 className="text-lg font-semibold text-brand-carbon dark:text-white">Gastos por Categoría</h3>
+      <section className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <div className="surface-card rounded-lg p-5 md:p-6">
+          <div className="mb-6 flex items-center gap-2">
+            <PieChart className="h-5 w-5 text-brand-cerulean" />
+            <h3 className="text-base font-semibold text-slate-950 dark:text-white">Gastos por categoría</h3>
           </div>
           <div className="h-80 w-full">
             <CategoryBarChart data={categoryData} />
           </div>
         </div>
 
-        {/* Gráfica de Área Mensual */}
-        <div className="bg-white dark:bg-brand-graphite border border-gray-200 dark:border-zinc-800 rounded-xl p-6 shadow-sm">
-          <div className="flex items-center gap-2 mb-6">
-            <TrendingUp className="w-5 h-5 text-brand-graphite dark:text-zinc-500" />
-            <h3 className="text-lg font-semibold text-brand-carbon dark:text-white">Tendencia Histórica</h3>
+        <div className="surface-card rounded-lg p-5 md:p-6">
+          <div className="mb-6 flex items-center gap-2">
+            <TrendingUp className="h-5 w-5 text-brand-cerulean" />
+            <h3 className="text-base font-semibold text-slate-950 dark:text-white">Tendencia histórica</h3>
           </div>
           <div className="h-80 w-full">
             <TrendAreaChart data={trendData} />
           </div>
         </div>
-
-      </div>
-    </div>
+      </section>
+    </PageShell>
   );
 }
+
+
+

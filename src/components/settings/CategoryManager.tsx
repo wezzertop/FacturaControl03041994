@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useTransition, useEffect } from 'react';
 import { 
@@ -166,8 +166,8 @@ export default function CategoryManager({ initialCategories }: CategoryManagerPr
         )}
 
         {/* Create Form */}
-        <form onSubmit={handleSubmit} className="space-y-4 pb-6 border-b border-gray-150 dark:border-zinc-800/80">
-          <h4 className="text-xs font-bold uppercase tracking-wider text-brand-graphite dark:text-zinc-550">
+        <form onSubmit={handleSubmit} className="space-y-4 pb-6 border-b border-gray-200 dark:border-zinc-800/80">
+          <h4 className="text-xs font-bold uppercase tracking-wider text-brand-graphite dark:text-zinc-500">
             {editingCategory ? 'Editar Categoría' : 'Crear Nueva Categoría'}
           </h4>
           
@@ -268,7 +268,7 @@ export default function CategoryManager({ initialCategories }: CategoryManagerPr
               return (
                 <div 
                   key={cat.id}
-                  className="flex items-center justify-between p-3 rounded-xl border border-gray-150 dark:border-zinc-800/80 bg-brand-smoke/40 dark:bg-zinc-900/30"
+                  className="flex items-center justify-between p-3 rounded-xl border border-gray-200 dark:border-zinc-800/80 bg-brand-smoke/40 dark:bg-zinc-900/30"
                 >
                   <div className="flex items-center gap-3">
                     <div className={`w-8 h-8 rounded-lg ${cat.color} text-white flex items-center justify-center shrink-0 shadow-sm`}>
@@ -278,7 +278,7 @@ export default function CategoryManager({ initialCategories }: CategoryManagerPr
                       <p className="text-sm font-semibold text-brand-carbon dark:text-white leading-tight">
                         {cat.name}
                       </p>
-                      <span className="text-[9px] font-bold uppercase tracking-wider text-brand-graphite dark:text-zinc-550 block">
+                      <span className="text-[9px] font-bold uppercase tracking-wider text-brand-graphite dark:text-zinc-500 block">
                         {isSystem ? 'Sistema' : 'Personalizada'}
                       </span>
                     </div>
@@ -317,3 +317,5 @@ export default function CategoryManager({ initialCategories }: CategoryManagerPr
     </div>
   );
 }
+
+

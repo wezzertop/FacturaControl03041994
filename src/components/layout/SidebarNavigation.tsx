@@ -1,185 +1,162 @@
-"use client";
+﻿"use client";
 
-import React, { useState, useEffect } from 'react';
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { useTheme } from 'next-themes';
-import { 
-  LayoutDashboard, 
-  UploadCloud, 
-  FileText, 
-  PieChart, 
-  Calculator, 
-  Settings,
+import React, { useState } from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { useTheme } from "next-themes";
+import {
+  Calculator,
   ChevronLeft,
   ChevronRight,
-  Zap,
+  FileText,
+  LayoutDashboard,
+  LogOut,
   Moon,
+  PieChart,
+  Settings,
+  Sparkles,
   Sun,
-  Wallet
-} from 'lucide-react';
-import { signout } from '@/app/actions/auth';
+  UploadCloud,
+  Wallet,
+  Zap,
+} from "lucide-react";
+import { signout } from "@/app/actions/auth";
 
-const cn = (...classes: (string | undefined | null | false)[]) => classes.filter(Boolean).join(' ');
+const cn = (...classes: (string | undefined | null | false)[]) => classes.filter(Boolean).join(" ");
 
 const navItems = [
-  { name: 'Dashboard', href: '/', icon: LayoutDashboard },
-  { name: 'Cargar XML', href: '/upload', icon: UploadCloud },
-  { name: 'Historial', href: '/invoices', icon: FileText },
-  { name: 'Carteras', href: '/wallets', icon: Wallet },
-  { name: 'Análisis de Gastos', href: '/analytics', icon: PieChart },
-  { name: 'Simulación Fiscal', href: '/simulation', icon: Calculator },
-  { name: 'Configuración', href: '/settings', icon: Settings },
+  { name: "Dashboard", href: "/", icon: LayoutDashboard },
+  { name: "Cargar XML", href: "/upload", icon: UploadCloud },
+  { name: "Historial", href: "/invoices", icon: FileText },
+  { name: "Carteras", href: "/wallets", icon: Wallet },
+  { name: "Análisis", href: "/analytics", icon: PieChart },
+  { name: "Simulación fiscal", href: "/simulation", icon: Calculator },
+  { name: "Configuración", href: "/settings", icon: Settings },
 ];
 
 export default function SidebarNavigation() {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
   const { theme, setTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  const isAuthPage = pathname.startsWith('/login') || pathname.startsWith('/register');
+  const isAuthPage = pathname.startsWith("/login") || pathname.startsWith("/register");
   if (isAuthPage) return null;
 
+  const nextTheme = theme === "dark" ? "light" : "dark";
+
   return (
-    <aside 
+    <aside
       className={cn(
-        "hidden md:flex relative flex-col h-screen bg-brand-white dark:bg-brand-graphite border-r border-gray-200 dark:border-zinc-800 transition-all duration-300",
-        collapsed ? "w-20" : "w-64"
+        "relative hidden h-screen shrink-0 flex-col border-r border-slate-200/80 bg-white/82 backdrop-blur-xl transition-all duration-300 dark:border-white/10 dark:bg-zinc-950/70 md:flex",
+        collapsed ? "w-20" : "w-72",
       )}
     >
-      {/* Toggle Button */}
-      <button 
+      <button
+        type="button"
         onClick={() => setCollapsed(!collapsed)}
-        className="absolute -right-3 top-8 bg-brand-smoke dark:bg-zinc-800 border border-gray-300 dark:border-zinc-700 rounded-full p-1 text-brand-graphite dark:text-brand-smoke hover:text-brand-cerulean dark:hover:text-white hover:bg-gray-200 dark:hover:bg-zinc-700 transition-colors z-10"
+        className="absolute -right-3 top-8 z-10 grid h-7 w-7 place-items-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:border-brand-cerulean hover:text-brand-cerulean dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-400"
+        title={collapsed ? "Expandir menú" : "Contraer menú"}
       >
         {collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
       </button>
 
-      {/* Logo */}
-      <div className="flex items-center h-20 px-6 border-b border-gray-200 dark:border-zinc-800/50 justify-between">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded bg-gradient-to-br from-brand-cerulean to-blue-400 flex items-center justify-center shrink-0">
-            <Zap className="text-white w-5 h-5" />
-          </div>
-          {!collapsed && (
-            <span className="font-bold text-lg tracking-tight text-brand-carbon dark:text-white">
-              Factura<span className="text-brand-cerulean">Control</span>
-            </span>
-          )}
+      <div className="flex h-20 items-center gap-3 px-5">
+        <div className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-brand-cerulean text-white shadow-lg shadow-brand-cerulean/20">
+          <Zap className="h-5 w-5" />
         </div>
-        {!collapsed && mounted && (
-          <button 
-            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-            className="p-1.5 rounded-md text-brand-graphite dark:text-zinc-400 hover:bg-brand-smoke dark:hover:bg-zinc-800 hover:text-brand-cerulean dark:hover:text-white transition-colors"
-            title={theme === 'dark' ? "Cambiar a modo claro" : "Cambiar a modo oscuro"}
-          >
-            {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
-          </button>
-        )}
+        {!collapsed ? (
+          <div className="min-w-0">
+            <p className="truncate text-lg font-semibold text-slate-950 dark:text-white">
+              Factura<span className="text-brand-cerulean">Control</span>
+            </p>
+            <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Panel financiero</p>
+          </div>
+        ) : null}
       </div>
 
-      {/* Navigation */}
-      <nav className="flex-1 py-6 px-3 space-y-1 overflow-y-auto overflow-x-hidden custom-scrollbar">
+      <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-3 custom-scrollbar">
         {navItems.map((item) => {
           const isActive = pathname === item.href;
           const Icon = item.icon;
-          
+
           return (
-            <Link 
-              key={item.name} 
+            <Link
+              key={item.name}
               href={item.href}
               className={cn(
-                "flex items-center gap-3 px-3 py-2.5 rounded-md transition-all duration-200 group",
-                isActive 
-                  ? "bg-brand-cerulean/10 dark:bg-brand-cerulean/20 text-brand-cerulean" 
-                  : "text-brand-graphite dark:text-zinc-400 hover:bg-brand-smoke dark:hover:bg-zinc-800/50 hover:text-brand-carbon dark:hover:text-zinc-100"
+                "group flex h-11 items-center gap-3 rounded-lg px-3 text-sm font-medium transition",
+                collapsed && "justify-center px-0",
+                isActive
+                  ? "bg-brand-cerulean text-white shadow-sm shadow-brand-cerulean/20"
+                  : "text-slate-600 hover:bg-slate-100 hover:text-slate-950 dark:text-slate-400 dark:hover:bg-white/10 dark:hover:text-white",
               )}
+              title={collapsed ? item.name : undefined}
             >
-              <Icon 
-                className={cn(
-                  "shrink-0", 
-                  collapsed ? "w-6 h-6 mx-auto" : "w-5 h-5"
-                )} 
-              />
-              {!collapsed && (
-                <span className="font-medium text-sm whitespace-nowrap">
-                  {item.name}
-                </span>
-              )}
-              
-              {isActive && !collapsed && (
-                <div className="ml-auto w-1.5 h-1.5 rounded-full bg-brand-cerulean" />
-              )}
+              <Icon className="h-5 w-5 shrink-0" strokeWidth={isActive ? 2.4 : 2} />
+              {!collapsed ? <span className="truncate">{item.name}</span> : null}
             </Link>
           );
         })}
       </nav>
 
-      {/* User Plan Indicator & Sign Out */}
-      <div className="p-4 border-t border-gray-200 dark:border-zinc-800/50 flex flex-col gap-3">
-        <div className={cn(
-          "bg-brand-smoke dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-lg transition-all duration-300",
-          collapsed ? "p-2 flex justify-center" : "p-4"
-        )}>
+      <div className="space-y-3 border-t border-slate-200/80 p-4 dark:border-white/10">
+        <div
+          className={cn(
+            "rounded-lg border border-slate-200 bg-slate-50 p-4 dark:border-white/10 dark:bg-white/5",
+            collapsed && "p-2",
+          )}
+        >
           {collapsed ? (
-            <div className="flex flex-col items-center gap-3">
-              <div className="w-8 h-8 rounded-full bg-brand-cerulean/10 flex items-center justify-center">
-                <Zap className="w-4 h-4 text-brand-cerulean" />
-              </div>
-              {mounted && (
-                <button 
-                  onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-                  className="p-1.5 rounded-md text-brand-graphite dark:text-zinc-400 hover:bg-gray-200 dark:hover:bg-zinc-800 hover:text-brand-cerulean transition-colors"
-                  title="Cambiar tema"
-                >
-                  {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
-                </button>
-              )}
+            <div className="grid place-items-center gap-3">
+              <Sparkles className="h-5 w-5 text-brand-cerulean" />
+              <button
+                type="button"
+                onClick={() => setTheme(nextTheme)}
+                className="grid h-9 w-9 place-items-center rounded-lg text-slate-500 transition hover:bg-white hover:text-brand-cerulean dark:text-slate-400 dark:hover:bg-zinc-900"
+                title="Cambiar tema"
+                suppressHydrationWarning
+              >
+                {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
+              </button>
             </div>
           ) : (
             <>
-              <div className="flex items-center gap-3 mb-2">
-                <div className="w-8 h-8 rounded-full bg-brand-cerulean/10 flex items-center justify-center">
-                  <Zap className="w-4 h-4 text-brand-cerulean" />
+              <div className="flex items-center gap-3">
+                <div className="grid h-9 w-9 place-items-center rounded-lg bg-brand-cerulean/10 text-brand-cerulean">
+                  <Sparkles className="h-4 w-4" />
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-brand-carbon dark:text-zinc-200">Plan Pro</p>
-                  <p className="text-xs text-brand-graphite dark:text-zinc-500">Ilimitado</p>
+                  <p className="text-sm font-semibold text-slate-950 dark:text-white">Plan Pro</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Facturas ilimitadas</p>
                 </div>
               </div>
-              <div className="mt-3">
-                <div className="flex justify-between text-xs text-brand-graphite dark:text-zinc-400 mb-1">
-                  <span>Facturas este mes</span>
-                  <span className="text-brand-cerulean font-medium">Ilimitado</span>
-                </div>
-                <div className="w-full bg-gray-300 dark:bg-zinc-800 rounded-full h-1.5">
-                  <div className="bg-brand-cerulean h-1.5 rounded-full" style={{ width: '100%' }}></div>
-                </div>
+              <div className="mt-4 flex items-center justify-between">
+                <span className="text-xs text-slate-500 dark:text-slate-400">Tema</span>
+                <button
+                  type="button"
+                  onClick={() => setTheme(nextTheme)}
+                  className="inline-flex h-9 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 transition hover:border-brand-cerulean hover:text-brand-cerulean dark:border-white/10 dark:bg-zinc-950 dark:text-slate-300"
+                  suppressHydrationWarning
+                >
+                  {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
+                  {theme === "dark" ? "Claro" : "Oscuro"}
+                </button>
               </div>
             </>
           )}
         </div>
-        
-        <form action={signout} className={collapsed ? 'mx-auto' : ''}>
-          <button 
+
+        <form action={signout}>
+          <button
             type="submit"
             className={cn(
-              "w-full flex items-center gap-3 px-3 py-2.5 rounded-md text-brand-graphite dark:text-zinc-400 hover:bg-red-50 dark:hover:bg-red-950/30 hover:text-red-600 dark:hover:text-red-400 transition-colors",
-              collapsed ? "justify-center" : ""
+              "flex h-11 w-full items-center gap-3 rounded-lg px-3 text-sm font-medium text-slate-600 transition hover:bg-rose-50 hover:text-rose-600 dark:text-slate-400 dark:hover:bg-rose-950/30 dark:hover:text-rose-300",
+              collapsed && "justify-center px-0",
             )}
-            title="Cerrar Sesión"
+            title="Cerrar sesión"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
-              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-              <polyline points="16 17 21 12 16 7"></polyline>
-              <line x1="21" y1="12" x2="9" y2="12"></line>
-            </svg>
-            {!collapsed && <span className="text-sm font-medium">Cerrar Sesión</span>}
+            <LogOut className="h-5 w-5 shrink-0" />
+            {!collapsed ? <span>Cerrar sesión</span> : null}
           </button>
         </form>
       </div>

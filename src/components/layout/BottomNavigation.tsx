@@ -1,267 +1,158 @@
-'use client';
+﻿"use client";
 
-import React, { useState, useEffect } from 'react';
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { 
-  LayoutDashboard, 
-  FileText, 
-  PieChart, 
-  Settings,
-  Plus,
-  UploadCloud,
-  X,
-  Wallet,
+import React, { useState } from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import {
   Camera,
-  PlusCircle
-} from 'lucide-react';
+  FileText,
+  LayoutDashboard,
+  PieChart,
+  Plus,
+  PlusCircle,
+  Settings,
+  UploadCloud,
+  Wallet,
+  X,
+} from "lucide-react";
 
 const navItems = [
-  { name: 'Inicio', href: '/', icon: LayoutDashboard },
-  { name: 'Historial', href: '/invoices', icon: FileText },
-  // El botón central flotante se intercala aquí visualmente
-  { name: 'Análisis', href: '/analytics', icon: PieChart },
-  { name: 'Ajustes', href: '/settings', icon: Settings },
+  { name: "Inicio", href: "/", icon: LayoutDashboard },
+  { name: "Historial", href: "/invoices", icon: FileText },
+  { name: "Análisis", href: "/analytics", icon: PieChart },
+  { name: "Ajustes", href: "/settings", icon: Settings },
 ];
 
 export default function BottomNavigation() {
   const pathname = usePathname();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [mounted, setMounted] = useState(false);
+  const isAuthPage = pathname.startsWith("/login") || pathname.startsWith("/register");
+  if (isAuthPage) return null;
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  const isAuthPage = pathname.startsWith('/login') || pathname.startsWith('/register');
-  if (isAuthPage || !mounted) return null;
-
-  // Manejador del click de OCR en móvil
   const handleOcrClick = (e: React.MouseEvent) => {
     setIsMenuOpen(false);
-    if (pathname === '/wallets') {
+    if (pathname === "/wallets") {
       e.preventDefault();
-      const input = document.getElementById('ocr-file-input');
-      if (input) {
-        (input as HTMLInputElement).click();
-      }
+      document.getElementById("ocr-file-input")?.click();
     }
   };
 
-  // Manejador del click de Transacción manual en móvil
   const handleTxClick = (e: React.MouseEvent) => {
     setIsMenuOpen(false);
-    if (pathname === '/wallets') {
+    if (pathname === "/wallets") {
       e.preventDefault();
-      const button = document.getElementById('trigger-tx-modal-btn');
-      if (button) {
-        (button as HTMLButtonElement).click();
-      }
+      document.getElementById("trigger-tx-modal-btn")?.click();
     }
   };
 
   return (
     <>
-      {/* Overlay Oscuro para el Menú Flotante */}
-      {isMenuOpen && (
-        <div 
-          className="fixed inset-0 bg-brand-carbon/60 dark:bg-black/80 backdrop-blur-sm z-40 transition-opacity duration-300 md:hidden"
+      {isMenuOpen ? (
+        <div
+          className="fixed inset-0 z-40 bg-slate-950/55 backdrop-blur-sm md:hidden"
           onClick={() => setIsMenuOpen(false)}
         />
-      )}
+      ) : null}
 
-      {/* Menú de Acción (Bottom Sheet Premium) */}
-      <div 
-        className={`fixed bottom-[84px] inset-x-4 z-40 transition-all duration-300 transform md:hidden ${
-          isMenuOpen 
-            ? 'translate-y-0 opacity-100 scale-100' 
-            : 'translate-y-10 opacity-0 scale-95 pointer-events-none'
+      <div
+        className={`fixed inset-x-3 bottom-[82px] z-40 transition duration-300 md:hidden ${
+          isMenuOpen ? "translate-y-0 opacity-100" : "translate-y-5 opacity-0 pointer-events-none"
         }`}
       >
-        <div className="bg-white/95 dark:bg-zinc-900/95 backdrop-blur-md border border-gray-150 dark:border-zinc-800 rounded-2xl shadow-2xl p-3 flex flex-col gap-1.5">
-          
-          {/* Encabezado del Bottom Sheet */}
-          <div className="px-3 py-2 border-b border-gray-100 dark:border-zinc-800/80 mb-1 flex justify-between items-center">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-brand-graphite dark:text-zinc-500">
-              Acciones Rápidas
+        <div className="surface-card rounded-lg p-2">
+          <div className="mb-1 flex items-center justify-between border-b border-slate-200/80 px-3 py-2 dark:border-white/10">
+            <span className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">
+              Acciones rápidas
             </span>
-            <button 
+            <button
+              type="button"
               onClick={() => setIsMenuOpen(false)}
-              className="text-brand-graphite dark:text-zinc-500 hover:text-brand-carbon dark:hover:text-white p-1 rounded-full hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors"
+              className="grid h-8 w-8 place-items-center rounded-lg text-slate-500 transition hover:bg-slate-100 hover:text-slate-950 dark:hover:bg-white/10 dark:hover:text-white"
+              title="Cerrar"
             >
-              <X className="w-3.5 h-3.5" />
+              <X className="h-4 w-4" />
             </button>
           </div>
-          
-          {/* 1. Subir Factura XML */}
-          <Link 
-            href="/upload" 
-            onClick={() => setIsMenuOpen(false)}
-            className="flex items-center gap-4 p-3 rounded-xl hover:bg-brand-cerulean/5 dark:hover:bg-brand-cerulean/10 active:scale-[0.98] transition-all"
-          >
-            <div className="w-10 h-10 rounded-full bg-brand-cerulean/10 flex items-center justify-center shrink-0">
-              <UploadCloud className="w-5 h-5 text-brand-cerulean" />
-            </div>
-            <div>
-              <h4 className="text-sm font-bold text-brand-carbon dark:text-white">Cargar XML (SAT)</h4>
-              <p className="text-[11px] text-brand-graphite dark:text-zinc-400">Sube tus archivos XML de facturas directamente</p>
-            </div>
+
+          <Link href="/upload" onClick={() => setIsMenuOpen(false)} className="flex items-center gap-3 rounded-lg p-3 transition hover:bg-slate-100 dark:hover:bg-white/10">
+            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-brand-cerulean/10 text-brand-cerulean">
+              <UploadCloud className="h-5 w-5" />
+            </span>
+            <span>
+              <span className="block text-sm font-semibold text-slate-950 dark:text-white">Cargar XML</span>
+              <span className="block text-xs text-slate-500 dark:text-slate-400">Procesa facturas CFDI del SAT</span>
+            </span>
           </Link>
 
-          {/* 2. Escanear Transferencia (OCR) */}
-          <Link 
-            href="/wallets?triggerOcr=true" 
-            onClick={handleOcrClick}
-            className="flex items-center gap-4 p-3 rounded-xl hover:bg-emerald-500/5 dark:hover:bg-emerald-500/10 active:scale-[0.98] transition-all"
-          >
-            <div className="w-10 h-10 rounded-full bg-emerald-100 dark:bg-emerald-950/30 flex items-center justify-center shrink-0">
-              <Camera className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
-            </div>
-            <div>
-              <h4 className="text-sm font-bold text-brand-carbon dark:text-white">Escanear Transferencia</h4>
-              <p className="text-[11px] text-brand-graphite dark:text-zinc-400">OCR automático desde captura de pantalla (BBVA)</p>
-            </div>
+          <Link href="/wallets?triggerOcr=true" onClick={handleOcrClick} className="flex items-center gap-3 rounded-lg p-3 transition hover:bg-slate-100 dark:hover:bg-white/10">
+            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+              <Camera className="h-5 w-5" />
+            </span>
+            <span>
+              <span className="block text-sm font-semibold text-slate-950 dark:text-white">Escanear transferencia</span>
+              <span className="block text-xs text-slate-500 dark:text-slate-400">Extrae datos desde una captura</span>
+            </span>
           </Link>
 
-          {/* 3. Registrar Movimiento en Efectivo */}
-          <Link 
-            href="/wallets?triggerTx=true" 
-            onClick={handleTxClick}
-            className="flex items-center gap-4 p-3 rounded-xl hover:bg-blue-500/5 dark:hover:bg-blue-500/10 active:scale-[0.98] transition-all"
-          >
-            <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-950/30 flex items-center justify-center shrink-0">
-              <PlusCircle className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-            </div>
-            <div>
-              <h4 className="text-sm font-bold text-brand-carbon dark:text-white">Movimiento en Efectivo</h4>
-              <p className="text-[11px] text-brand-graphite dark:text-zinc-400">Registra un ingreso o gasto manual en efectivo</p>
-            </div>
+          <Link href="/wallets?triggerTx=true" onClick={handleTxClick} className="flex items-center gap-3 rounded-lg p-3 transition hover:bg-slate-100 dark:hover:bg-white/10">
+            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400">
+              <PlusCircle className="h-5 w-5" />
+            </span>
+            <span>
+              <span className="block text-sm font-semibold text-slate-950 dark:text-white">Movimiento manual</span>
+              <span className="block text-xs text-slate-500 dark:text-slate-400">Registra efectivo o cuenta bancaria</span>
+            </span>
           </Link>
 
-          {/* 4. Mi Cartera y Cuentas */}
-          <Link 
-            href="/wallets" 
-            onClick={() => setIsMenuOpen(false)}
-            className="flex items-center gap-4 p-3 rounded-xl hover:bg-purple-500/5 dark:hover:bg-purple-500/10 active:scale-[0.98] transition-all"
-          >
-            <div className="w-10 h-10 rounded-full bg-purple-100 dark:bg-purple-950/30 flex items-center justify-center shrink-0">
-              <Wallet className="w-5 h-5 text-purple-600 dark:text-purple-400" />
-            </div>
-            <div>
-              <h4 className="text-sm font-bold text-brand-carbon dark:text-white">Mi Cartera y Cuentas</h4>
-              <p className="text-[11px] text-brand-graphite dark:text-zinc-400">Ver saldos de cuentas, conciliar y transferencias</p>
-            </div>
+          <Link href="/wallets" onClick={() => setIsMenuOpen(false)} className="flex items-center gap-3 rounded-lg p-3 transition hover:bg-slate-100 dark:hover:bg-white/10">
+            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400">
+              <Wallet className="h-5 w-5" />
+            </span>
+            <span>
+              <span className="block text-sm font-semibold text-slate-950 dark:text-white">Carteras</span>
+              <span className="block text-xs text-slate-500 dark:text-slate-400">Consulta saldos y movimientos</span>
+            </span>
           </Link>
-
         </div>
       </div>
 
-      {/* Barra de Navegación Inferior Estilo Premium */}
-      <div className="fixed bottom-0 left-0 w-full bg-white/90 dark:bg-zinc-900/90 backdrop-blur-md border-t border-gray-150 dark:border-zinc-800 grid grid-cols-5 px-2 pb-safe pt-2.5 h-[68px] z-50 md:hidden shadow-[0_-4px_24px_-4px_rgba(0,0,0,0.06)]">
-        
-        {/* 1. Inicio */}
-        {(() => {
-          const item = navItems[0];
+      <div className="fixed bottom-0 left-0 z-50 grid h-[72px] w-full grid-cols-5 border-t border-slate-200/80 bg-white/90 px-2 pt-2 shadow-[0_-18px_45px_-30px_rgba(15,23,42,0.6)] backdrop-blur-xl dark:border-white/10 dark:bg-zinc-950/90 md:hidden">
+        {navItems.slice(0, 2).map((item) => {
           const isActive = pathname === item.href;
           const Icon = item.icon;
           return (
-            <Link 
-              href={item.href} 
-              onClick={() => setIsMenuOpen(false)}
-              className="flex flex-col items-center justify-center gap-1 active:scale-95 transition-transform"
-            >
-              <Icon 
-                className={`w-5 h-5 transition-colors ${isActive ? 'text-brand-cerulean' : 'text-brand-graphite dark:text-zinc-500'}`} 
-                strokeWidth={isActive ? 2.5 : 2}
-              />
-              <span className={`text-[10px] font-bold tracking-tight transition-colors ${isActive ? 'text-brand-cerulean font-extrabold' : 'text-brand-graphite dark:text-zinc-500'}`}>
-                {item.name}
-              </span>
+            <Link key={item.name} href={item.href} onClick={() => setIsMenuOpen(false)} className="flex flex-col items-center justify-center gap-1 rounded-lg transition active:scale-95">
+              <Icon className={`h-5 w-5 ${isActive ? "text-brand-cerulean" : "text-slate-500 dark:text-slate-400"}`} strokeWidth={isActive ? 2.5 : 2} />
+              <span className={`text-[10px] font-semibold ${isActive ? "text-brand-cerulean" : "text-slate-500 dark:text-slate-400"}`}>{item.name}</span>
             </Link>
           );
-        })()}
+        })}
 
-        {/* 2. Historial */}
-        {(() => {
-          const item = navItems[1];
-          const isActive = pathname === item.href;
-          const Icon = item.icon;
-          return (
-            <Link 
-              href={item.href} 
-              onClick={() => setIsMenuOpen(false)}
-              className="flex flex-col items-center justify-center gap-1 active:scale-95 transition-transform"
-            >
-              <Icon 
-                className={`w-5 h-5 transition-colors ${isActive ? 'text-brand-cerulean' : 'text-brand-graphite dark:text-zinc-500'}`} 
-                strokeWidth={isActive ? 2.5 : 2}
-              />
-              <span className={`text-[10px] font-bold tracking-tight transition-colors ${isActive ? 'text-brand-cerulean font-extrabold' : 'text-brand-graphite dark:text-zinc-500'}`}>
-                {item.name}
-              </span>
-            </Link>
-          );
-        })()}
-
-        {/* 3. Espacio Central Reservado para el FAB */}
         <div className="relative flex items-center justify-center">
-          <div className="absolute -top-7">
-            <button 
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className={`w-13 h-13 rounded-full flex items-center justify-center shadow-lg shadow-brand-cerulean/25 text-white active:scale-95 hover:scale-105 transition-all duration-300 ${
-                isMenuOpen ? 'bg-zinc-850 dark:bg-white text-white dark:text-zinc-900 rotate-45' : 'bg-brand-cerulean text-white'
-              }`}
-            >
-              <Plus className="w-5 h-5" strokeWidth={3.5} />
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={() => setIsMenuOpen(!isMenuOpen)}
+            className={`absolute -top-6 grid h-14 w-14 place-items-center rounded-full text-white shadow-lg shadow-brand-cerulean/30 transition active:scale-95 ${
+              isMenuOpen ? "rotate-45 bg-slate-900 dark:bg-white dark:text-slate-950" : "bg-brand-cerulean"
+            }`}
+            title="Acciones rápidas"
+          >
+            <Plus className="h-6 w-6" strokeWidth={3} />
+          </button>
         </div>
 
-        {/* 4. Análisis */}
-        {(() => {
-          const item = navItems[2];
+        {navItems.slice(2).map((item) => {
           const isActive = pathname === item.href;
           const Icon = item.icon;
           return (
-            <Link 
-              href={item.href} 
-              onClick={() => setIsMenuOpen(false)}
-              className="flex flex-col items-center justify-center gap-1 active:scale-95 transition-transform"
-            >
-              <Icon 
-                className={`w-5 h-5 transition-colors ${isActive ? 'text-brand-cerulean' : 'text-brand-graphite dark:text-zinc-500'}`} 
-                strokeWidth={isActive ? 2.5 : 2}
-              />
-              <span className={`text-[10px] font-bold tracking-tight transition-colors ${isActive ? 'text-brand-cerulean font-extrabold' : 'text-brand-graphite dark:text-zinc-500'}`}>
-                {item.name}
-              </span>
+            <Link key={item.name} href={item.href} onClick={() => setIsMenuOpen(false)} className="flex flex-col items-center justify-center gap-1 rounded-lg transition active:scale-95">
+              <Icon className={`h-5 w-5 ${isActive ? "text-brand-cerulean" : "text-slate-500 dark:text-slate-400"}`} strokeWidth={isActive ? 2.5 : 2} />
+              <span className={`text-[10px] font-semibold ${isActive ? "text-brand-cerulean" : "text-slate-500 dark:text-slate-400"}`}>{item.name}</span>
             </Link>
           );
-        })()}
-
-        {/* 5. Ajustes */}
-        {(() => {
-          const item = navItems[3];
-          const isActive = pathname === item.href;
-          const Icon = item.icon;
-          return (
-            <Link 
-              href={item.href} 
-              onClick={() => setIsMenuOpen(false)}
-              className="flex flex-col items-center justify-center gap-1 active:scale-95 transition-transform"
-            >
-              <Icon 
-                className={`w-5 h-5 transition-colors ${isActive ? 'text-brand-cerulean' : 'text-brand-graphite dark:text-zinc-500'}`} 
-                strokeWidth={isActive ? 2.5 : 2}
-              />
-              <span className={`text-[10px] font-bold tracking-tight transition-colors ${isActive ? 'text-brand-cerulean font-extrabold' : 'text-brand-graphite dark:text-zinc-500'}`}>
-                {item.name}
-              </span>
-            </Link>
-          );
-        })()}
-
+        })}
       </div>
     </>
   );
 }
+

@@ -1,288 +1,291 @@
-import React from 'react';
-import { createClient } from '@/utils/supabase/server';
-import InvoiceTable from '@/components/invoices/InvoiceTable';
-import { 
-  DollarSign, 
-  Receipt, 
-  CreditCard, 
-  TrendingUp, 
-  ShoppingCart, 
-  Fuel, 
-  Coffee,
-  MoreHorizontal,
+﻿import React from "react";
+import type { LucideIcon } from "lucide-react";
+import { createClient } from "@/utils/supabase/server";
+import InvoiceTable from "@/components/invoices/InvoiceTable";
+import {
+  ArrowDownRight,
+  ArrowUpRight,
+  DollarSign,
   PieChart,
-  Zap,
-  HeartPulse,
-  Utensils,
+  Receipt,
+  TrendingUp,
   Wallet,
-  ArrowUpRight
-} from 'lucide-react';
+} from "lucide-react";
 
-// Mapeo simple de iconos
-const IconMap: Record<string, any> = {
-  ShoppingCart,
-  Fuel,
-  Zap,
-  HeartPulse,
-  Utensils,
-  MoreHorizontal,
-  Receipt
-};
+const currency = new Intl.NumberFormat("es-MX", {
+  style: "currency",
+  currency: "MXN",
+  maximumFractionDigits: 2,
+});
+
+interface KpiCard {
+  title: string;
+  value: string;
+  helper: string;
+  icon: LucideIcon;
+  tone: string;
+}
+
+interface CategoryValue {
+  name?: string | null;
+  color?: string | null;
+}
+
+interface InvoiceRow {
+  id: string | number;
+  invoice_type?: string | null;
+  total?: number | string | null;
+  iva?: number | string | null;
+  fecha?: string | null;
+  categories?: CategoryValue | null;
+  [key: string]: unknown;
+}
+
+interface WalletRow {
+  balance?: number | string | null;
+  [key: string]: unknown;
+}
+
+interface TransactionRow {
+  type?: string | null;
+  amount?: number | string | null;
+  date?: string | null;
+  invoice_id?: string | number | null;
+  categories?: CategoryValue | null;
+  [key: string]: unknown;
+}
 
 export default async function FinancialOverview() {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
   if (!user) return null;
 
-  // 1. Obtener facturas (con categorías)
-  const { data: invoices } = await supabase
-    .from('invoices')
-    .select('*, categories(*)')
-    .eq('user_id', user.id)
-    .order('fecha', { ascending: false });
+  const [invoicesResponse, walletsResponse, transactionsResponse] = await Promise.all([
+    supabase
+      .from("invoices")
+      .select("*, categories(*)")
+      .eq("user_id", user.id)
+      .order("fecha", { ascending: false }),
+    supabase.from("wallets").select("*").eq("user_id", user.id),
+    supabase.from("transactions").select("*, categories(*)").eq("user_id", user.id),
+  ]);
 
-  const validInvoices = (invoices as any[]) || [];
+  const validInvoices = (invoicesResponse.data || []) as InvoiceRow[];
+  const validWallets = (walletsResponse.data || []) as WalletRow[];
+  const validTransactions = (transactionsResponse.data || []) as TransactionRow[];
 
-  // 2. Obtener carteras
-  const { data: wallets } = await supabase
-    .from('wallets')
-    .select('*')
-    .eq('user_id', user.id);
-    
-  const validWallets = (wallets as any[]) || [];
-  const totalWalletsBalance = validWallets.reduce((acc, w) => acc + Number(w.balance), 0);
-
-  // 3. Obtener transacciones (con categorías)
-  const { data: transactions } = await supabase
-    .from('transactions')
-    .select('*, categories(*)')
-    .eq('user_id', user.id);
-
-  const validTransactions = (transactions as any[]) || [];
-
-  // Calcular sumatorios
-  // Facturas de ingreso (nómina y emitidas)
+  const totalWalletsBalance = validWallets.reduce((acc, wallet) => acc + Number(wallet.balance), 0);
   const invoicesIncome = validInvoices
-    .filter(inv => inv.invoice_type === 'nomina' || inv.invoice_type === 'ingreso')
-    .reduce((acc, inv) => acc + Number(inv.total), 0);
-
-  // Facturas de egreso (gastos)
+    .filter((invoice) => invoice.invoice_type === "nomina" || invoice.invoice_type === "ingreso")
+    .reduce((acc, invoice) => acc + Number(invoice.total), 0);
   const invoicesExpense = validInvoices
-    .filter(inv => inv.invoice_type === 'egreso')
-    .reduce((acc, inv) => acc + Number(inv.total), 0);
-
-  const invoicesIva = validInvoices
-    .filter(inv => inv.invoice_type === 'egreso')
-    .reduce((acc, inv) => acc + Number(inv.iva), 0);
-
-  // Transacciones manuales de ingreso (no vinculadas a facturas)
+    .filter((invoice) => invoice.invoice_type === "egreso")
+    .reduce((acc, invoice) => acc + Number(invoice.total), 0);
   const manualIncome = validTransactions
-    .filter(tx => tx.type === 'income' && !tx.invoice_id)
-    .reduce((acc, tx) => acc + Number(tx.amount), 0);
-
-  // Transacciones manuales de gasto (no vinculadas a facturas, ej. efectivo)
+    .filter((transaction) => transaction.type === "income" && !transaction.invoice_id)
+    .reduce((acc, transaction) => acc + Number(transaction.amount), 0);
   const manualExpense = validTransactions
-    .filter(tx => tx.type === 'expense' && !tx.invoice_id)
-    .reduce((acc, tx) => acc + Number(tx.amount), 0);
+    .filter((transaction) => transaction.type === "expense" && !transaction.invoice_id)
+    .reduce((acc, transaction) => acc + Number(transaction.amount), 0);
 
-  // Totales consolidados
   const totalIngreso = invoicesIncome + manualIncome;
   const totalGasto = invoicesExpense + manualExpense;
-  const facturasCount = validInvoices.filter(inv => inv.invoice_type === 'egreso').length;
+  const balance = totalIngreso - totalGasto + totalWalletsBalance;
+  const latestTransactions = validInvoices.filter((invoice) => invoice.invoice_type === "egreso").slice(0, 5);
 
-  const KPICards = [
-    { 
-      title: 'Ingresos Totales (Nómina / Efectivo)', 
-      amount: `$${totalIngreso.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 
+  const kpiCards: KpiCard[] = [
+    {
+      title: "Ingresos consolidados",
+      value: currency.format(totalIngreso),
+      helper: "Nómina, facturas emitidas y efectivo",
       icon: ArrowUpRight,
-      color: 'text-emerald-500',
-      bg: 'bg-emerald-500/10'
+      tone: "text-emerald-600 bg-emerald-500/10 dark:text-emerald-400",
     },
-    { 
-      title: 'Gastos Totales (Facturas / Efectivo)', 
-      amount: `$${totalGasto.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 
-      icon: DollarSign,
-      color: 'text-brand-cerulean',
-      bg: 'bg-brand-cerulean/10'
+    {
+      title: "Gastos registrados",
+      value: currency.format(totalGasto),
+      helper: "Facturas XML y movimientos manuales",
+      icon: ArrowDownRight,
+      tone: "text-brand-cerulean bg-brand-cerulean/10",
     },
-    { 
-      title: 'Disponible en Carteras', 
-      amount: `$${totalWalletsBalance.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 
+    {
+      title: "Saldo en carteras",
+      value: currency.format(totalWalletsBalance),
+      helper: `${validWallets.length} cartera${validWallets.length === 1 ? "" : "s"} activa${validWallets.length === 1 ? "" : "s"}`,
       icon: Wallet,
-      color: 'text-purple-500',
-      bg: 'bg-purple-500/10'
+      tone: "text-amber-600 bg-amber-500/10 dark:text-amber-400",
     },
   ];
 
-  // Tomar los últimos 5 gastos de facturas
-  const latestTransactions = validInvoices
-    .filter(inv => inv.invoice_type === 'egreso')
-    .slice(0, 5);
-
-  // Agrupar por categoría para la Dona (XML + Efectivo)
   const categoryTotals: Record<string, { value: number; color: string }> = {};
-  
-  // Agregar gastos XML
-  validInvoices.filter(inv => inv.invoice_type === 'egreso').forEach(inv => {
-    const catName = inv.categories?.name || 'Otros';
-    const catColor = inv.categories?.color || 'bg-gray-300 dark:bg-zinc-700';
-    
-    if (!categoryTotals[catName]) {
-      categoryTotals[catName] = { value: 0, color: catColor };
-    }
-    categoryTotals[catName].value += Number(inv.total);
-  });
 
-  // Agregar gastos en efectivo / manuales
-  validTransactions.filter(tx => tx.type === 'expense' && !tx.invoice_id).forEach(tx => {
-    const catName = tx.categories?.name || 'Otros';
-    const catColor = tx.categories?.color || 'bg-gray-300 dark:bg-zinc-700';
-    
-    if (!categoryTotals[catName]) {
-      categoryTotals[catName] = { value: 0, color: catColor };
-    }
-    categoryTotals[catName].value += Number(tx.amount);
-  });
+  validInvoices
+    .filter((invoice) => invoice.invoice_type === "egreso")
+    .forEach((invoice) => {
+      const category = invoice.categories?.name || "Otros";
+      const color = invoice.categories?.color || "bg-slate-400";
+      categoryTotals[category] ??= { value: 0, color };
+      categoryTotals[category].value += Number(invoice.total);
+    });
 
-  const donutData = Object.entries(categoryTotals)
+  validTransactions
+    .filter((transaction) => transaction.type === "expense" && !transaction.invoice_id)
+    .forEach((transaction) => {
+      const category = transaction.categories?.name || "Otros";
+      const color = transaction.categories?.color || "bg-slate-400";
+      categoryTotals[category] ??= { value: 0, color };
+      categoryTotals[category].value += Number(transaction.amount);
+    });
+
+  const categoryData = Object.entries(categoryTotals)
     .map(([label, data]) => ({
       label,
       value: data.value,
-      percentage: totalGasto > 0 ? Math.round((data.value / totalGasto) * 100) + '%' : '0%',
-      color: data.color
+      percentage: totalGasto > 0 ? Math.round((data.value / totalGasto) * 100) : 0,
+      color: data.color,
     }))
     .sort((a, b) => b.value - a.value)
-    .slice(0, 4);
+    .slice(0, 5);
 
-  if (donutData.length === 0) {
-    donutData.push({ label: 'Sin Datos', value: 0, percentage: '0%', color: 'bg-gray-200 dark:bg-zinc-800' });
-  }
-
-  // Agrupar por día de la semana para la tendencia (Gastos XML + Efectivo)
   const weekDays = [0, 0, 0, 0, 0, 0, 0];
-  
-  validInvoices.filter(inv => inv.invoice_type === 'egreso').forEach(inv => {
-    const d = new Date(inv.fecha);
-    const day = d.getDay();
-    const shiftedDay = day === 0 ? 6 : day - 1; // Lunes = 0, Domingo = 6
-    weekDays[shiftedDay] += Number(inv.total);
-  });
+  const addToWeekday = (dateValue: string, amount: number) => {
+    const day = new Date(dateValue).getDay();
+    weekDays[day === 0 ? 6 : day - 1] += amount;
+  };
 
-  validTransactions.filter(tx => tx.type === 'expense' && !tx.invoice_id).forEach(tx => {
-    const d = new Date(tx.date);
-    const day = d.getDay();
-    const shiftedDay = day === 0 ? 6 : day - 1; // Lunes = 0, Domingo = 6
-    weekDays[shiftedDay] += Number(tx.amount);
-  });
+  validInvoices
+    .filter((invoice) => invoice.invoice_type === "egreso")
+    .forEach((invoice) => addToWeekday(invoice.fecha || new Date().toISOString(), Number(invoice.total)));
+  validTransactions
+    .filter((transaction) => transaction.type === "expense" && !transaction.invoice_id)
+    .forEach((transaction) => addToWeekday(transaction.date || new Date().toISOString(), Number(transaction.amount)));
 
   const maxDay = Math.max(...weekDays, 1);
-  const trendHeights = weekDays.map(val => (val / maxDay) * 100);
+  const trendHeights = weekDays.map((value) => Math.max((value / maxDay) * 100, value > 0 ? 8 : 2));
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
-        <div>
-          <h2 className="text-2xl font-bold text-brand-carbon dark:text-white tracking-tight">Resumen Financiero</h2>
-          <p className="text-sm text-brand-graphite dark:text-zinc-400 mt-1">Tu panorama de gastos y carteras consolidado en tiempo real.</p>
+      <section className="surface-card rounded-lg p-5 md:p-6">
+        <div className="grid gap-5 lg:grid-cols-[1.4fr_0.9fr] lg:items-center">
+          <div>
+            <p className="text-xs font-semibold uppercase text-brand-cerulean">Resumen en vivo</p>
+            <h2 className="mt-2 text-2xl font-semibold text-slate-950 dark:text-white md:text-3xl">
+              Panorama financiero
+            </h2>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600 dark:text-slate-400">
+              Ingresos, gastos, carteras y facturas consolidados para tomar decisiones rápidas sin revisar cada XML por separado.
+            </p>
+          </div>
+          <div className="rounded-lg border border-slate-200 bg-white p-4 dark:border-white/10 dark:bg-white/5">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-sm text-slate-500 dark:text-slate-400">Balance operativo</p>
+                <p className="mt-1 text-2xl font-semibold text-slate-950 dark:text-white">{currency.format(balance)}</p>
+              </div>
+              <div className="grid h-12 w-12 place-items-center rounded-lg bg-brand-cerulean/10 text-brand-cerulean">
+                <DollarSign className="h-6 w-6" />
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
- 
-      {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {KPICards.map((kpi, i) => {
+      </section>
+
+      <section className="grid grid-cols-1 gap-4 md:grid-cols-3">
+        {kpiCards.map((kpi) => {
           const Icon = kpi.icon;
           return (
-            <div key={i} className="bg-brand-white dark:bg-brand-graphite border border-gray-200 dark:border-zinc-800 rounded-xl p-5 relative overflow-hidden group hover:border-gray-300 dark:hover:border-zinc-700 transition-colors shadow-sm">
-              <div className="flex justify-between items-start mb-4">
-                <div className={`p-2.5 rounded-lg ${kpi.bg}`}>
-                  <Icon className={`w-5 h-5 ${kpi.color}`} />
+            <div key={kpi.title} className="surface-card rounded-lg p-5 transition hover:-translate-y-0.5">
+              <div className="flex items-start justify-between gap-4">
+                <div className={`grid h-11 w-11 place-items-center rounded-lg ${kpi.tone}`}>
+                  <Icon className="h-5 w-5" />
                 </div>
+                <Receipt className="h-4 w-4 text-slate-400" />
               </div>
-              
-              <div>
-                <p className="text-sm text-brand-graphite dark:text-zinc-400 font-medium mb-1">{kpi.title}</p>
-                <h3 className="text-2xl font-bold text-brand-carbon dark:text-white tracking-tight">{kpi.amount}</h3>
-              </div>
-
-              {/* Decorative gradient blur */}
-              <div className="absolute -bottom-6 -right-6 w-24 h-24 bg-gradient-to-br from-transparent to-brand-cerulean opacity-0 group-hover:opacity-10 dark:group-hover:opacity-20 blur-2xl transition-opacity duration-500" />
+              <p className="mt-5 text-sm font-medium text-slate-500 dark:text-slate-400">{kpi.title}</p>
+              <p className="mt-1 text-2xl font-semibold text-slate-950 dark:text-white">{kpi.value}</p>
+              <p className="mt-2 text-xs text-slate-500 dark:text-slate-500">{kpi.helper}</p>
             </div>
           );
         })}
-      </div>
+      </section>
 
-      {/* Charts Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {/* Weekly Trend Line Chart */}
-        <div className="bg-brand-white dark:bg-brand-graphite border border-gray-200 dark:border-zinc-800 rounded-xl p-6 shadow-sm">
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-base font-semibold text-brand-carbon dark:text-white">Tendencia Semanal de Gastos</h3>
-            <TrendingUp className="w-4 h-4 text-brand-graphite dark:text-zinc-500" />
+      <section className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <div className="surface-card rounded-lg p-5 md:p-6">
+          <div className="mb-6 flex items-center justify-between">
+            <div>
+              <h3 className="text-base font-semibold text-slate-950 dark:text-white">Tendencia semanal</h3>
+              <p className="text-sm text-slate-500 dark:text-slate-400">Gasto por día</p>
+            </div>
+            <TrendingUp className="h-5 w-5 text-brand-cerulean" />
           </div>
-          <div className="h-48 flex items-end justify-between gap-2">
-            {trendHeights.map((height, i) => (
-              <div key={i} className="w-full h-full relative group flex items-end">
-                <div 
-                  className="w-full bg-gradient-to-t from-brand-cerulean/30 to-brand-cerulean/80 rounded-t-sm transition-all duration-300 group-hover:from-brand-cerulean/50 group-hover:to-brand-cerulean"
-                  style={{ height: `${height}%` }}
-                >
-                  <div className="opacity-0 group-hover:opacity-100 absolute -top-8 left-1/2 -translate-x-1/2 bg-brand-carbon text-xs text-white px-2 py-1 rounded shadow-lg transition-opacity whitespace-nowrap z-10">
-                    ${weekDays[i].toLocaleString('es-MX', { maximumFractionDigits: 0 })}
-                  </div>
+          <div className="flex h-52 items-end justify-between gap-2">
+            {trendHeights.map((height, index) => (
+              <div key={index} className="group flex h-full w-full items-end">
+                <div className="relative w-full rounded-t-md bg-brand-cerulean/75 transition group-hover:bg-brand-cerulean" style={{ height: `${height}%` }}>
+                  <span className="absolute -top-8 left-1/2 hidden -translate-x-1/2 rounded-md bg-slate-950 px-2 py-1 text-xs font-medium text-white shadow-lg group-hover:block">
+                    {currency.format(weekDays[index])}
+                  </span>
                 </div>
               </div>
             ))}
           </div>
-          <div className="flex justify-between mt-3 text-xs text-brand-graphite dark:text-zinc-500 font-medium">
-            <span>Lun</span><span>Mar</span><span>Mie</span><span>Jue</span><span>Vie</span><span>Sab</span><span>Dom</span>
+          <div className="mt-3 flex justify-between text-xs font-medium text-slate-500 dark:text-slate-500">
+            <span>Lun</span><span>Mar</span><span>Mié</span><span>Jue</span><span>Vie</span><span>Sáb</span><span>Dom</span>
           </div>
         </div>
 
-        {/* Expense Distribution Donut Chart */}
-        <div className="bg-brand-white dark:bg-brand-graphite border border-gray-200 dark:border-zinc-800 rounded-xl p-6 shadow-sm">
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-base font-semibold text-brand-carbon dark:text-white">Distribución de Gastos</h3>
-            <PieChart className="w-4 h-4 text-brand-graphite dark:text-zinc-500" />
-          </div>
-          
-          <div className="flex flex-col sm:flex-row items-center justify-center sm:justify-between gap-6 min-h-[12rem] py-2">
-            <div className="relative w-32 h-32 flex-shrink-0">
-              <div className="absolute inset-0 rounded-full border-[12px] border-transparent border-t-brand-cerulean border-r-blue-400 border-b-emerald-500 border-l-gray-300 dark:border-l-zinc-700 transform rotate-45" />
-              <div className="absolute inset-0 flex items-center justify-center flex-col">
-                <span className="text-xs text-brand-graphite dark:text-zinc-500">Total</span>
-                <span className="text-sm font-bold text-brand-carbon dark:text-white">
-                  ${(totalGasto / 1000).toFixed(1)}k
-                </span>
-              </div>
+        <div className="surface-card rounded-lg p-5 md:p-6">
+          <div className="mb-6 flex items-center justify-between">
+            <div>
+              <h3 className="text-base font-semibold text-slate-950 dark:text-white">Gastos por categoría</h3>
+              <p className="text-sm text-slate-500 dark:text-slate-400">Top de consumo consolidado</p>
             </div>
+            <PieChart className="h-5 w-5 text-brand-cerulean" />
+          </div>
 
-            <div className="flex-1 w-full sm:ml-8 space-y-3">
-              {donutData.map((item, i) => (
-                <div key={i} className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                     <div className={`w-2 h-2 rounded-full ${item.color}`} />
-                    <span className="text-sm text-brand-carbon dark:text-zinc-300 truncate max-w-[150px]">{item.label}</span>
+          {categoryData.length > 0 ? (
+            <div className="space-y-4">
+              {categoryData.map((item) => (
+                <div key={item.label}>
+                  <div className="mb-2 flex items-center justify-between gap-3 text-sm">
+                    <div className="flex min-w-0 items-center gap-2">
+                      <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${item.color}`} />
+                      <span className="truncate font-medium text-slate-700 dark:text-slate-200">{item.label}</span>
+                    </div>
+                    <span className="shrink-0 font-semibold text-slate-950 dark:text-white">{item.percentage}%</span>
                   </div>
-                  <span className="text-sm font-medium text-brand-carbon dark:text-white">{item.percentage}</span>
+                  <div className="h-2 overflow-hidden rounded-full bg-slate-200 dark:bg-white/10">
+                    <div className="h-full rounded-full bg-brand-cerulean" style={{ width: `${Math.max(item.percentage, 3)}%` }} />
+                  </div>
                 </div>
               ))}
             </div>
+          ) : (
+            <div className="grid min-h-48 place-items-center rounded-lg border border-dashed border-slate-300 text-center dark:border-white/10">
+              <div>
+                <p className="font-semibold text-slate-900 dark:text-white">Aún no hay gastos</p>
+                <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Carga XML o registra movimientos para ver el desglose.</p>
+              </div>
+            </div>
+          )}
+        </div>
+      </section>
+
+      <section className="surface-card rounded-lg p-5 md:p-6">
+        <div className="mb-5 flex items-center justify-between gap-3">
+          <div>
+            <h3 className="text-base font-semibold text-slate-950 dark:text-white">Últimos gastos de facturas</h3>
+            <p className="text-sm text-slate-500 dark:text-slate-400">Los XML de egreso más recientes.</p>
           </div>
         </div>
-      </div>
-
-      {/* Recent Transactions Table */}
-      <div className="lg:col-span-2 bg-brand-white dark:bg-brand-graphite border border-gray-200 dark:border-zinc-800 rounded-xl p-6 shadow-sm">
-        <div className="flex items-center justify-between mb-6">
-          <h3 className="text-base font-semibold text-brand-carbon dark:text-white">Últimos Gastos de Facturas (XML)</h3>
-        </div>
-        
-        <div className="mx--6">
-          <InvoiceTable invoices={latestTransactions} compact={true} />
-        </div>
-      </div>
+        <InvoiceTable invoices={latestTransactions} compact />
+      </section>
     </div>
   );
 }
+
+
+

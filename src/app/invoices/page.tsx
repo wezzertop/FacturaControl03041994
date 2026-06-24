@@ -1,47 +1,49 @@
-import React from 'react';
-import { createClient } from '@/utils/supabase/server';
-import { AlertCircle } from 'lucide-react';
-import InvoiceTable from '@/components/invoices/InvoiceTable';
-import ExportCSVButton from '@/components/invoices/ExportCSVButton';
+﻿import React from "react";
+import { createClient } from "@/utils/supabase/server";
+import { AlertCircle } from "lucide-react";
+import InvoiceTable, { type InvoiceTableRow } from "@/components/invoices/InvoiceTable";
+import ExportCSVButton from "@/components/invoices/ExportCSVButton";
+import PageShell from "@/components/layout/PageShell";
 
 export default async function InvoicesPage() {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
   if (!user) {
-    return <div>No autenticado</div>;
+    return <div className="p-8 text-center text-sm text-slate-500">No autenticado</div>;
   }
 
   const { data: invoices, error } = await supabase
-    .from('invoices')
+    .from("invoices")
     .select(`
       *,
       categories (name, color, icon)
     `)
-    .eq('user_id', user.id)
-    .order('fecha', { ascending: false });
+    .eq("user_id", user.id)
+    .order("fecha", { ascending: false });
+
+  const validInvoices = (invoices || []) as InvoiceTableRow[];
 
   return (
-    <div className="w-full max-w-6xl mx-auto space-y-6 p-4 sm:p-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
-        <div>
-          <h2 className="text-2xl font-bold text-brand-carbon dark:text-white tracking-tight">Historial de Facturas</h2>
-          <p className="text-sm text-brand-graphite dark:text-zinc-400 mt-1">
-            Revisa todos los comprobantes CFDI procesados y clasificados. Haz clic en una factura para ver el ticket detallado.
-          </p>
-        </div>
-        <ExportCSVButton invoices={(invoices as any[]) || []} />
-      </div>
-
+    <PageShell
+      eyebrow="CFDI"
+      title="Historial de facturas"
+      description="Revisa comprobantes procesados, categorías, montos y detalle de cada ticket fiscal."
+      actions={<ExportCSVButton invoices={validInvoices} />}
+    >
       {error ? (
-        <div className="bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 p-4 rounded-xl flex items-center gap-3">
-          <AlertCircle className="w-5 h-5" />
-          <p className="text-sm font-medium">Error al cargar el historial. Por favor, intenta de nuevo.</p>
+        <div className="rounded-lg border border-rose-200 bg-rose-50 p-4 text-rose-700 dark:border-rose-900/40 dark:bg-rose-950/20 dark:text-rose-300">
+          <div className="flex items-center gap-3">
+            <AlertCircle className="h-5 w-5" />
+            <p className="text-sm font-medium">Error al cargar el historial. Por favor, intenta de nuevo.</p>
+          </div>
         </div>
       ) : (
-        <InvoiceTable invoices={(invoices as any[]) || []} />
+        <InvoiceTable invoices={validInvoices} />
       )}
-    </div>
+    </PageShell>
   );
 }
+

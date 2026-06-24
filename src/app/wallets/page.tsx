@@ -1,43 +1,33 @@
-import React from 'react';
-import { createClient } from '@/utils/supabase/server';
-import { getWallets, getTransactions, getUnlinkedInvoices } from '@/app/actions/wallets';
-import { getCategories } from '@/app/actions/categories';
-import WalletsManager from './WalletsManager';
+﻿import React from "react";
+import { createClient } from "@/utils/supabase/server";
+import { getWallets, getTransactions, getUnlinkedInvoices } from "@/app/actions/wallets";
+import { getCategories } from "@/app/actions/categories";
+import PageShell from "@/components/layout/PageShell";
+import WalletsManager from "./WalletsManager";
 
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 
 export default async function WalletsPage() {
-  const supabase = await createClient();
-  
-  // 1. Obtener carteras
-  const wallets = await getWallets();
-
-  // 2. Obtener transacciones
-  const transactions = await getTransactions();
-
-  // 3. Obtener facturas no vinculadas
-  const unlinkedInvoices = await getUnlinkedInvoices();
-
-  // 4. Obtener todas las categorías para transacciones manuales (globales + personalizadas)
-  const categories = await getCategories();
+  await createClient();
+  const [wallets, transactions, unlinkedInvoices, categories] = await Promise.all([
+    getWallets(),
+    getTransactions(),
+    getUnlinkedInvoices(),
+    getCategories(),
+  ]);
 
   return (
-    <div className="w-full max-w-6xl mx-auto p-4 md:p-8 space-y-8 pb-24 md:pb-8">
-      <div>
-        <h1 className="text-2xl md:text-3xl font-extrabold text-brand-carbon dark:text-white tracking-tight">
-          Mis Carteras y Efectivo
-        </h1>
-        <p className="text-sm text-brand-graphite dark:text-zinc-400 mt-1">
-          Controla tus cuentas bancarias, consolida tu nómina y registra tus gastos diarios en efectivo.
-        </p>
-      </div>
-
-      <WalletsManager 
+    <PageShell
+      eyebrow="Cuentas y efectivo"
+      title="Mis carteras"
+      description="Controla cuentas bancarias, consolida nómina y registra gastos diarios en efectivo."
+    >
+      <WalletsManager
         initialWallets={wallets}
         initialTransactions={transactions}
         initialUnlinkedInvoices={unlinkedInvoices}
         categories={categories || []}
       />
-    </div>
+    </PageShell>
   );
 }

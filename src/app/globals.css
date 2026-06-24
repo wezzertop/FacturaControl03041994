@@ -1,13 +1,17 @@
-@import "tailwindcss";
+﻿@import "tailwindcss";
 
 @custom-variant dark (&:is(.dark *));
 
 @theme {
   --color-brand-white: #FFFFFF;
-  --color-brand-smoke: #F4F4F4;
+  --color-brand-smoke: #F6F8FB;
   --color-brand-cerulean: #007EA7;
-  --color-brand-graphite: #18181b; /* Más oscuro para un mejor contraste en modo oscuro */
-  --color-brand-carbon: #09090b;   /* Casi negro, fondo perfecto para modo oscuro */
+  --color-brand-graphite: #1F2937;
+  --color-brand-carbon: #0B1220;
+  --color-brand-ink: #111827;
+  --color-brand-mint: #10B981;
+  --color-brand-amber: #F59E0B;
+  --color-brand-rose: #F43F5E;
 }
 
 :root {
@@ -31,6 +35,62 @@ body {
   background-color: var(--background);
   color: var(--foreground);
   font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+  text-rendering: optimizeLegibility;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    linear-gradient(135deg, rgba(0, 126, 167, 0.08), transparent 34%),
+    linear-gradient(180deg, rgba(16, 185, 129, 0.06), transparent 42%),
+    radial-gradient(circle at 1px 1px, rgba(15, 23, 42, 0.08) 1px, transparent 0);
+  background-size: auto, auto, 28px 28px;
+}
+
+.dark body::before {
+  background:
+    linear-gradient(135deg, rgba(0, 126, 167, 0.14), transparent 32%),
+    linear-gradient(180deg, rgba(16, 185, 129, 0.08), transparent 40%),
+    radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.08) 1px, transparent 0);
+  background-size: auto, auto, 30px 30px;
+}
+
+::selection {
+  background: rgba(0, 126, 167, 0.2);
+}
+
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(100, 116, 139, 0.45) transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  height: 10px;
+  width: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(100, 116, 139, 0.35);
+  border: 3px solid transparent;
+  border-radius: 999px;
+  background-clip: content-box;
+}
+
+.surface-card {
+  background: rgba(255, 255, 255, 0.86);
+  border: 1px solid rgba(203, 213, 225, 0.78);
+  box-shadow: 0 18px 55px -36px rgba(15, 23, 42, 0.55);
+  backdrop-filter: blur(16px);
+}
+
+.dark .surface-card {
+  background: rgba(24, 24, 27, 0.76);
+  border-color: rgba(63, 63, 70, 0.78);
+  box-shadow: 0 22px 65px -38px rgba(0, 0, 0, 0.8);
 }
 
 @keyframes slideUp {
@@ -45,4 +105,3 @@ body {
 .animate-slide-up {
   animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
-

@@ -39,7 +39,12 @@ export async function getWallets() {
 /**
  * Crea una nueva cartera.
  */
-export async function createWallet(name: string, initialBalance: number = 0) {
+export async function createWallet(
+  name: string, 
+  type: 'cash' | 'debit' | 'credit' = 'debit', 
+  initialBalance: number = 0, 
+  creditLimit: number = 0
+) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
@@ -47,33 +52,45 @@ export async function createWallet(name: string, initialBalance: number = 0) {
     return { success: false, error: 'Usuario no autenticado' };
   }
 
+  // Para tarjeta de crédito, el balance inicial representa deuda. 
+  // Si ingresan saldo positivo de deuda, lo registramos como negativo (balance real).
+  const actualBalance = type === 'credit' ? -Math.abs(initialBalance) : initialBalance;
+
   // 1. Insertar cartera
-  const { data: wallet, error } = await supabase
+  const { data: wallet, error } = await (supabase
     .from('wallets')
     .insert({
       user_id: user.id,
       name,
       balance: 0.00, // Se inicializa en 0 y se actualiza mediante transacción
-      currency: 'MXN'
+      currency: 'MXN',
+      type,
+      credit_limit: type === 'credit' ? creditLimit : 0.00
     } as any)
-    .select()
+    .select() as any)
     .single();
 
   if (error) {
     console.error('Error al crear cartera:', error);
-    return { success: false, error: 'Error al crear la cartera' };
+    return { success: false, error: 'Error al crear la cartera. Asegúrate de ejecutar la migración SQL.' };
   }
 
-  // 2. Si hay saldo inicial, insertar una transacción de ingreso
-  if (initialBalance > 0) {
+  // 2. Si hay saldo inicial (positivo o negativo), insertar una transacción de ajuste
+  if (initialBalance !== 0) {
+    const isCredit = type === 'credit';
+    // Si es crédito y tiene saldo inicial (ej. debe $5000), es un gasto (expense).
+    // Si es débito/efectivo y es positivo, es ingreso (income).
+    const txType = isCredit ? 'expense' : (initialBalance > 0 ? 'income' : 'expense');
+    const amount = Math.abs(initialBalance);
+
     const { error: txError } = await supabase
       .from('transactions')
       .insert({
         user_id: user.id,
         wallet_id: (wallet as any).id,
-        type: 'income',
-        amount: initialBalance,
-        concept: 'Saldo inicial',
+        type: txType,
+        amount,
+        concept: isCredit ? 'Deuda inicial' : 'Saldo inicial',
         date: new Date().toISOString()
       } as any);
 
@@ -88,6 +105,84 @@ export async function createWallet(name: string, initialBalance: number = 0) {
   revalidatePath('/wallets');
   revalidatePath('/');
   return { success: true, wallet: wallet as any };
+}
+
+/**
+ * Actualiza una cartera existente.
+ * Permite cambiar el nombre, tipo, límite de crédito y ajustar el balance de forma profesional.
+ */
+export async function updateWallet(
+  walletId: string, 
+  name: string, 
+  type: 'cash' | 'debit' | 'credit', 
+  creditLimit: number, 
+  newBalance: number
+) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { success: false, error: 'Usuario no autenticado' };
+  }
+
+  // 1. Obtener el saldo actual de la cartera para calcular la diferencia de ajuste
+  const { data: currentWallet, error: fetchError } = await supabase
+    .from('wallets')
+    .select('balance')
+    .eq('id', walletId)
+    .eq('user_id', user.id)
+    .single();
+
+  if (fetchError || !currentWallet) {
+    console.error('Error al obtener la cartera para actualizar:', fetchError);
+    return { success: false, error: 'No se encontró la cartera especificada' };
+  }
+
+  const currentBal = Number((currentWallet as any).balance);
+  const diff = newBalance - currentBal;
+
+  // 2. Si hay diferencia, creamos una transacción de ajuste para conciliar el saldo de forma profesional
+  if (diff !== 0) {
+    const txType = diff > 0 ? 'income' : 'expense';
+    const amount = Math.abs(diff);
+
+    const { error: txError } = await supabase
+      .from('transactions')
+      .insert({
+        user_id: user.id,
+        wallet_id: walletId,
+        type: txType,
+        amount,
+        concept: 'Ajuste de saldo manual',
+        date: new Date().toISOString()
+      } as any);
+
+    if (txError) {
+      console.error('Error al registrar transacción de ajuste:', txError);
+      return { success: false, error: 'No se pudo ajustar el saldo' };
+    }
+  }
+
+  // 3. Actualizar los campos de la cartera (el saldo se actualiza automáticamente por el trigger si hubo transacción)
+  const { data: updatedWallet, error: updateError } = await (supabase.from('wallets') as any)
+    .update({
+      name,
+      type,
+      credit_limit: type === 'credit' ? creditLimit : 0.00
+    })
+    .eq('id', walletId)
+    .eq('user_id', user.id)
+    .select()
+    .single();
+
+  if (updateError) {
+    console.error('Error al actualizar la cartera:', updateError);
+    return { success: false, error: 'Error al guardar los cambios de la cartera' };
+  }
+
+  revalidatePath('/wallets');
+  revalidatePath('/');
+  return { success: true, wallet: updatedWallet as any };
 }
 
 /**
