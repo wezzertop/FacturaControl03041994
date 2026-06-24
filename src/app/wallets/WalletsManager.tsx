@@ -11,7 +11,7 @@ import {
 import { createWorker } from 'tesseract.js';
 import { 
   createWallet, updateWallet, deleteWallet, createTransaction, 
-  deleteTransaction, linkInvoiceToWallet, getVoucherUrl 
+  deleteTransaction, linkInvoiceToWallet, getVoucherUrl, updateWalletStatement 
 } from '@/app/actions/wallets';
 import { createCategory } from '@/app/actions/categories';
 
@@ -39,6 +39,127 @@ const ColorPalette = [
   { class: 'bg-purple-500', name: 'Púrpura' },
   { class: 'bg-gray-400', name: 'Gris' },
 ];
+
+interface CCCutoffSummary {
+  lastCutOffDate: Date;
+  nextCutOffDate: Date;
+  dueDate: Date;
+  activeMsiList: Array<{ concept: string; amount: number; current: number; total: number }>;
+  msiTotal: number;
+  contadoTotal: number;
+  contadoList: Array<{ concept: string; amount: number; date: string }>;
+  paymentsTotal: number;
+}
+
+function getCCStatementSummary(wallet: any, transactions: any[]): CCCutoffSummary {
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const currentMonth = now.getMonth();
+
+  const cutOffDay = wallet.cut_off_day || 15;
+  const dueDay = wallet.due_day || 5;
+
+  // 1. Calcular fechas de corte
+  let nextCutOffDate = new Date(currentYear, currentMonth, cutOffDay, 23, 59, 59);
+  let lastCutOffDate = new Date(currentYear, currentMonth - 1, cutOffDay, 23, 59, 59);
+
+  if (now > nextCutOffDate) {
+    lastCutOffDate = nextCutOffDate;
+    nextCutOffDate = new Date(currentYear, currentMonth + 1, cutOffDay, 23, 59, 59);
+  }
+
+  // Fecha de corte previa a lastCutOffDate (1 mes antes)
+  const prevToLastCutOffDate = new Date(lastCutOffDate.getFullYear(), lastCutOffDate.getMonth() - 1, cutOffDay, 23, 59, 59);
+
+  // Fecha limite de pago correspondiente a lastCutOffDate
+  let dueMonth = lastCutOffDate.getMonth() + 1;
+  let dueYear = lastCutOffDate.getFullYear();
+  if (dueMonth > 11) {
+    dueMonth = 0;
+    dueYear += 1;
+  }
+  const dueDate = new Date(dueYear, dueMonth, dueDay, 23, 59, 59);
+
+  // Helper para ver en qué corte cae una fecha
+  const getFirstCutOffAfter = (dateStr: string, cutDay: number): Date => {
+    const d = new Date(dateStr);
+    const y = d.getFullYear();
+    const m = d.getMonth();
+    let cut = new Date(y, m, cutDay, 23, 59, 59);
+    if (d > cut) {
+      cut = new Date(y, m + 1, cutDay, 23, 59, 59);
+    }
+    return cut;
+  };
+
+  const activeMsiList: Array<{ concept: string; amount: number; current: number; total: number }> = [];
+  let msiTotal = 0;
+  
+  const contadoList: Array<{ concept: string; amount: number; date: string }> = [];
+  let contadoTotal = 0;
+
+  let paymentsTotal = 0;
+
+  // Filtrar transacciones de esta cartera
+  const ccTx = transactions.filter(t => t.wallet_id === wallet.id);
+
+  ccTx.forEach(tx => {
+    const txDate = new Date(tx.date);
+    const amount = Number(tx.amount);
+
+    if (tx.type === 'income') {
+      // Los abonos hechos después del último corte cuentan para liquidar ese corte
+      if (txDate > lastCutOffDate) {
+        paymentsTotal += amount;
+      }
+    } else if (tx.type === 'expense') {
+      if (tx.installments_count) {
+        // Compra a meses (MSI)
+        const N = tx.installments_count;
+        const monthlyAmount = amount / N;
+        const firstCutOff = getFirstCutOffAfter(tx.date, cutOffDay);
+
+        // Generar las fechas de corte para cada una de las N mensualidades
+        for (let k = 0; k < N; k++) {
+          const installmentCutOff = new Date(firstCutOff.getFullYear(), firstCutOff.getMonth() + k, cutOffDay, 23, 59, 59);
+          
+          // Queremos ver si esta mensualidad cae en el corte de lastCutOffDate
+          if (installmentCutOff.toDateString() === lastCutOffDate.toDateString()) {
+            activeMsiList.push({
+              concept: tx.concept,
+              amount: monthlyAmount,
+              current: k + 1,
+              total: N
+            });
+            msiTotal += monthlyAmount;
+          }
+        }
+      } else {
+        // Compra de contado (pago único)
+        // Cae en el corte si su fecha es después de prevToLastCutOff y antes/igual a lastCutOff
+        if (txDate > prevToLastCutOffDate && txDate <= lastCutOffDate) {
+          contadoList.push({
+            concept: tx.concept,
+            amount,
+            date: tx.date
+          });
+          contadoTotal += amount;
+        }
+      }
+    }
+  });
+
+  return {
+    lastCutOffDate,
+    nextCutOffDate,
+    dueDate,
+    activeMsiList,
+    msiTotal,
+    contadoTotal,
+    contadoList,
+    paymentsTotal
+  };
+}
 
 interface WalletsManagerProps {
   initialWallets: any[];
@@ -98,6 +219,17 @@ export default function WalletsManager({
   const [editingWallet, setEditingWallet] = useState<any | null>(null);
   const [walletType, setWalletType] = useState<'cash' | 'debit' | 'credit'>('debit');
   const [creditLimit, setCreditLimit] = useState('');
+  const [cutOffDay, setCutOffDay] = useState('');
+  const [dueDay, setDueDay] = useState('');
+  const [statementPaymentDue, setStatementPaymentDue] = useState('');
+
+  // Estados de MSI (installments) en transacciones
+  const [isInstallments, setIsInstallments] = useState(false);
+  const [installmentsCount, setInstallmentsCount] = useState('12');
+
+  // Estado para la edición inline del pago de corte
+  const [editingStatementId, setEditingStatementId] = useState<string | null>(null);
+  const [tempStatementPayment, setTempStatementPayment] = useState('');
 
   const [txWalletId, setTxWalletId] = useState('');
   const [txType, setTxType] = useState<'income' | 'expense'>('expense');
@@ -127,6 +259,27 @@ export default function WalletsManager({
 
   // Re-calcular balances locales y totales
   const totalBalance = wallets.reduce((acc, w) => acc + Number(w.balance), 0);
+
+  // Obtener resumen de corte si la cartera filtrada es tarjeta de crédito
+  const activeWallet = activeWalletFilter ? wallets.find(w => w.id === activeWalletFilter) : null;
+  const isCreditActive = activeWallet?.type === 'credit';
+  
+  // Calcular resumen si aplica
+  const ccSummary = isCreditActive && activeWallet ? getCCStatementSummary(activeWallet, transactions) : null;
+
+  // Lógica para guardar la edición inline del pago de corte
+  const handleSaveStatementPayment = (walletId: string) => {
+    const val = parseFloat(tempStatementPayment) || 0;
+    startTransition(async () => {
+      const res = await updateWalletStatement(walletId, val);
+      if (res.success) {
+        setWallets(prev => prev.map(w => w.id === walletId ? { ...w, statement_payment_due: val } : w));
+        setEditingStatementId(null);
+      } else {
+        alert(res.error || 'Error al actualizar el pago del corte');
+      }
+    });
+  };
 
   // Formateadores
   const formatCurrency = (amount: number) => {
@@ -261,9 +414,12 @@ export default function WalletsManager({
 
     const initialBal = parseFloat(newWalletBalance) || 0;
     const limitNum = parseFloat(creditLimit) || 0;
+    const cutOffNum = walletType === 'credit' ? (parseInt(cutOffDay) || null) : null;
+    const dueNum = walletType === 'credit' ? (parseInt(dueDay) || null) : null;
+    const statementDueNum = walletType === 'credit' ? (parseFloat(statementPaymentDue) || 0) : 0;
 
     startTransition(async () => {
-      const res = await createWallet(newWalletName, walletType, initialBal, limitNum);
+      const res = await createWallet(newWalletName, walletType, initialBal, limitNum, cutOffNum, dueNum, statementDueNum);
       if (res.success && res.wallet) {
         const createdWallet = res.wallet;
         setWallets([...wallets, createdWallet]);
@@ -291,6 +447,9 @@ export default function WalletsManager({
         setNewWalletBalance('');
         setWalletType('debit');
         setCreditLimit('');
+        setCutOffDay('');
+        setDueDay('');
+        setStatementPaymentDue('');
       } else {
         alert(res.error || 'Error al crear la cartera');
       }
@@ -304,9 +463,12 @@ export default function WalletsManager({
 
     const targetBal = parseFloat(newWalletBalance) || 0;
     const limitNum = parseFloat(creditLimit) || 0;
+    const cutOffNum = walletType === 'credit' ? (parseInt(cutOffDay) || null) : null;
+    const dueNum = walletType === 'credit' ? (parseInt(dueDay) || null) : null;
+    const statementDueNum = walletType === 'credit' ? (parseFloat(statementPaymentDue) || 0) : 0;
 
     startTransition(async () => {
-      const res = await updateWallet(editingWallet.id, newWalletName, walletType, limitNum, targetBal);
+      const res = await updateWallet(editingWallet.id, newWalletName, walletType, limitNum, targetBal, cutOffNum, dueNum, statementDueNum);
       if (res.success && res.wallet) {
         const updated = res.wallet;
         
@@ -333,6 +495,9 @@ export default function WalletsManager({
         setNewWalletBalance('');
         setWalletType('debit');
         setCreditLimit('');
+        setCutOffDay('');
+        setDueDay('');
+        setStatementPaymentDue('');
       } else {
         alert(res.error || 'Error al actualizar la cartera');
       }
@@ -346,6 +511,9 @@ export default function WalletsManager({
     setNewWalletBalance('');
     setWalletType('debit');
     setCreditLimit('');
+    setCutOffDay('');
+    setDueDay('');
+    setStatementPaymentDue('');
   };
 
   const handleOpenNewWalletModal = () => {
@@ -354,6 +522,9 @@ export default function WalletsManager({
     setNewWalletBalance('');
     setWalletType('debit');
     setCreditLimit('');
+    setCutOffDay('');
+    setDueDay('');
+    setStatementPaymentDue('');
     setShowWalletModal(true);
   };
 
@@ -408,6 +579,10 @@ export default function WalletsManager({
     const amountNum = parseFloat(txAmount);
     if (isNaN(amountNum) || amountNum <= 0) return;
 
+    const isCC = wallets.find(w => w.id === txWalletId)?.type === 'credit';
+    const isMsi = isCC && txType === 'expense' && isInstallments;
+    const installmentsNum = isMsi ? parseInt(installmentsCount) : null;
+
     startTransition(async () => {
       let voucher_base64: string | null = null;
       let voucher_name: string | null = null;
@@ -425,10 +600,12 @@ export default function WalletsManager({
         wallet_id: txWalletId,
         type: txType,
         amount: amountNum,
-        concept: txConcept,
+        concept: isMsi ? `${txConcept} (MSI 1/${installmentsNum})` : txConcept,
         category_id: txCategoryId || null,
         voucher_base64,
-        voucher_name
+        voucher_name,
+        installments_count: installmentsNum,
+        current_installment: isMsi ? 1 : null
       });
 
       if (res.success) {
@@ -441,11 +618,13 @@ export default function WalletsManager({
           wallet_id: txWalletId,
           type: txType,
           amount: amountNum,
-          concept: txConcept,
+          concept: isMsi ? `${txConcept} (MSI 1/${installmentsNum})` : txConcept,
           date: new Date().toISOString(),
           wallets: { name: selectedWallet?.name || 'Cartera' },
           categories: selectedCategory ? { name: selectedCategory.name, color: selectedCategory.color } : null,
-          voucher_url: voucherFile ? 'comprobante_cargado' : null // marcador temporal local
+          voucher_url: voucherFile ? 'comprobante_cargado' : null, // marcador temporal local
+          installments_count: installmentsNum,
+          current_installment: isMsi ? 1 : null
         };
 
         setTransactions([newTx, ...transactions]);
@@ -463,6 +642,8 @@ export default function WalletsManager({
         setTxConcept('');
         setTxCategoryId('');
         setVoucherFile(null);
+        setIsInstallments(false);
+        setInstallmentsCount('12');
       } else {
         alert(res.error);
       }
@@ -731,6 +912,9 @@ export default function WalletsManager({
                         setNewWalletBalance(wallet.balance.toString());
                         setWalletType(wallet.type || 'debit');
                         setCreditLimit(wallet.credit_limit ? wallet.credit_limit.toString() : '0');
+                        setCutOffDay(wallet.cut_off_day ? wallet.cut_off_day.toString() : '');
+                        setDueDay(wallet.due_day ? wallet.due_day.toString() : '');
+                        setStatementPaymentDue(wallet.statement_payment_due ? wallet.statement_payment_due.toString() : '0');
                         setShowWalletModal(true);
                       }}
                       className="p-1.5 rounded-lg text-brand-graphite dark:text-zinc-400 hover:text-brand-cerulean dark:hover:text-brand-cerulean/80 hover:bg-brand-cerulean/10 transition-all"
@@ -787,6 +971,158 @@ export default function WalletsManager({
           </div>
         </div>
       </div>
+
+      {/* Resumen del Corte de la Tarjeta de Crédito */}
+      {isCreditActive && ccSummary && activeWallet && (
+        <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl p-6 shadow-sm space-y-6 animate-in fade-in duration-250">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-gray-150 dark:border-zinc-800">
+            <div>
+              <h3 className="text-base font-bold text-brand-carbon dark:text-white flex items-center gap-2">
+                <CreditCard className="w-5 h-5 text-brand-cerulean" />
+                Resumen del Corte: {activeWallet.name}
+              </h3>
+              <p className="text-xs text-brand-graphite dark:text-zinc-400 mt-1">
+                Visualiza los pagos a realizar para el corte cerrado más reciente.
+              </p>
+            </div>
+            <div className="flex gap-4 text-xs font-semibold text-brand-graphite dark:text-zinc-400">
+              <div className="flex items-center gap-1.5">
+                <Calendar className="w-4 h-4 text-brand-cerulean" />
+                <span>Corte: Día {activeWallet.cut_off_day || 15}</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <Calendar className="w-4 h-4 text-emerald-500" />
+                <span>Pago: Día {activeWallet.due_day || 5}</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* Tarjeta 1: Pago para no generar intereses */}
+            <div className="bg-gray-50/50 dark:bg-zinc-900/50 border border-gray-200 dark:border-zinc-800 rounded-xl p-4.5 space-y-2">
+              <span className="text-[10px] uppercase font-bold tracking-wider text-brand-graphite dark:text-zinc-500">Pago para no generar intereses</span>
+              {editingStatementId === activeWallet.id ? (
+                <div className="flex items-center gap-2 mt-1">
+                  <input 
+                    type="number"
+                    step="0.01"
+                    className="w-full bg-white dark:bg-zinc-950 border border-gray-300 dark:border-zinc-850 rounded px-2 py-1 text-sm font-bold text-brand-carbon dark:text-white focus:outline-none"
+                    value={tempStatementPayment}
+                    onChange={(e) => setTempStatementPayment(e.target.value)}
+                    autoFocus
+                  />
+                  <button 
+                    onClick={() => handleSaveStatementPayment(activeWallet.id)}
+                    className="px-2.5 py-1.5 rounded bg-brand-carbon dark:bg-white text-white dark:text-brand-carbon hover:opacity-90 active:scale-95 transition-all text-xs font-bold"
+                  >
+                    Guardar
+                  </button>
+                  <button 
+                    onClick={() => setEditingStatementId(null)}
+                    className="px-2 py-1.5 rounded bg-gray-250 dark:bg-zinc-800 text-brand-graphite text-xs font-bold"
+                  >
+                    X
+                  </button>
+                </div>
+              ) : (
+                <div className="flex items-center justify-between mt-1">
+                  <p className="text-xl font-black text-brand-carbon dark:text-white tracking-tight">
+                    {formatCurrency(Number(activeWallet.statement_payment_due || 0))}
+                  </p>
+                  <button 
+                    onClick={() => {
+                      setEditingStatementId(activeWallet.id);
+                      setTempStatementPayment((activeWallet.statement_payment_due || 0).toString());
+                    }}
+                    className="p-1.5 rounded-lg text-brand-cerulean hover:bg-brand-cerulean/10 active:scale-95 transition-all text-[11px] font-bold"
+                  >
+                    Ajustar
+                  </button>
+                </div>
+              )}
+              <p className="text-[10px] text-brand-graphite dark:text-zinc-400">
+                Ajusta manualmente el monto indicado por tu banco para este corte.
+              </p>
+            </div>
+
+            {/* Tarjeta 2: Abonado en el periodo */}
+            <div className="bg-gray-50/50 dark:bg-zinc-900/50 border border-gray-200 dark:border-zinc-800 rounded-xl p-4.5 space-y-2">
+              <span className="text-[10px] uppercase font-bold tracking-wider text-brand-graphite dark:text-zinc-500">Abonado a la fecha</span>
+              <p className="text-xl font-black text-emerald-600 dark:text-emerald-400 tracking-tight mt-1">
+                {formatCurrency(ccSummary.paymentsTotal)}
+              </p>
+              <p className="text-[10px] text-brand-graphite dark:text-zinc-400">
+                Pagos y depósitos registrados desde el corte ({formatDate(ccSummary.lastCutOffDate.toISOString())}).
+              </p>
+            </div>
+
+            {/* Tarjeta 3: Restante por pagar */}
+            <div className="bg-gray-50/50 dark:bg-zinc-900/50 border border-gray-200 dark:border-zinc-800 rounded-xl p-4.5 space-y-2">
+              <span className="text-[10px] uppercase font-bold tracking-wider text-brand-graphite dark:text-zinc-500">Restante por pagar del corte</span>
+              <p className="text-xl font-black text-brand-cerulean tracking-tight mt-1">
+                {formatCurrency(Math.max(0, Number(activeWallet.statement_payment_due || 0) - ccSummary.paymentsTotal))}
+              </p>
+              <p className="text-[10px] text-brand-graphite dark:text-zinc-400">
+                Monto restante para cubrir el pago para no generar intereses.
+              </p>
+            </div>
+          </div>
+
+          {/* Desglose de compras asociadas al corte */}
+          <div className="border border-gray-200 dark:border-zinc-800 rounded-xl overflow-hidden bg-gray-50/20 dark:bg-zinc-900/20">
+            <div className="bg-gray-100/60 dark:bg-zinc-900/80 px-4 py-2 border-b border-gray-200 dark:border-zinc-800">
+              <span className="text-xs font-bold text-brand-carbon dark:text-white">Desglose de compras del Corte Cerrado</span>
+            </div>
+            <div className="p-4 space-y-3.5 text-xs text-brand-carbon dark:text-zinc-300">
+              {/* Contado */}
+              {ccSummary.contadoList.length > 0 && (
+                <div className="space-y-1.5">
+                  <span className="font-bold text-brand-graphite dark:text-zinc-400 block text-[10px] uppercase">Compras de contado en este ciclo ({formatCurrency(ccSummary.contadoTotal)})</span>
+                  <div className="divide-y divide-gray-150 dark:divide-zinc-800 max-h-32 overflow-y-auto custom-scrollbar">
+                    {ccSummary.contadoList.map((item, idx) => (
+                      <div key={idx} className="py-1.5 flex justify-between">
+                        <span className="truncate max-w-[200px] sm:max-w-xs">{item.concept}</span>
+                        <span className="font-semibold text-brand-graphite dark:text-zinc-400">{formatCurrency(item.amount)}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* MSI */}
+              {ccSummary.activeMsiList.length > 0 && (
+                <div className="space-y-1.5">
+                  <span className="font-bold text-brand-graphite dark:text-zinc-400 block text-[10px] uppercase">Mensualidades MSI activas ({formatCurrency(ccSummary.msiTotal)})</span>
+                  <div className="divide-y divide-gray-150 dark:divide-zinc-800 max-h-32 overflow-y-auto custom-scrollbar">
+                    {ccSummary.activeMsiList.map((item, idx) => (
+                      <div key={idx} className="py-1.5 flex justify-between">
+                        <span className="truncate max-w-[200px] sm:max-w-xs">{item.concept} <span className="text-[10px] text-brand-graphite">({item.current}/{item.total})</span></span>
+                        <span className="font-semibold text-brand-carbon dark:text-white">{formatCurrency(item.amount)}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Ajuste manual */}
+              {Math.abs(Number(activeWallet.statement_payment_due || 0) - (ccSummary.msiTotal + ccSummary.contadoTotal)) > 0.01 && (
+                <div className="pt-2 border-t border-dashed border-gray-200 dark:border-zinc-800/80 flex justify-between font-medium">
+                  <span className="text-brand-graphite dark:text-zinc-400">Cargos anteriores / Ajuste manual de corte</span>
+                  <span className="font-bold">
+                    {formatCurrency(Number(activeWallet.statement_payment_due || 0) - (ccSummary.msiTotal + ccSummary.contadoTotal))}
+                  </span>
+                </div>
+              )}
+
+              {ccSummary.contadoList.length === 0 && ccSummary.activeMsiList.length === 0 && (
+                <p className="text-center text-brand-graphite dark:text-zinc-500 py-2">
+                  No hay transacciones registradas del corte anterior. Ajusta el monto manual arriba.
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 4. Panel de Reconciliación (Doble Columna) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
@@ -1049,18 +1385,61 @@ export default function WalletsManager({
               </div>
 
               {walletType === 'credit' && (
-                <div className="space-y-1">
-                  <label className="text-xs font-semibold text-brand-graphite dark:text-zinc-400">Límite de Crédito ($)</label>
-                  <input 
-                    type="number"
-                    step="0.01"
-                    required
-                    placeholder="0.00"
-                    value={creditLimit}
-                    onChange={(e) => setCreditLimit(e.target.value)}
-                    className="w-full bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-lg px-3 py-2.5 md:py-2 text-base md:text-sm text-brand-carbon dark:text-white placeholder:text-zinc-650 focus:outline-none focus:border-brand-cerulean transition-colors"
-                  />
-                </div>
+                <>
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold text-brand-graphite dark:text-zinc-400">Límite de Crédito ($)</label>
+                    <input 
+                      type="number"
+                      step="0.01"
+                      required
+                      placeholder="0.00"
+                      value={creditLimit}
+                      onChange={(e) => setCreditLimit(e.target.value)}
+                      className="w-full bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-lg px-3 py-2.5 md:py-2 text-base md:text-sm text-brand-carbon dark:text-white placeholder:text-zinc-650 focus:outline-none focus:border-brand-cerulean transition-colors"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <label className="text-xs font-semibold text-brand-graphite dark:text-zinc-400">Día de Corte (1-31)</label>
+                      <input 
+                        type="number"
+                        min="1"
+                        max="31"
+                        required
+                        placeholder="Ej. 15"
+                        value={cutOffDay}
+                        onChange={(e) => setCutOffDay(e.target.value)}
+                        className="w-full bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-lg px-3 py-2.5 md:py-2 text-base md:text-sm text-brand-carbon dark:text-white placeholder:text-zinc-600 focus:outline-none focus:border-brand-cerulean transition-colors"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-xs font-semibold text-brand-graphite dark:text-zinc-400">Límite de Pago (1-31)</label>
+                      <input 
+                        type="number"
+                        min="1"
+                        max="31"
+                        required
+                        placeholder="Ej. 5"
+                        value={dueDay}
+                        onChange={(e) => setDueDay(e.target.value)}
+                        className="w-full bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-lg px-3 py-2.5 md:py-2 text-base md:text-sm text-brand-carbon dark:text-white placeholder:text-zinc-600 focus:outline-none focus:border-brand-cerulean transition-colors"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold text-brand-graphite dark:text-zinc-400">Pago para no generar intereses (Corte Actual)</label>
+                    <input 
+                      type="number"
+                      step="0.01"
+                      placeholder="0.00"
+                      value={statementPaymentDue}
+                      onChange={(e) => setStatementPaymentDue(e.target.value)}
+                      className="w-full bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-lg px-3 py-2.5 md:py-2 text-base md:text-sm text-brand-carbon dark:text-white placeholder:text-zinc-650 focus:outline-none focus:border-brand-cerulean transition-colors"
+                    />
+                  </div>
+                </>
               )}
 
               <div className="space-y-1">
@@ -1195,6 +1574,42 @@ export default function WalletsManager({
 
               {txType === 'expense' && (
                 <>
+                  {/* Si es tarjeta de crédito, permitir compras a MSI */}
+                  {wallets.find(w => w.id === txWalletId)?.type === 'credit' && (
+                    <div className="bg-gray-50 dark:bg-zinc-900/40 border border-gray-200 dark:border-zinc-800 rounded-xl p-3.5 space-y-3">
+                      <div className="flex items-center gap-2">
+                        <input 
+                          type="checkbox" 
+                          id="isInstallments"
+                          checked={isInstallments}
+                          onChange={(e) => setIsInstallments(e.target.checked)}
+                          className="w-4 h-4 rounded border-gray-300 dark:border-zinc-800 text-brand-cerulean focus:ring-brand-cerulean bg-gray-50 dark:bg-zinc-900 cursor-pointer"
+                        />
+                        <label htmlFor="isInstallments" className="text-xs font-semibold text-brand-graphite dark:text-zinc-400 cursor-pointer select-none">
+                          ¿Es compra a Meses sin Intereses (MSI)?
+                        </label>
+                      </div>
+
+                      {isInstallments && (
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-semibold text-brand-graphite dark:text-zinc-400 block">Número de Mensualidades</label>
+                          <select 
+                            value={installmentsCount}
+                            onChange={(e) => setInstallmentsCount(e.target.value)}
+                            className="w-full bg-white dark:bg-zinc-950 border border-gray-250 dark:border-zinc-800 rounded-lg px-2.5 py-1.5 text-xs text-brand-carbon dark:text-white focus:outline-none focus:border-brand-cerulean transition-colors"
+                          >
+                            <option value="3">3 meses sin intereses</option>
+                            <option value="6">6 meses sin intereses</option>
+                            <option value="9">9 meses sin intereses</option>
+                            <option value="12">12 meses sin intereses</option>
+                            <option value="18">18 meses sin intereses</option>
+                            <option value="24">24 meses sin intereses</option>
+                            <option value="36">36 meses sin intereses</option>
+                          </select>
+                        </div>
+                      )}
+                    </div>
+                  )}
                   {showInlineCategoryForm ? (
                     <div className="bg-gray-50 dark:bg-zinc-900/40 border border-gray-200 dark:border-zinc-800 rounded-xl p-3.5 space-y-3.5 animate-in fade-in duration-200">
                       <div className="flex justify-between items-center">

@@ -43,7 +43,10 @@ export async function createWallet(
   name: string, 
   type: 'cash' | 'debit' | 'credit' = 'debit', 
   initialBalance: number = 0, 
-  creditLimit: number = 0
+  creditLimit: number = 0,
+  cutOffDay: number | null = null,
+  dueDay: number | null = null,
+  statementPaymentDue: number = 0
 ) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -65,7 +68,10 @@ export async function createWallet(
       balance: 0.00, // Se inicializa en 0 y se actualiza mediante transacción
       currency: 'MXN',
       type,
-      credit_limit: type === 'credit' ? creditLimit : 0.00
+      credit_limit: type === 'credit' ? creditLimit : 0.00,
+      cut_off_day: type === 'credit' ? cutOffDay : null,
+      due_day: type === 'credit' ? dueDay : null,
+      statement_payment_due: type === 'credit' ? statementPaymentDue : 0.00
     } as any)
     .select() as any)
     .single();
@@ -116,7 +122,10 @@ export async function updateWallet(
   name: string, 
   type: 'cash' | 'debit' | 'credit', 
   creditLimit: number, 
-  newBalance: number
+  newBalance: number,
+  cutOffDay: number | null = null,
+  dueDay: number | null = null,
+  statementPaymentDue: number = 0
 ) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -168,7 +177,10 @@ export async function updateWallet(
     .update({
       name,
       type,
-      credit_limit: type === 'credit' ? creditLimit : 0.00
+      credit_limit: type === 'credit' ? creditLimit : 0.00,
+      cut_off_day: type === 'credit' ? cutOffDay : null,
+      due_day: type === 'credit' ? dueDay : null,
+      statement_payment_due: type === 'credit' ? statementPaymentDue : 0.00
     })
     .eq('id', walletId)
     .eq('user_id', user.id)
@@ -256,6 +268,8 @@ export async function createTransaction(data: {
   invoice_id?: string | null;
   voucher_base64?: string | null;
   voucher_name?: string | null;
+  installments_count?: number | null;
+  current_installment?: number | null;
 }) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -304,7 +318,9 @@ export async function createTransaction(data: {
       category_id: data.category_id || null,
       invoice_id: data.invoice_id || null,
       date: data.date || new Date().toISOString(),
-      voucher_url: voucherUrl
+      voucher_url: voucherUrl,
+      installments_count: data.installments_count || null,
+      current_installment: data.current_installment || null
     } as any);
 
   if (error) {
@@ -315,6 +331,36 @@ export async function createTransaction(data: {
   revalidatePath('/wallets');
   revalidatePath('/');
   return { success: true };
+}
+
+/**
+ * Actualiza el pago para no generar intereses de una cartera manualmente.
+ */
+export async function updateWalletStatement(walletId: string, statementPaymentDue: number) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { success: false, error: 'Usuario no autenticado' };
+  }
+
+  const { data: updatedWallet, error: updateError } = await (supabase.from('wallets') as any)
+    .update({
+      statement_payment_due: statementPaymentDue
+    })
+    .eq('id', walletId)
+    .eq('user_id', user.id)
+    .select()
+    .single();
+
+  if (updateError) {
+    console.error('Error al actualizar el pago de corte:', updateError);
+    return { success: false, error: 'Error al actualizar el pago del corte de tarjeta.' };
+  }
+
+  revalidatePath('/wallets');
+  revalidatePath('/');
+  return { success: true, wallet: updatedWallet as any };
 }
 
 /**
