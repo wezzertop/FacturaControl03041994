@@ -471,7 +471,14 @@ export default function WalletsManager({
 
   // Eliminar Transacción
   const handleDeleteTransaction = async (id: string, walletId: string, type: 'income' | 'expense', amount: number) => {
-    if (!confirm('¿Deseas eliminar este movimiento? Su saldo se revertirá en la cartera.')) return;
+    const txToDelete = transactions.find(t => t.id === id);
+    const hasInvoice = !!(txToDelete && txToDelete.invoices);
+    
+    const confirmMessage = hasInvoice
+      ? 'Este movimiento está vinculado a una factura del SAT. Al eliminarlo, se desconciliará y la factura volverá a la lista de "Facturas sin Conciliar", y el saldo se revertirá. ¿Deseas continuar?'
+      : '¿Deseas eliminar este movimiento? Su saldo se revertirá en la cartera.';
+
+    if (!confirm(confirmMessage)) return;
 
     startTransition(async () => {
       const res = await deleteTransaction(id);
@@ -484,6 +491,11 @@ export default function WalletsManager({
           }
           return w;
         }));
+
+        // Restaurar factura en el listado de facturas sin conciliar
+        if (txToDelete && txToDelete.invoices) {
+          setUnlinkedInvoices(prev => [txToDelete.invoices, ...prev]);
+        }
       } else {
         alert(res.error);
       }
@@ -858,6 +870,7 @@ export default function WalletsManager({
                       <button 
                         onClick={() => handleDeleteTransaction(tx.id, tx.wallet_id, tx.type, Number(tx.amount))}
                         className="p-1 rounded text-brand-graphite dark:text-zinc-500 hover:text-red-500 dark:hover:text-red-400 hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors"
+                        title="Eliminar movimiento / Desconciliar factura"
                       >
                         <X className="w-4 h-4" />
                       </button>

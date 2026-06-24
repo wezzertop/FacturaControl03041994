@@ -225,7 +225,7 @@ export async function getTransactions(walletId?: string) {
 
   let query = supabase
     .from('transactions')
-    .select('*, wallets(name), categories(name, color, icon), invoices(total)')
+    .select('*, wallets(name), categories(name, color, icon), invoices(*, categories(*))')
     .eq('user_id', user.id)
     .order('date', { ascending: false });
 
