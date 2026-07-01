@@ -1,4 +1,4 @@
-﻿import React from "react";
+import React from "react";
 import type { LucideIcon } from "lucide-react";
 import { createClient } from "@/utils/supabase/server";
 import InvoiceTable from "@/components/invoices/InvoiceTable";
@@ -50,6 +50,7 @@ interface TransactionRow {
   type?: string | null;
   amount?: number | string | null;
   date?: string | null;
+  concept?: string | null;
   invoice_id?: string | number | null;
   categories?: CategoryValue | null;
   [key: string]: unknown;
@@ -77,6 +78,44 @@ export default async function FinancialOverview() {
   const validWallets = (walletsResponse.data || []) as WalletRow[];
   const validTransactions = (transactionsResponse.data || []) as TransactionRow[];
 
+  // Helper para identificar saldo inicial / deuda inicial y excluirlos de ingresos y gastos
+  const isInitialBalance = (concept?: string | null) => {
+    if (!concept) return false;
+    const c = concept.toLowerCase().trim();
+    return c === 'saldo inicial' || c === 'deuda inicial';
+  };
+
+  // Helper para manejar fechas sin desvío de zona horaria
+  const getCalendarDate = (dateValue: string) => {
+    const dateStr = dateValue.includes('T') ? dateValue.split('T')[0] : dateValue;
+    const parts = dateStr.split('-');
+    if (parts.length === 3) {
+      const year = parseInt(parts[0], 10);
+      const month = parseInt(parts[1], 10) - 1;
+      const day = parseInt(parts[2], 10);
+      return new Date(year, month, day);
+    }
+    return new Date(dateValue);
+  };
+
+  // Obtener rango de lunes a domingo de la semana actual
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const currentDay = today.getDay(); // 0: domingo, 1: lunes...
+  const diffToMonday = currentDay === 0 ? -6 : 1 - currentDay;
+  const monday = new Date(today);
+  monday.setDate(today.getDate() + diffToMonday);
+
+  const sunday = new Date(monday);
+  sunday.setDate(monday.getDate() + 6);
+  sunday.setHours(23, 59, 59, 999);
+
+  const isInCurrentWeek = (dateStr: string | null | undefined) => {
+    if (!dateStr) return false;
+    const d = getCalendarDate(dateStr);
+    return d >= monday && d <= sunday;
+  };
+
   const totalWalletsBalance = validWallets.reduce((acc, wallet) => acc + Number(wallet.balance), 0);
   const invoicesIncome = validInvoices
     .filter((invoice) => invoice.invoice_type === "nomina" || invoice.invoice_type === "ingreso")
@@ -85,15 +124,40 @@ export default async function FinancialOverview() {
     .filter((invoice) => invoice.invoice_type === "egreso")
     .reduce((acc, invoice) => acc + Number(invoice.total), 0);
   const manualIncome = validTransactions
-    .filter((transaction) => transaction.type === "income" && !transaction.invoice_id)
+    .filter((transaction) => transaction.type === "income" && !transaction.invoice_id && !isInitialBalance(transaction.concept))
     .reduce((acc, transaction) => acc + Number(transaction.amount), 0);
   const manualExpense = validTransactions
-    .filter((transaction) => transaction.type === "expense" && !transaction.invoice_id)
+    .filter((transaction) => transaction.type === "expense" && !transaction.invoice_id && !isInitialBalance(transaction.concept))
     .reduce((acc, transaction) => acc + Number(transaction.amount), 0);
 
   const totalIngreso = invoicesIncome + manualIncome;
   const totalGasto = invoicesExpense + manualExpense;
-  const balance = totalIngreso - totalGasto + totalWalletsBalance;
+
+  // Encontrar facturas conciliadas en transacciones
+  const reconciledInvoiceIds = new Set(
+    validTransactions.map((tx) => tx.invoice_id).filter(Boolean)
+  );
+
+  // Calcular facturas de ingresos no conciliadas aún
+  const unreconciledInvoicesIncome = validInvoices
+    .filter((invoice) => 
+      !reconciledInvoiceIds.has(invoice.id) && 
+      (invoice.invoice_type === "nomina" || invoice.invoice_type === "ingreso")
+    )
+    .reduce((acc, invoice) => acc + Number(invoice.total), 0);
+
+  // Calcular facturas de egresos no conciliadas aún
+  const unreconciledInvoicesExpense = validInvoices
+    .filter((invoice) => 
+      !reconciledInvoiceIds.has(invoice.id) && 
+      invoice.invoice_type === "egreso"
+    )
+    .reduce((acc, invoice) => acc + Number(invoice.total), 0);
+
+  // El balance operativo es el saldo actual en carteras + ingresos no conciliados - gastos no conciliados.
+  // De esta manera se evita la duplicación de ingresos/gastos ya consolidados en el saldo real.
+  const balance = totalWalletsBalance + unreconciledInvoicesIncome - unreconciledInvoicesExpense;
+
   const latestTransactions = validInvoices.filter((invoice) => invoice.invoice_type === "egreso").slice(0, 5);
 
   const kpiCards: KpiCard[] = [
@@ -132,7 +196,7 @@ export default async function FinancialOverview() {
     });
 
   validTransactions
-    .filter((transaction) => transaction.type === "expense" && !transaction.invoice_id)
+    .filter((transaction) => transaction.type === "expense" && !transaction.invoice_id && !isInitialBalance(transaction.concept))
     .forEach((transaction) => {
       const category = transaction.categories?.name || "Otros";
       const color = transaction.categories?.color || "bg-slate-400";
@@ -152,15 +216,17 @@ export default async function FinancialOverview() {
 
   const weekDays = [0, 0, 0, 0, 0, 0, 0];
   const addToWeekday = (dateValue: string, amount: number) => {
-    const day = new Date(dateValue).getDay();
+    const d = getCalendarDate(dateValue);
+    const day = d.getDay();
     weekDays[day === 0 ? 6 : day - 1] += amount;
   };
 
   validInvoices
-    .filter((invoice) => invoice.invoice_type === "egreso")
+    .filter((invoice) => invoice.invoice_type === "egreso" && isInCurrentWeek(invoice.fecha))
     .forEach((invoice) => addToWeekday(invoice.fecha || new Date().toISOString(), Number(invoice.total)));
+  
   validTransactions
-    .filter((transaction) => transaction.type === "expense" && !transaction.invoice_id)
+    .filter((transaction) => transaction.type === "expense" && !transaction.invoice_id && !isInitialBalance(transaction.concept) && isInCurrentWeek(transaction.date))
     .forEach((transaction) => addToWeekday(transaction.date || new Date().toISOString(), Number(transaction.amount)));
 
   const maxDay = Math.max(...weekDays, 1);

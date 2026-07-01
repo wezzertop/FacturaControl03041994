@@ -104,16 +104,7 @@ export async function uploadXML(formData: FormData) {
       categoryName = 'Restaurantes y Comida';
     }
 
-    // Buscar el ID de la categoría
-    const { data: categoryData } = await supabaseAdmin
-      .from('categories')
-      .select('id')
-      .eq('name', categoryName)
-      .single();
-
-    const category_id = (categoryData as any)?.id || null;
-
-    // 4. Insertar registro real en la base de datos ligado al usuario autenticado
+    // 4. Obtener el usuario autenticado primero
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     
@@ -122,6 +113,22 @@ export async function uploadXML(formData: FormData) {
     }
     
     const userId = user.id;
+
+    // Buscar la categoría (obteniendo tanto la versión del usuario como la global)
+    const { data: categoryList } = await supabaseAdmin
+      .from('categories')
+      .select('id, user_id')
+      .eq('name', categoryName)
+      .or(`user_id.is.null,user_id.eq.${userId}`);
+
+    // Priorizar la categoría específica del usuario
+    let category_id = null;
+    const catList = categoryList as any[] | null;
+    if (catList && catList.length > 0) {
+      const userSpecific = catList.find((c: any) => c.user_id === userId);
+      const globalCat = catList.find((c: any) => !c.user_id);
+      category_id = userSpecific?.id || globalCat?.id || catList[0].id;
+    }
 
     // Obtener el RFC del usuario para clasificar ingreso/egreso
     const { data: userData } = await supabaseAdmin
