@@ -14,6 +14,21 @@ interface OnboardingWallet {
   isPayrollRecipient?: boolean;
 }
 
+interface OnboardingLoan {
+  name: string;
+  bank: string;
+  amount_granted: number;
+  current_balance: number;
+  interest_rate: number;
+  total_payments: number;
+  frequency: 'days_14' | 'days_15' | 'monthly';
+  payment_amount: number;
+  start_date: string;
+  wallet_name: string;
+  first_payment_date?: string;
+  first_payment_amount?: number;
+}
+
 interface OnboardingData {
   rfc?: string;
   startDate: string; // YYYY-MM-DD
@@ -22,6 +37,8 @@ interface OnboardingData {
   nextPayrollDate: string; // YYYY-MM-DD
   payrollFrequency: 'days_14' | 'days_15' | 'monthly' | 'weekly' | 'yearly';
   wallets: OnboardingWallet[];
+  hasLoan: boolean;
+  loan?: OnboardingLoan;
 }
 
 export async function setupInitialData(data: OnboardingData) {
@@ -71,11 +88,8 @@ export async function setupInitialData(data: OnboardingData) {
 
   // 4. Si tiene nómina configurada, crear el pago recurrente de ingresos
   if (data.hasPayroll) {
-    // Si no se asignó explícitamente una cartera receptora, intentamos encontrar la primera cartera creada
     if (!payrollRecipientWalletId && data.wallets.length > 0) {
-      // Buscar la primera de tipo debit o cash, si no hay, la primera cualquiera
       const fallbackWallet = data.wallets.find(w => w.type !== 'credit') || data.wallets[0];
-      // Necesitamos obtener las carteras recién insertadas de la DB para saber sus IDs correspondientes
       const { data: insertedWallets } = await supabase
         .from('wallets')
         .select('id, name')
@@ -109,8 +123,44 @@ export async function setupInitialData(data: OnboardingData) {
     }
   }
 
+  // 5. Si tiene préstamo configurado, crearlo
+  if (data.hasLoan && data.loan) {
+    const loan = data.loan;
+    const { data: insertedWallets } = await supabase
+      .from('wallets')
+      .select('id, name')
+      .eq('user_id', user.id);
+
+    const matchedWallet = (insertedWallets as any)?.find((w: any) => w.name === loan.wallet_name);
+    if (matchedWallet) {
+      const { error: loanError } = await (supabase.from('loans') as any)
+        .insert({
+          user_id: user.id,
+          name: loan.name,
+          bank: loan.bank,
+          amount_granted: loan.amount_granted,
+          current_balance: loan.current_balance,
+          interest_rate: loan.interest_rate,
+          total_payments: loan.total_payments,
+          payments_made: 0,
+          frequency: loan.frequency,
+          payment_amount: loan.payment_amount,
+          start_date: loan.start_date,
+          wallet_id: matchedWallet.id,
+          is_active: true,
+          first_payment_date: loan.first_payment_date || null,
+          first_payment_amount: loan.first_payment_amount || null
+        } as any);
+
+      if (loanError) {
+        console.error("Error al registrar préstamo en onboarding:", loanError);
+      }
+    }
+  }
+
   revalidatePath('/');
   revalidatePath('/wallets');
   revalidatePath('/settings');
+  revalidatePath('/loans');
   return { success: true };
 }

@@ -14,7 +14,9 @@ import {
   AlertCircle, 
   RefreshCw, 
   CheckCircle,
-  HelpCircle
+  Landmark,
+  PiggyBank,
+  X
 } from 'lucide-react';
 import { setupInitialData } from '@/app/actions/onboarding';
 
@@ -35,20 +37,18 @@ export default function OnboardingWizard() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Paso 1
+  // Paso 1: Datos Base
   const [rfc, setRfc] = useState('');
   const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
 
-  // Paso 2
+  // Paso 2: Nómina
   const [hasPayroll, setHasPayroll] = useState(true);
   const [payrollAmount, setPayrollAmount] = useState<number>(15000);
   const [nextPayrollDate, setNextPayrollDate] = useState(() => {
     const d = new Date();
-    // Sugerir la próxima quincena o fin de mes
     if (d.getDate() < 15) {
       d.setDate(15);
     } else {
-      // Último día de mes
       d.setMonth(d.getMonth() + 1);
       d.setDate(0);
     }
@@ -56,7 +56,7 @@ export default function OnboardingWizard() {
   });
   const [payrollFrequency, setPayrollFrequency] = useState<'days_14' | 'days_15' | 'monthly'>('days_15');
 
-  // Paso 3
+  // Paso 3: Carteras
   const [wallets, setWallets] = useState<WalletSetup[]>([
     {
       name: 'Efectivo',
@@ -81,7 +81,7 @@ export default function OnboardingWizard() {
     {
       name: 'Tarjeta de Crédito',
       type: 'credit',
-      initialBalance: 0, // representa deuda inicial
+      initialBalance: 0,
       creditLimit: 25000,
       cutOffDay: 10,
       dueDay: 30,
@@ -90,9 +90,27 @@ export default function OnboardingWizard() {
     }
   ]);
 
+  // Paso 4: Préstamos (Opcional - pre-llenado con datos del usuario)
+  const [hasLoan, setHasLoan] = useState(false);
+  const [loanName, setLoanName] = useState('PR9997');
+  const [loanBank, setLoanBank] = useState('BBVA');
+  const [loanAmount, setLoanAmount] = useState<string>('15000');
+  const [loanBalance, setLoanBalance] = useState<string>('15108.60');
+  const [loanRate, setLoanRate] = useState<string>('37.45');
+  const [loanTotalPayments, setLoanTotalPayments] = useState<string>('144');
+  const [loanFrequency, setLoanFrequency] = useState<'days_14' | 'days_15' | 'monthly'>('days_15');
+  const [loanPaymentAmount, setLoanPaymentAmount] = useState<string>('262.13');
+  const [loanStartDate, setLoanStartDate] = useState('2026-06-25');
+  const [loanHasFirstIrregular, setLoanHasFirstIrregular] = useState(true);
+  const [loanFirstPaymentDate, setLoanFirstPaymentDate] = useState('2026-07-01');
+  const [loanFirstPaymentAmount, setLoanFirstPaymentAmount] = useState<string>('108.60');
+  const [loanWalletName, setLoanWalletName] = useState('Tarjeta de Débito');
+
   const handleWalletChange = (index: number, fields: Partial<WalletSetup>) => {
     setWallets(prev => prev.map((w, i) => i === index ? { ...w, ...fields } : w));
   };
+
+  const activeWalletsList = wallets.filter(w => w.enabled);
 
   const handleNext = () => {
     setError(null);
@@ -115,6 +133,34 @@ export default function OnboardingWizard() {
         return;
       }
     }
+    if (step === 3) {
+      if (activeWalletsList.length === 0) {
+        setError('Debes activar al menos una cartera.');
+        return;
+      }
+      const payrollWallet = activeWalletsList.find(w => w.isPayrollRecipient) || activeWalletsList[0];
+      if (payrollWallet) {
+        setLoanWalletName(payrollWallet.name);
+      }
+    }
+    if (step === 4 && hasLoan) {
+      if (!loanName.trim()) {
+        setError('Por favor ingresa un nombre para el préstamo.');
+        return;
+      }
+      if (!loanAmount || Number(loanAmount) <= 0) {
+        setError('El monto otorgado debe ser mayor a 0.');
+        return;
+      }
+      if (!loanBalance || Number(loanBalance) <= 0) {
+        setError('El saldo pendiente debe ser mayor a 0.');
+        return;
+      }
+      if (!loanPaymentAmount || Number(loanPaymentAmount) <= 0) {
+        setError('Ingresa una cuota de pago fija.');
+        return;
+      }
+    }
     setStep(prev => prev + 1);
   };
 
@@ -127,9 +173,8 @@ export default function OnboardingWizard() {
     setIsSubmitting(true);
     setError(null);
 
-    const activeWallets = wallets.filter(w => w.enabled);
-    if (activeWallets.length === 0) {
-      setError('Debes activar al menos una cartera (Efectivo o Débito) para poder continuar.');
+    if (activeWalletsList.length === 0) {
+      setError('Debes activar al menos una cartera.');
       setIsSubmitting(false);
       return;
     }
@@ -142,7 +187,7 @@ export default function OnboardingWizard() {
         payrollAmount: hasPayroll ? Number(payrollAmount) : 0,
         nextPayrollDate,
         payrollFrequency,
-        wallets: activeWallets.map(w => ({
+        wallets: activeWalletsList.map(w => ({
           name: w.name,
           type: w.type,
           initialBalance: Number(w.initialBalance),
@@ -150,47 +195,60 @@ export default function OnboardingWizard() {
           cutOffDay: w.type === 'credit' ? Number(w.cutOffDay) : undefined,
           dueDay: w.type === 'credit' ? Number(w.dueDay) : undefined,
           isPayrollRecipient: w.type === 'debit' && w.isPayrollRecipient
-        }))
+        })),
+        hasLoan,
+        loan: hasLoan ? {
+          name: loanName.trim(),
+          bank: loanBank.trim(),
+          amount_granted: Number(loanAmount),
+          current_balance: Number(loanBalance),
+          interest_rate: Number(loanRate),
+          total_payments: Number(loanTotalPayments),
+          frequency: loanFrequency,
+          payment_amount: Number(loanPaymentAmount),
+          start_date: loanStartDate,
+          wallet_name: loanWalletName,
+          first_payment_date: loanHasFirstIrregular && loanFirstPaymentDate ? loanFirstPaymentDate : undefined,
+          first_payment_amount: loanHasFirstIrregular && loanFirstPaymentAmount ? Number(loanFirstPaymentAmount) : undefined
+        } : undefined
       };
 
       const res = await setupInitialData(payload);
       if (res.success) {
         router.refresh();
       } else {
-        setError(res.error || 'Ocurrió un error al guardar la configuración inicial.');
+        setError(res.error || 'Ocurrió un error al guardar.');
       }
     } catch (err: any) {
       console.error(err);
-      setError('Error inesperado de red. Intenta de nuevo.');
+      setError('Error de red. Intenta de nuevo.');
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="min-h-[80vh] flex items-center justify-center p-4">
+    <div className="min-h-[85vh] flex items-center justify-center p-4">
       <div className="w-full max-w-2xl bg-white dark:bg-zinc-950 border border-gray-200 dark:border-zinc-800 rounded-3xl shadow-xl overflow-hidden transition-all duration-300">
         
-        {/* Header decoration */}
         <div className="bg-gradient-to-r from-brand-cerulean to-blue-600 h-2 w-full" />
         
         <div className="p-6 md:p-10">
           
-          {/* Progress Indicator */}
           <div className="flex justify-between items-center mb-8">
             <div className="flex gap-2 items-center">
               <Sparkles className="w-5 h-5 text-brand-cerulean" />
               <span className="text-xs font-bold uppercase tracking-wider text-brand-cerulean">Configuración de Inicio</span>
             </div>
             <div className="text-xs font-semibold text-gray-500">
-              Paso {step} de 4
+              Paso {step} de 5
             </div>
           </div>
 
           <div className="w-full bg-gray-100 dark:bg-zinc-800 h-1.5 rounded-full mb-8 overflow-hidden">
             <div 
               className="bg-brand-cerulean h-full transition-all duration-300"
-              style={{ width: `${(step / 4) * 100}%` }}
+              style={{ width: `${(step / 5) * 100}%` }}
             />
           </div>
 
@@ -200,8 +258,6 @@ export default function OnboardingWizard() {
               <p className="text-xs text-red-700 dark:text-red-400 font-medium">{error}</p>
             </div>
           )}
-
-          {/* Wizard Steps */}
 
           {/* Paso 1: Datos Base */}
           {step === 1 && (
@@ -228,7 +284,7 @@ export default function OnboardingWizard() {
                 </div>
 
                 <div className="flex flex-col space-y-1.5">
-                  <label className="text-xs font-bold text-gray-700 dark:text-gray-300">RFC de Facturación (Opcional)</label>
+                  <label className="text-xs font-bold text-gray-700 dark:text-gray-350">RFC de Facturación (Opcional)</label>
                   <input 
                     type="text"
                     value={rfc}
@@ -242,7 +298,7 @@ export default function OnboardingWizard() {
             </div>
           )}
 
-          {/* Paso 2: Nómina Recurrente */}
+          {/* Paso 2: Nómina */}
           {step === 2 && (
             <div className="space-y-6">
               <div>
@@ -335,7 +391,7 @@ export default function OnboardingWizard() {
             </div>
           )}
 
-          {/* Paso 3: Carteras iniciales */}
+          {/* Paso 3: Carteras */}
           {step === 3 && (
             <div className="space-y-6">
               <div>
@@ -458,7 +514,6 @@ export default function OnboardingWizard() {
                                     type="checkbox"
                                     checked={wallet.isPayrollRecipient}
                                     onChange={(e) => {
-                                      // Asegurar que solo este tenga isPayrollRecipient a true
                                       setWallets(prev => prev.map((w, idx) => {
                                         if (idx === index) return { ...w, isPayrollRecipient: e.target.checked };
                                         if (w.type === 'debit') return { ...w, isPayrollRecipient: !e.target.checked };
@@ -481,8 +536,194 @@ export default function OnboardingWizard() {
             </div>
           )}
 
-          {/* Paso 4: Resumen */}
+          {/* Paso 4: Préstamos Bancarios (Opcional) */}
           {step === 4 && (
+            <div className="space-y-6">
+              <div>
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white">Préstamos Bancarios Activos</h2>
+                <p className="text-xs text-gray-500 mt-1">¿Tienes algún préstamo de consumo o crédito personal actualmente activo con tu banco?</p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <button
+                  type="button"
+                  onClick={() => setHasLoan(true)}
+                  className={`p-4 border rounded-2xl flex flex-col items-center gap-2 transition-all ${
+                    hasLoan 
+                      ? 'border-brand-cerulean bg-brand-cerulean/5 text-brand-cerulean' 
+                      : 'border-gray-200 dark:border-zinc-800 hover:border-gray-300 text-gray-600 dark:text-zinc-400'
+                  }`}
+                >
+                  <CheckCircle className={`w-5 h-5 ${hasLoan ? 'text-brand-cerulean' : 'text-gray-300'}`} />
+                  <span className="text-xs font-bold">Sí, tengo un préstamo activo</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setHasLoan(false)}
+                  className={`p-4 border rounded-2xl flex flex-col items-center gap-2 transition-all ${
+                    !hasLoan 
+                      ? 'border-brand-cerulean bg-brand-cerulean/5 text-brand-cerulean' 
+                      : 'border-gray-200 dark:border-zinc-800 hover:border-gray-300 text-gray-600 dark:text-zinc-400'
+                  }`}
+                >
+                  <CheckCircle className={`w-5 h-5 ${!hasLoan ? 'text-brand-cerulean' : 'text-gray-300'}`} />
+                  <span className="text-xs font-bold">No tengo préstamos</span>
+                </button>
+              </div>
+
+              {hasLoan && (
+                <div className="space-y-4 pt-4 border-t border-gray-100 dark:border-zinc-800 transition-all">
+                  <div className="bg-brand-cerulean/5 border border-brand-cerulean/15 rounded-xl p-3 text-[10px] text-brand-cerulean leading-relaxed font-semibold">
+                    💡 Hemos pre-llenado estos campos con los datos del préstamo quincenal BBVA (144 pagos, tasa de 37.45%) para ahorrarte tiempo. Ajusta lo necesario.
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="flex flex-col space-y-1">
+                      <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Nombre del Préstamo</label>
+                      <input
+                        type="text"
+                        value={loanName}
+                        onChange={(e) => setLoanName(e.target.value)}
+                        placeholder="PR9997"
+                        className="w-full px-3 py-1.5 text-xs border border-gray-200 dark:border-zinc-800 bg-transparent rounded-lg focus:outline-none focus:ring-1 focus:ring-brand-cerulean dark:text-white"
+                      />
+                    </div>
+
+                    <div className="flex flex-col space-y-1">
+                      <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Banco</label>
+                      <input
+                        type="text"
+                        value={loanBank}
+                        onChange={(e) => setLoanBank(e.target.value)}
+                        placeholder="BBVA"
+                        className="w-full px-3 py-1.5 text-xs border border-gray-200 dark:border-zinc-800 bg-transparent rounded-lg focus:outline-none focus:ring-1 focus:ring-brand-cerulean dark:text-white"
+                      />
+                    </div>
+
+                    <div className="flex flex-col space-y-1">
+                      <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Monto Otorgado Original ($)</label>
+                      <input
+                        type="number"
+                        value={loanAmount}
+                        onChange={(e) => setLoanAmount(e.target.value)}
+                        placeholder="15000"
+                        className="w-full px-3 py-1.5 text-xs border border-gray-200 dark:border-zinc-800 bg-transparent rounded-lg focus:outline-none focus:ring-1 focus:ring-brand-cerulean dark:text-white"
+                      />
+                    </div>
+
+                    <div className="flex flex-col space-y-1">
+                      <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Deuda Pendiente Actual ($)</label>
+                      <input
+                        type="number"
+                        value={loanBalance}
+                        onChange={(e) => setLoanBalance(e.target.value)}
+                        placeholder="15108.60"
+                        className="w-full px-3 py-1.5 text-xs border border-gray-200 dark:border-zinc-800 bg-transparent rounded-lg focus:outline-none focus:ring-1 focus:ring-brand-cerulean dark:text-white"
+                      />
+                    </div>
+
+                    <div className="flex flex-col space-y-1">
+                      <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Tasa Interés Fija Anual (%)</label>
+                      <input
+                        type="number"
+                        value={loanRate}
+                        onChange={(e) => setLoanRate(e.target.value)}
+                        placeholder="37.45"
+                        step="0.01"
+                        className="w-full px-3 py-1.5 text-xs border border-gray-200 dark:border-zinc-800 bg-transparent rounded-lg focus:outline-none focus:ring-1 focus:ring-brand-cerulean dark:text-white"
+                      />
+                    </div>
+
+                    <div className="flex flex-col space-y-1">
+                      <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Cuota de Pago Fijo ($)</label>
+                      <input
+                        type="number"
+                        value={loanPaymentAmount}
+                        onChange={(e) => setLoanPaymentAmount(e.target.value)}
+                        placeholder="262.13"
+                        className="w-full px-3 py-1.5 text-xs border border-gray-200 dark:border-zinc-800 bg-transparent rounded-lg focus:outline-none focus:ring-1 focus:ring-brand-cerulean dark:text-white"
+                      />
+                    </div>
+
+                    <div className="flex flex-col space-y-1">
+                      <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Plazo (Total de Recibos)</label>
+                      <input
+                        type="number"
+                        value={loanTotalPayments}
+                        onChange={(e) => setLoanTotalPayments(e.target.value)}
+                        placeholder="144"
+                        className="w-full px-3 py-1.5 text-xs border border-gray-200 dark:border-zinc-800 bg-transparent rounded-lg focus:outline-none focus:ring-1 focus:ring-brand-cerulean dark:text-white"
+                      />
+                    </div>
+
+                    <div className="flex flex-col space-y-1">
+                      <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Fecha Contratación</label>
+                      <input
+                        type="date"
+                        value={loanStartDate}
+                        onChange={(e) => setLoanStartDate(e.target.value)}
+                        className="w-full px-3 py-1.5 text-xs border border-gray-200 dark:border-zinc-800 bg-transparent rounded-lg focus:outline-none focus:ring-1 focus:ring-brand-cerulean dark:text-white"
+                      />
+                    </div>
+
+                    <div className="flex flex-col space-y-1 md:col-span-2">
+                      <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Cartera de Cobro Asociada</label>
+                      <select
+                        value={loanWalletName}
+                        onChange={(e) => setLoanWalletName(e.target.value)}
+                        className="w-full px-3 py-2 text-xs border border-gray-200 dark:border-zinc-800 bg-transparent rounded-lg focus:outline-none focus:ring-1 focus:ring-brand-cerulean dark:text-white"
+                      >
+                        {activeWalletsList.map(w => (
+                          <option key={w.name} value={w.name}>{w.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="pt-2">
+                    <label className="flex items-center gap-2 cursor-pointer mb-2">
+                      <input
+                        type="checkbox"
+                        checked={loanHasFirstIrregular}
+                        onChange={(e) => setLoanHasFirstIrregular(e.target.checked)}
+                        className="w-3.5 h-3.5 text-brand-cerulean rounded border-gray-300"
+                      />
+                      <span className="text-[11px] font-bold text-gray-700 dark:text-gray-300">
+                        El primer pago es irregular / sólo intereses por broken period
+                      </span>
+                    </label>
+
+                    {loanHasFirstIrregular && (
+                      <div className="grid grid-cols-2 gap-3 p-3 border border-dashed border-gray-200 dark:border-zinc-800 rounded-lg bg-gray-50/50 dark:bg-zinc-900/10">
+                        <div className="flex flex-col space-y-1">
+                          <label className="text-[9px] font-bold text-gray-500 uppercase">Fecha Primer Pago</label>
+                          <input
+                            type="date"
+                            value={loanFirstPaymentDate}
+                            onChange={(e) => setLoanFirstPaymentDate(e.target.value)}
+                            className="px-2 py-1 text-xs border border-gray-200 dark:border-zinc-800 bg-transparent rounded focus:outline-none dark:text-white"
+                          />
+                        </div>
+                        <div className="flex flex-col space-y-1">
+                          <label className="text-[9px] font-bold text-gray-500 uppercase">Monto Primer Pago ($)</label>
+                          <input
+                            type="number"
+                            value={loanFirstPaymentAmount}
+                            onChange={(e) => setLoanFirstPaymentAmount(e.target.value)}
+                            className="px-2 py-1 text-xs border border-gray-200 dark:border-zinc-800 bg-transparent rounded focus:outline-none dark:text-white"
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Paso 5: Resumen */}
+          {step === 5 && (
             <div className="space-y-6">
               <div className="text-center py-2">
                 <div className="mx-auto w-12 h-12 bg-brand-cerulean/10 text-brand-cerulean rounded-full flex items-center justify-center mb-3">
@@ -517,10 +758,10 @@ export default function OnboardingWizard() {
                   </span>
                 </div>
 
-                <div className="space-y-2">
+                <div className="space-y-2 border-b border-gray-150 dark:border-zinc-800 pb-3">
                   <span className="text-xs text-gray-500 font-medium block">Carteras a Crear:</span>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    {wallets.filter(w => w.enabled).map(w => (
+                    {activeWalletsList.map(w => (
                       <div key={w.type} className="flex justify-between items-center p-2.5 border border-gray-200 dark:border-zinc-800 rounded-xl bg-white dark:bg-zinc-900 text-xs">
                         <div className="flex items-center gap-1.5">
                           {w.type === 'credit' ? <CreditCard className="w-3.5 h-3.5 text-blue-500" /> : <Wallet className="w-3.5 h-3.5 text-emerald-500" />}
@@ -535,6 +776,25 @@ export default function OnboardingWizard() {
                     ))}
                   </div>
                 </div>
+
+                {hasLoan && (
+                  <div className="space-y-2">
+                    <span className="text-xs text-gray-500 font-medium block">Préstamo Bancario a Vincular:</span>
+                    <div className="flex justify-between items-center p-3 border border-gray-200 dark:border-zinc-800 rounded-xl bg-white dark:bg-zinc-900 text-xs">
+                      <div className="flex items-center gap-1.5">
+                        <Landmark className="w-4 h-4 text-brand-cerulean" />
+                        <div>
+                          <p className="font-semibold text-gray-800 dark:text-white">{loanName} ({loanBank})</p>
+                          <p className="text-[10px] text-gray-400">Cuota: ${Number(loanPaymentAmount).toFixed(2)} - Plazo: {loanTotalPayments} pagos</p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-bold text-gray-800 dark:text-zinc-300">Deuda: ${Number(loanBalance).toLocaleString('es-MX')}</p>
+                        <p className="text-[9px] text-gray-400">Ligado a: {loanWalletName}</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -555,7 +815,7 @@ export default function OnboardingWizard() {
               <div />
             )}
 
-            {step < 4 ? (
+            {step < 5 ? (
               <button
                 type="button"
                 onClick={handleNext}
