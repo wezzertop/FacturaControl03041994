@@ -335,6 +335,15 @@ export async function createTransaction(data: {
     return { success: false, error: 'Error al registrar la transacción' };
   }
 
+  // Si es un ingreso y el concepto contiene "Nómina", verificar cobros de préstamos asociados
+  if (data.type === 'income' && data.concept.toLowerCase().includes('nómina')) {
+    try {
+      await autoDeductLoansFromPayroll(user.id, data.wallet_id, data.date || new Date().toISOString());
+    } catch (err) {
+      console.error('Error en deducción automática de préstamos:', err);
+    }
+  }
+
   revalidatePath('/wallets');
   revalidatePath('/');
   return { success: true };
@@ -639,7 +648,16 @@ export async function resetUserData() {
     console.error('Error al borrar categorías:', catError);
   }
 
-  // 6. Resetear RFC del usuario a NULL en la tabla users
+  // 6. Eliminar préstamos
+  const { error: loanError } = await (supabase.from('loans') as any)
+    .delete()
+    .eq('user_id', user.id);
+
+  if (loanError) {
+    console.error('Error al borrar préstamos:', loanError);
+  }
+
+  // 7. Resetear RFC del usuario a NULL en la tabla users
   const { error: userError } = await (supabase.from('users') as any)
     .update({ rfc: null })
     .eq('id', user.id);
@@ -648,10 +666,32 @@ export async function resetUserData() {
     console.error('Error al resetear RFC del usuario:', userError);
   }
 
+  // 8. Vaciar físicamente los archivos del storage (XMLs y comprobantes)
+  try {
+    const { data: fileList } = await supabaseAdmin.storage.from('facturas').list();
+    if (fileList && fileList.length > 0) {
+      const fileNames = fileList.map(f => f.name);
+      await supabaseAdmin.storage.from('facturas').remove(fileNames);
+    }
+  } catch (err) {
+    console.error('Error al vaciar storage de facturas:', err);
+  }
+
+  try {
+    const { data: voucherList } = await supabaseAdmin.storage.from('comprobantes').list();
+    if (voucherList && voucherList.length > 0) {
+      const voucherNames = voucherList.map(f => f.name);
+      await supabaseAdmin.storage.from('comprobantes').remove(voucherNames);
+    }
+  } catch (err) {
+    console.error('Error al vaciar storage de comprobantes:', err);
+  }
+
   revalidatePath('/wallets');
   revalidatePath('/');
   revalidatePath('/settings');
   revalidatePath('/invoices');
+  revalidatePath('/loans');
   
   return { success: true };
 }
@@ -856,6 +896,15 @@ export async function processRecurringPayments(userId: string) {
         break;
       }
 
+      // Si es un ingreso y el concepto contiene "Nómina", verificar cobros de préstamos asociados
+      if (rule.type === 'income' && rule.concept.toLowerCase().includes('nómina')) {
+        try {
+          await autoDeductLoansFromPayroll(userId, rule.wallet_id, nextExec.toISOString());
+        } catch (err) {
+          console.error('Error en deducción automática de préstamos en recurrente:', err);
+        }
+      }
+
       // 2. Incrementar fecha de próxima ejecución según la frecuencia
       const freq = rule.frequency;
       if (freq === 'days_14') {
@@ -884,4 +933,158 @@ export async function processRecurringPayments(userId: string) {
       console.error('Error al actualizar fecha de ejecución de regla recurrente:', updateError);
     }
   }
+}
+
+/**
+ * Actualiza una transacción existente.
+ */
+export async function updateTransaction(
+  transactionId: string,
+  data: {
+    amount: number;
+    concept: string;
+    category_id?: string | null;
+    date: string;
+    type?: 'income' | 'expense';
+  }
+) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { success: false, error: 'Usuario no autenticado' };
+  }
+
+  const updateFields: any = {
+    amount: data.amount,
+    concept: data.concept,
+    category_id: data.category_id || null,
+    date: data.date
+  };
+
+  if (data.type) {
+    updateFields.type = data.type;
+  }
+
+  const { data: tx, error } = await (supabase
+    .from('transactions') as any)
+    .update(updateFields)
+    .eq('id', transactionId)
+    .eq('user_id', user.id)
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Error al actualizar transacción:', error);
+    return { success: false, error: 'No se pudo actualizar la transacción' };
+  }
+
+  revalidatePath('/wallets');
+  revalidatePath('/');
+  return { success: true, transaction: tx };
+}
+
+/**
+ * Deduce automáticamente la cuota de préstamos activos ligados a una nómina depositada.
+ */
+export async function autoDeductLoansFromPayroll(userId: string, walletId: string, date: string) {
+  const supabase = await createClient();
+  
+  // Buscar préstamos activos ligados a esta cartera
+  const { data: activeLoans } = await (supabase
+    .from('loans') as any)
+    .select('*')
+    .eq('user_id', userId)
+    .eq('wallet_id', walletId)
+    .eq('is_active', true);
+
+  if (!activeLoans || activeLoans.length === 0) return;
+
+  for (const loan of activeLoans) {
+    // Verificar si ya existe un pago regular registrado para este préstamo en el mismo día
+    const startOfDay = new Date(date);
+    startOfDay.setHours(0, 0, 0, 0);
+    const endOfDay = new Date(date);
+    endOfDay.setHours(23, 59, 59, 999);
+
+    const { data: existingPayment } = await supabase
+      .from('transactions')
+      .select('id')
+      .eq('user_id', userId)
+      .eq('loan_id', loan.id)
+      .eq('loan_payment_type', 'regular')
+      .gte('date', startOfDay.toISOString())
+      .lte('date', endOfDay.toISOString())
+      .limit(1);
+
+    if (existingPayment && existingPayment.length > 0) {
+      console.log(`El pago de préstamo para ${loan.name} ya fue deducido en esta fecha.`);
+      continue;
+    }
+
+    const nextPaymentNumber = loan.payments_made + 1;
+    
+    // Si ya completamos todos los pagos, desactivamos el préstamo
+    if (nextPaymentNumber > loan.total_payments) {
+      await (supabase.from('loans') as any)
+        .update({ is_active: false } as any)
+        .eq('id', loan.id);
+      continue;
+    }
+
+    // Calcular porción de capital para este pago quincenal/mensual
+    const principalAmount = calculatePrincipalPortion(
+      loan.amount_granted,
+      loan.current_balance,
+      loan.interest_rate,
+      loan.total_payments,
+      loan.payments_made,
+      loan.frequency,
+      loan.payment_amount
+    );
+
+    // Insertar la transacción de deducción
+    await supabase
+      .from('transactions')
+      .insert({
+        user_id: userId,
+        wallet_id: walletId,
+        type: 'expense',
+        amount: loan.payment_amount,
+        concept: `Deducción Préstamo ${loan.name} (Recibo ${nextPaymentNumber}/${loan.total_payments})`,
+        date: date,
+        loan_id: loan.id,
+        loan_payment_type: 'regular',
+        principal_amount: principalAmount
+      } as any);
+  }
+}
+
+// Helper para calcular la porción de capital del pago
+function calculatePrincipalPortion(
+  amountGranted: number,
+  currentBalance: number,
+  interestRate: number,
+  totalPayments: number,
+  paymentsMade: number,
+  frequency: string,
+  paymentAmount: number
+) {
+  const annualRate = Number(interestRate) / 100;
+  let periodsPerYear = 12;
+  if (frequency === 'days_14') periodsPerYear = 26;
+  else if (frequency === 'days_15') periodsPerYear = 24;
+
+  const ratePerPeriod = annualRate / periodsPerYear;
+  
+  // Interés bruto con IVA (16%)
+  const grossInterest = Number(currentBalance) * ratePerPeriod;
+  const interestWithIVA = grossInterest * 1.16;
+
+  let principal = Number(paymentAmount) - interestWithIVA;
+  
+  if (principal < 0) principal = 0;
+  if (principal > Number(currentBalance)) principal = Number(currentBalance);
+
+  return Math.round(principal * 100) / 100;
 }

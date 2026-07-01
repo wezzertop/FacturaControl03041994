@@ -11,7 +11,8 @@ import {
 import { createWorker } from 'tesseract.js';
 import { 
   createWallet, updateWallet, deleteWallet, createTransaction, 
-  deleteTransaction, linkInvoiceToWallet, getVoucherUrl, updateWalletStatement 
+  deleteTransaction, linkInvoiceToWallet, getVoucherUrl, updateWalletStatement,
+  updateTransaction
 } from '@/app/actions/wallets';
 import { createCategory } from '@/app/actions/categories';
 
@@ -212,6 +213,15 @@ export default function WalletsManager({
   const [showWalletModal, setShowWalletModal] = useState(false);
   const [showTxModal, setShowTxModal] = useState(false);
   const [showLinkModal, setShowLinkModal] = useState(false);
+
+  // Estados para edición de transacciones
+  const [showEditTxModal, setShowEditTxModal] = useState(false);
+  const [editingTx, setEditingTx] = useState<any | null>(null);
+  const [editConcept, setEditConcept] = useState('');
+  const [editAmount, setEditAmount] = useState('');
+  const [editCategoryId, setEditCategoryId] = useState('');
+  const [editDate, setEditDate] = useState('');
+  const [editType, setEditType] = useState<'income' | 'expense'>('expense');
 
   // Estados de formularios
   const [newWalletName, setNewWalletName] = useState('');
@@ -679,6 +689,62 @@ export default function WalletsManager({
         }
       } else {
         alert(res.error);
+      }
+    });
+  };
+
+  // Iniciar edición de transacción
+  const handleEditTransaction = (tx: any) => {
+    setEditingTx(tx);
+    setEditConcept(tx.concept);
+    setEditAmount(tx.amount.toString());
+    setEditCategoryId(tx.category_id || '');
+    setEditDate(tx.date ? tx.date.split('T')[0] : new Date().toISOString().split('T')[0]);
+    setEditType(tx.type);
+    setShowEditTxModal(true);
+  };
+
+  // Guardar edición de transacción
+  const handleUpdateTxSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingTx) return;
+
+    const amountNum = Number(editAmount);
+    if (!editConcept.trim() || isNaN(amountNum) || amountNum <= 0) {
+      alert('Ingresa datos válidos.');
+      return;
+    }
+
+    startTransition(async () => {
+      const res = await updateTransaction(editingTx.id, {
+        concept: editConcept.trim(),
+        amount: amountNum,
+        category_id: editCategoryId || null,
+        date: new Date(editDate + 'T12:00:00').toISOString(),
+        type: editType
+      });
+
+      if (res.success && res.transaction) {
+        const updatedTx = res.transaction;
+        
+        // 1. Actualizar listado de transacciones
+        setTransactions(prev => prev.map(t => t.id === editingTx.id ? { ...t, ...updatedTx } : t));
+
+        // 2. Recalcular saldo de la cartera
+        setWallets(prev => prev.map(w => {
+          if (w.id === editingTx.wallet_id) {
+            const oldDiff = editingTx.type === 'income' ? Number(editingTx.amount) : -Number(editingTx.amount);
+            const newDiff = editType === 'income' ? amountNum : -amountNum;
+            const diff = newDiff - oldDiff;
+            return { ...w, balance: Number(w.balance) + diff };
+          }
+          return w;
+        }));
+
+        setShowEditTxModal(false);
+        setEditingTx(null);
+      } else {
+        alert(res.error || 'Error al actualizar el movimiento.');
       }
     });
   };
@@ -1202,6 +1268,14 @@ export default function WalletsManager({
                           <Eye className="w-3.5 h-3.5" />
                         </button>
                       )}
+
+                      <button 
+                        onClick={() => handleEditTransaction(tx)}
+                        className="p-1 rounded text-brand-graphite dark:text-zinc-500 hover:text-brand-cerulean dark:hover:text-brand-cerulean hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors"
+                        title="Editar movimiento"
+                      >
+                        <Edit className="w-4 h-4" />
+                      </button>
 
                       <button 
                         onClick={() => handleDeleteTransaction(tx.id, tx.wallet_id, tx.type, Number(tx.amount))}
@@ -1813,6 +1887,105 @@ export default function WalletsManager({
                 className="w-full bg-brand-carbon dark:bg-white text-white dark:text-brand-carbon py-3 md:py-2.5 rounded-lg text-sm font-semibold hover:opacity-90 active:scale-95 transition-all disabled:opacity-50 min-h-[44px]"
               >
                 {isPending ? 'Vinculando...' : 'Confirmar Conciliación'}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Editar Transacción */}
+      {showEditTxModal && editingTx && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-zinc-950 border border-gray-200 dark:border-zinc-800 rounded-2xl w-full max-w-md shadow-2xl p-6 md:p-8 relative">
+            <button 
+              onClick={() => {
+                setShowEditTxModal(false);
+                setEditingTx(null);
+              }}
+              className="absolute top-4 right-4 text-brand-graphite dark:text-zinc-400 hover:text-brand-carbon dark:hover:text-white p-2 rounded-full hover:bg-gray-100 dark:hover:bg-zinc-800"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <h3 className="text-lg font-bold text-brand-carbon dark:text-white mb-2">
+              Editar Movimiento
+            </h3>
+            <p className="text-xs text-brand-graphite dark:text-zinc-500 mb-6">
+              Ajusta los detalles del movimiento. El balance de la cartera asociada se actualizará de forma reactiva al instante.
+            </p>
+
+            <form onSubmit={handleUpdateTxSubmit} className="space-y-4">
+              <div className="space-y-1">
+                <label className="text-xs font-semibold text-brand-graphite dark:text-zinc-400">Concepto</label>
+                <input 
+                  type="text" 
+                  value={editConcept}
+                  onChange={(e) => setEditConcept(e.target.value)}
+                  className="w-full bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-lg px-3 py-2 text-sm text-brand-carbon dark:text-white focus:outline-none focus:border-brand-cerulean"
+                  required
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-brand-graphite dark:text-zinc-400">Monto ($)</label>
+                  <input 
+                    type="number" 
+                    value={editAmount}
+                    onChange={(e) => setEditAmount(e.target.value)}
+                    className="w-full bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-lg px-3 py-2 text-sm text-brand-carbon dark:text-white focus:outline-none focus:border-brand-cerulean"
+                    step="0.01"
+                    min="0.01"
+                    required
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-brand-graphite dark:text-zinc-400">Fecha</label>
+                  <input 
+                    type="date" 
+                    value={editDate}
+                    onChange={(e) => setEditDate(e.target.value)}
+                    className="w-full bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-lg px-3 py-2 text-sm text-brand-carbon dark:text-white focus:outline-none focus:border-brand-cerulean"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-brand-graphite dark:text-zinc-400">Tipo</label>
+                  <select 
+                    value={editType}
+                    onChange={(e) => setEditType(e.target.value as 'income' | 'expense')}
+                    className="w-full bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-lg px-3 py-2.5 text-sm text-brand-carbon dark:text-white focus:outline-none focus:border-brand-cerulean"
+                  >
+                    <option value="expense">Gasto / Cargo</option>
+                    <option value="income">Ingreso / Abono</option>
+                  </select>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-brand-graphite dark:text-zinc-400">Categoría</label>
+                  <select 
+                    value={editCategoryId}
+                    onChange={(e) => setEditCategoryId(e.target.value)}
+                    className="w-full bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-lg px-3 py-2.5 text-sm text-brand-carbon dark:text-white focus:outline-none focus:border-brand-cerulean"
+                  >
+                    <option value="">Sin Categoría</option>
+                    {categories.map(c => (
+                      <option key={c.id} value={c.id}>{c.name}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <button 
+                type="submit"
+                disabled={isPending}
+                className="w-full bg-brand-carbon dark:bg-white text-white dark:text-brand-carbon py-2.5 rounded-lg text-sm font-semibold hover:opacity-90 active:scale-95 transition-all disabled:opacity-50 mt-4"
+              >
+                {isPending ? 'Guardando...' : 'Guardar Cambios'}
               </button>
             </form>
           </div>

@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React, { useState } from "react";
 import Link from "next/link";
@@ -9,6 +9,7 @@ import {
   ChevronLeft,
   ChevronRight,
   FileText,
+  Landmark,
   LayoutDashboard,
   LogOut,
   Moon,
@@ -29,6 +30,7 @@ const navItems = [
   { name: "Cargar XML", href: "/upload", icon: UploadCloud },
   { name: "Historial", href: "/invoices", icon: FileText },
   { name: "Carteras", href: "/wallets", icon: Wallet },
+  { name: "Préstamos", href: "/loans", icon: Landmark },
   { name: "Análisis", href: "/analytics", icon: PieChart },
   { name: "Simulación fiscal", href: "/simulation", icon: Calculator },
   { name: "Configuración", href: "/settings", icon: Settings },
