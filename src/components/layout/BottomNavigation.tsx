@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React, { useState } from "react";
 import Link from "next/link";
@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import {
   Camera,
   FileText,
+  Landmark,
   LayoutDashboard,
   PieChart,
   Plus,
@@ -101,6 +102,16 @@ export default function BottomNavigation() {
             <span>
               <span className="block text-sm font-semibold text-slate-950 dark:text-white">Movimiento manual</span>
               <span className="block text-xs text-slate-500 dark:text-slate-400">Registra efectivo o cuenta bancaria</span>
+            </span>
+          </Link>
+
+          <Link href="/loans" onClick={() => setIsMenuOpen(false)} className="flex items-center gap-3 rounded-lg p-3 transition hover:bg-slate-100 dark:hover:bg-white/10">
+            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-indigo-500/10 text-indigo-600 dark:text-indigo-400">
+              <Landmark className="h-5 w-5" />
+            </span>
+            <span>
+              <span className="block text-sm font-semibold text-slate-950 dark:text-white">Mis Préstamos</span>
+              <span className="block text-xs text-slate-500 dark:text-slate-400">Amortizaciones, cuotas y abonos</span>
             </span>
           </Link>
 
