@@ -543,7 +543,7 @@ export default function LoansManager({ initialLoans, wallets, categories }: Loan
                   </p>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto sm:justify-end">
                   <button
                     type="button"
                     onClick={() => {
