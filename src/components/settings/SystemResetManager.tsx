@@ -32,8 +32,7 @@ export default function SystemResetManager() {
         setSuccess(true);
         setTimeout(() => {
           setShowConfirm(false);
-          router.push('/');
-          router.refresh();
+          window.location.href = '/';
         }, 1500);
       } else {
         setError(res.error || 'Ocurrió un error inesperado al restablecer.');
@@ -62,7 +61,7 @@ export default function SystemResetManager() {
           setShowXmlConfirm(false);
           setXmlSafetyText('');
           setSuccess(false);
-          router.refresh();
+          window.location.reload();
         }, 1500);
       } else {
         setError(res.error || 'Ocurrió un error al limpiar los XMLs.');
