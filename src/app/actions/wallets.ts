@@ -599,7 +599,7 @@ export async function resetUserData() {
   }
 
   // 1. Eliminar transacciones
-  const { error: txError } = await supabase
+  const { error: txError } = await supabaseAdmin
     .from('transactions')
     .delete()
     .eq('user_id', user.id);
@@ -609,7 +609,7 @@ export async function resetUserData() {
   }
 
   // 2. Eliminar facturas
-  const { error: invError } = await supabase
+  const { error: invError } = await supabaseAdmin
     .from('invoices')
     .delete()
     .eq('user_id', user.id);
@@ -619,7 +619,7 @@ export async function resetUserData() {
   }
 
   // 3. Eliminar pagos recurrentes
-  const { error: recError } = await (supabase
+  const { error: recError } = await (supabaseAdmin
     .from('recurring_payments') as any)
     .delete()
     .eq('user_id', user.id);
@@ -629,7 +629,7 @@ export async function resetUserData() {
   }
 
   // 4. Eliminar carteras
-  const { error: walletError } = await supabase
+  const { error: walletError } = await supabaseAdmin
     .from('wallets')
     .delete()
     .eq('user_id', user.id);
@@ -639,7 +639,7 @@ export async function resetUserData() {
   }
 
   // 5. Eliminar categorías personalizadas (las que tienen user_id del usuario)
-  const { error: catError } = await supabase
+  const { error: catError } = await supabaseAdmin
     .from('categories')
     .delete()
     .eq('user_id', user.id);
@@ -649,7 +649,7 @@ export async function resetUserData() {
   }
 
   // 6. Eliminar préstamos
-  const { error: loanError } = await (supabase.from('loans') as any)
+  const { error: loanError } = await (supabaseAdmin.from('loans') as any)
     .delete()
     .eq('user_id', user.id);
 
@@ -658,7 +658,7 @@ export async function resetUserData() {
   }
 
   // 7. Resetear RFC del usuario a NULL en la tabla users
-  const { error: userError } = await (supabase.from('users') as any)
+  const { error: userError } = await (supabaseAdmin.from('users') as any)
     .update({ rfc: null })
     .eq('id', user.id);
 
