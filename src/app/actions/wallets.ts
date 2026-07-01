@@ -1088,3 +1088,63 @@ function calculatePrincipalPortion(
 
   return Math.round(principal * 100) / 100;
 }
+
+/**
+ * Elimina las facturas XML cargadas de la base de datos y vacía físicamente el storage.
+ * Desvincula las facturas de cualquier transacción para no borrar tus movimientos ni alterar carteras.
+ */
+export async function resetXMLData() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { success: false, error: 'Usuario no autenticado' };
+  }
+
+  // 1. Desvincular todas las facturas de las transacciones (establecer invoice_id a null)
+  const { error: txError } = await (supabase
+    .from('transactions') as any)
+    .update({ invoice_id: null } as any)
+    .eq('user_id', user.id);
+
+  if (txError) {
+    console.error('Error al desvincular facturas de transacciones:', txError);
+  }
+
+  // 2. Eliminar facturas
+  const { error: invError } = await supabase
+    .from('invoices')
+    .delete()
+    .eq('user_id', user.id);
+
+  if (invError) {
+    console.error('Error al borrar facturas:', invError);
+    return { success: false, error: 'No se pudieron eliminar las facturas de la base de datos' };
+  }
+
+  // 3. Vaciar físicamente los archivos del storage (XMLs y comprobantes)
+  try {
+    const { data: fileList } = await supabaseAdmin.storage.from('facturas').list();
+    if (fileList && fileList.length > 0) {
+      const fileNames = fileList.map(f => f.name);
+      await supabaseAdmin.storage.from('facturas').remove(fileNames);
+    }
+  } catch (err) {
+    console.error('Error al vaciar storage de facturas:', err);
+  }
+
+  try {
+    const { data: voucherList } = await supabaseAdmin.storage.from('comprobantes').list();
+    if (voucherList && voucherList.length > 0) {
+      const voucherNames = voucherList.map(f => f.name);
+      await supabaseAdmin.storage.from('comprobantes').remove(voucherNames);
+    }
+  } catch (err) {
+    console.error('Error al vaciar storage de comprobantes:', err);
+  }
+
+  revalidatePath('/invoices');
+  revalidatePath('/wallets');
+  revalidatePath('/');
+  return { success: true };
+}
