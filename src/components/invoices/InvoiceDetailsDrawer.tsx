@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useEffect, useTransition } from 'react';
-import { X, Receipt, Building2, Calendar, FileText, CheckCircle2, ChevronDown } from 'lucide-react';
+import React, { useEffect, useState, useTransition } from 'react';
+import { X, Receipt, Building2, Calendar, FileText, CheckCircle2, ChevronDown, Check } from 'lucide-react';
 import { updateInvoiceCategory } from '@/app/actions/invoices';
 
 interface InvoiceDetailsDrawerProps {
@@ -9,7 +9,10 @@ interface InvoiceDetailsDrawerProps {
   isOpen: boolean;
   onClose: () => void;
   categories: any[];
+  providerMappings?: any[];
   onCategoryChange?: (invoiceId: string, newCategoryId: string) => void;
+  onProviderMappingChange?: (rfc: string, newCommercialName: string) => void;
+  onDescriptionChange?: (invoiceId: string, newDescription: string) => void;
 }
 
 export default function InvoiceDetailsDrawer({ 
@@ -17,9 +20,26 @@ export default function InvoiceDetailsDrawer({
   isOpen, 
   onClose, 
   categories, 
-  onCategoryChange 
+  providerMappings = [],
+  onCategoryChange,
+  onProviderMappingChange,
+  onDescriptionChange
 }: InvoiceDetailsDrawerProps) {
   const [isPending, startTransition] = useTransition();
+
+  const [commNameInput, setCommNameInput] = useState('');
+  const [descriptionInput, setDescriptionInput] = useState('');
+
+  // Sincronizar campos de entrada cuando cambia el invoice seleccionado o sus mapeos
+  useEffect(() => {
+    if (invoice) {
+      const mapping = providerMappings.find(
+        m => m.rfc?.trim().toUpperCase() === invoice.rfc_emisor?.trim().toUpperCase()
+      );
+      setCommNameInput(mapping ? mapping.commercial_name : '');
+      setDescriptionInput(invoice.description || '');
+    }
+  }, [invoice, providerMappings]);
 
   // Evitar scroll en el body cuando el panel está abierto
   useEffect(() => {
@@ -65,6 +85,40 @@ export default function InvoiceDetailsDrawer({
     });
   };
 
+  const handleUpsertCommercialName = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!invoice.rfc_emisor) return;
+
+    startTransition(async () => {
+      const { upsertProviderMapping } = await import('@/app/actions/invoices');
+      const res = await upsertProviderMapping(invoice.rfc_emisor, commNameInput);
+      if (res.success) {
+        if (onProviderMappingChange) {
+          onProviderMappingChange(invoice.rfc_emisor, commNameInput);
+        }
+      } else {
+        alert(res.error || 'Error al guardar el nombre comercial');
+      }
+    });
+  };
+
+  const handleUpdateDescription = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!invoice.id) return;
+
+    startTransition(async () => {
+      const { updateInvoiceDescription } = await import('@/app/actions/invoices');
+      const res = await updateInvoiceDescription(invoice.id, descriptionInput);
+      if (res.success) {
+        if (onDescriptionChange) {
+          onDescriptionChange(invoice.id, descriptionInput);
+        }
+      } else {
+        alert(res.error || 'Error al guardar la descripción');
+      }
+    });
+  };
+
   const items = invoice.items || [];
   const currentCategoryId = invoice.category_id || invoice.categories?.id || '';
 
@@ -99,17 +153,17 @@ export default function InvoiceDetailsDrawer({
         </div>
 
         {/* Contenido scrolleable */}
-        <div className="flex-1 overflow-y-auto custom-scrollbar p-6 space-y-8">
+        <div className="flex-1 overflow-y-auto custom-scrollbar p-6 space-y-6">
           
           {/* Sección de Emisor y Montos Principales */}
           <div className="space-y-4">
             <div className="flex justify-between items-start">
               <div>
                 <p className="text-sm text-brand-graphite dark:text-zinc-400 flex items-center gap-1.5 mb-1">
-                  <Building2 className="w-4 h-4" /> Proveedor
+                  <Building2 className="w-4 h-4" /> Proveedor (Razón Social)
                 </p>
-                <p className="font-bold text-brand-carbon dark:text-white text-lg">{invoice.nombre_emisor}</p>
-                <p className="text-sm font-medium text-brand-graphite dark:text-zinc-500">{invoice.rfc_emisor}</p>
+                <p className="font-bold text-brand-carbon dark:text-white text-base leading-snug">{invoice.nombre_emisor}</p>
+                <p className="text-xs font-semibold text-brand-graphite dark:text-zinc-500 font-mono mt-0.5">{invoice.rfc_emisor}</p>
               </div>
               <div className="text-right">
                 <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-xs font-semibold">
@@ -118,14 +172,14 @@ export default function InvoiceDetailsDrawer({
               </div>
             </div>
 
-            <div className="flex items-center gap-2 text-sm text-brand-graphite dark:text-zinc-400">
+            <div className="flex items-center gap-2 text-xs text-brand-graphite dark:text-zinc-400">
               <Calendar className="w-4 h-4" />
               {formatDate(invoice.fecha)}
             </div>
 
             {/* Categoría Seleccionable */}
             <div className="flex flex-col space-y-1.5 pt-2">
-              <label className="text-[10px] font-bold text-gray-500 dark:text-zinc-400 uppercase tracking-wider">Categoría de la Factura</label>
+              <label className="text-[10px] font-bold text-gray-600 dark:text-zinc-400 uppercase tracking-wider">Categoría de la Factura</label>
               <div className="relative">
                 <select
                   value={currentCategoryId}
@@ -145,6 +199,52 @@ export default function InvoiceDetailsDrawer({
                 </div>
               </div>
             </div>
+
+            {/* Configurar Nombre Comercial (Alias de Proveedor) */}
+            <form onSubmit={handleUpsertCommercialName} className="flex flex-col space-y-1.5 pt-2">
+              <label className="text-[10px] font-bold text-gray-650 dark:text-zinc-400 uppercase tracking-wider">Nombre Comercial (Alias de Proveedor)</label>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={commNameInput}
+                  onChange={(e) => setCommNameInput(e.target.value)}
+                  placeholder="Ej. Domino's Pizza"
+                  className="flex-1 px-3 py-2.5 text-xs border border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 rounded-xl focus:ring-2 focus:ring-brand-cerulean focus:outline-none dark:text-white font-medium"
+                />
+                <button
+                  type="submit"
+                  disabled={isPending}
+                  className="px-3.5 py-2.5 bg-brand-cerulean hover:bg-brand-cerulean/90 text-white rounded-xl text-xs font-bold transition flex items-center justify-center shrink-0 disabled:opacity-50"
+                  title="Guardar nombre comercial"
+                >
+                  <Check className="w-4 h-4" />
+                </button>
+              </div>
+              <span className="text-[9px] text-gray-400">Personaliza el nombre de este proveedor para todas las facturas de su RFC.</span>
+            </form>
+
+            {/* Descripción del Gasto */}
+            <form onSubmit={handleUpdateDescription} className="flex flex-col space-y-1.5 pt-2">
+              <label className="text-[10px] font-bold text-gray-650 dark:text-zinc-400 uppercase tracking-wider">Descripción o Notas del Gasto</label>
+              <div className="flex gap-2 items-end">
+                <textarea
+                  value={descriptionInput}
+                  onChange={(e) => setDescriptionInput(e.target.value)}
+                  placeholder="Ej. Cena familiar con mi esposa o compra de insumos"
+                  rows={2}
+                  className="flex-1 px-3 py-2 text-xs border border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 rounded-xl focus:ring-2 focus:ring-brand-cerulean focus:outline-none dark:text-white font-medium resize-none"
+                />
+                <button
+                  type="submit"
+                  disabled={isPending}
+                  className="px-3.5 py-2 bg-brand-cerulean hover:bg-brand-cerulean/90 text-white rounded-xl text-xs font-bold transition flex items-center justify-center shrink-0 h-9 disabled:opacity-50"
+                  title="Guardar descripción"
+                >
+                  <Check className="w-4 h-4" />
+                </button>
+              </div>
+              <span className="text-[9px] text-gray-400">Añade una descripción específica para saber en qué consistió este gasto.</span>
+            </form>
           </div>
 
           {/* Ticket de Compra (Conceptos) */}

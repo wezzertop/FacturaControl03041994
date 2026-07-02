@@ -5,6 +5,7 @@ import InvoiceTable, { type InvoiceTableRow } from "@/components/invoices/Invoic
 import ExportCSVButton from "@/components/invoices/ExportCSVButton";
 import PageShell from "@/components/layout/PageShell";
 import { getCategories } from "@/app/actions/categories";
+import { getProviderMappings } from "@/app/actions/invoices";
 
 export default async function InvoicesPage() {
   const supabase = await createClient();
@@ -26,6 +27,7 @@ export default async function InvoicesPage() {
     .order("fecha", { ascending: false });
 
   const categories = await getCategories();
+  const providerMappings = await getProviderMappings();
   const validInvoices = (invoices || []) as InvoiceTableRow[];
 
   return (
@@ -43,7 +45,7 @@ export default async function InvoicesPage() {
           </div>
         </div>
       ) : (
-        <InvoiceTable invoices={validInvoices} categories={categories} />
+        <InvoiceTable invoices={validInvoices} categories={categories} providerMappings={providerMappings} />
       )}
     </PageShell>
   );

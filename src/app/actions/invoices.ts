@@ -46,3 +46,93 @@ export async function updateInvoiceCategory(invoiceId: string, categoryId: strin
   revalidatePath('/');
   return { success: true };
 }
+
+export async function getProviderMappings() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    return [];
+  }
+
+  const { data, error } = await supabase
+    .from('provider_mappings')
+    .select('*')
+    .eq('user_id', user.id);
+
+  if (error) {
+    console.error('Error al obtener mapeos de proveedores:', error);
+    return [];
+  }
+
+  return data || [];
+}
+
+export async function upsertProviderMapping(rfc: string, commercialName: string) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { success: false, error: 'Usuario no autenticado' };
+  }
+
+  const trimmedName = commercialName.trim();
+  const upperRfc = rfc.trim().toUpperCase();
+
+  if (!trimmedName) {
+    // Si el nombre comercial está vacío, eliminamos el mapeo
+    const { error } = await supabase
+      .from('provider_mappings')
+      .delete()
+      .eq('rfc', upperRfc)
+      .eq('user_id', user.id);
+
+    if (error) {
+      console.error('Error al eliminar mapeo de proveedor:', error);
+      return { success: false, error: 'No se pudo eliminar el nombre comercial.' };
+    }
+  } else {
+    // Upsert usando supabaseAdmin para evitar RLS o conflictos
+    const { error } = await (supabaseAdmin
+      .from('provider_mappings') as any)
+      .upsert({
+        user_id: user.id,
+        rfc: upperRfc,
+        commercial_name: trimmedName
+      }, {
+        onConflict: 'user_id,rfc'
+      });
+
+    if (error) {
+      console.error('Error al guardar mapeo de proveedor:', error);
+      return { success: false, error: 'No se pudo guardar el nombre comercial.' };
+    }
+  }
+
+  revalidatePath('/invoices');
+  revalidatePath('/');
+  return { success: true };
+}
+
+export async function updateInvoiceDescription(invoiceId: string, description: string) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { success: false, error: 'Usuario no autenticado' };
+  }
+
+  const { error } = await (supabaseAdmin
+    .from('invoices') as any)
+    .update({ description: description })
+    .eq('id', invoiceId)
+    .eq('user_id', user.id);
+
+  if (error) {
+    console.error('Error al actualizar descripción de factura:', error);
+    return { success: false, error: 'No se pudo actualizar la descripción de la factura.' };
+  }
+
+  revalidatePath('/invoices');
+  return { success: true };
+}

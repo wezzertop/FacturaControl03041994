@@ -12,6 +12,7 @@ export interface InvoiceTableRow {
   fecha?: string | null;
   status?: string | null;
   category_id?: string | null;
+  description?: string | null;
   categories?: {
     id?: string | null;
     name?: string | null;
@@ -23,6 +24,7 @@ export interface InvoiceTableRow {
 interface InvoiceTableProps {
   invoices: InvoiceTableRow[];
   categories?: any[];
+  providerMappings?: any[];
   compact?: boolean;
 }
 
@@ -39,13 +41,30 @@ const formatDate = (dateString: string | null | undefined) => {
   });
 };
 
-export default function InvoiceTable({ invoices, categories, compact = false }: InvoiceTableProps) {
+export default function InvoiceTable({ 
+  invoices, 
+  categories, 
+  providerMappings = [], 
+  compact = false 
+}: InvoiceTableProps) {
   const [localInvoices, setLocalInvoices] = useState<InvoiceTableRow[]>(invoices);
+  const [localProviderMappings, setLocalProviderMappings] = useState<any[]>(providerMappings);
   const [selectedInvoice, setSelectedInvoice] = useState<InvoiceTableRow | null>(null);
 
   useEffect(() => {
     setLocalInvoices(invoices);
   }, [invoices]);
+
+  useEffect(() => {
+    setLocalProviderMappings(providerMappings);
+  }, [providerMappings]);
+
+  const getInvoiceDisplayName = (invoice: InvoiceTableRow) => {
+    const mapping = localProviderMappings.find(
+      m => m.rfc?.trim().toUpperCase() === invoice.rfc_emisor?.trim().toUpperCase()
+    );
+    return mapping ? mapping.commercial_name : (invoice.nombre_emisor || "Proveedor sin nombre");
+  };
 
   if (localInvoices.length === 0) {
     return (
@@ -77,12 +96,24 @@ export default function InvoiceTable({ invoices, categories, compact = false }: 
             >
               <div className="flex items-start justify-between gap-4">
                 <div className="min-w-0 flex-1">
-                  <h4 className="truncate text-sm font-semibold text-slate-950 dark:text-white">{invoice.nombre_emisor || "Proveedor sin nombre"}</h4>
-                  <p className="mt-1 truncate font-mono text-xs text-slate-500 dark:text-slate-400">{invoice.rfc_emisor || "Sin RFC"}</p>
+                  <h4 className="truncate text-sm font-semibold text-slate-950 dark:text-white">
+                    {getInvoiceDisplayName(invoice)}
+                  </h4>
+                  <p className="mt-1 truncate font-mono text-[10px] text-slate-500 dark:text-slate-450">
+                    {invoice.rfc_emisor || "Sin RFC"}
+                    {invoice.nombre_emisor && getInvoiceDisplayName(invoice) !== invoice.nombre_emisor 
+                      ? ` • ${invoice.nombre_emisor}` 
+                      : ""}
+                  </p>
+                  {invoice.description && (
+                    <p className="mt-1 text-[10px] text-brand-cerulean font-medium line-clamp-1 italic">
+                      "{invoice.description}"
+                    </p>
+                  )}
                 </div>
                 <div className="shrink-0 text-right">
                   <p className="font-semibold text-slate-950 dark:text-white">{formatCurrency(invoice.total)}</p>
-                  <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{formatDate(invoice.fecha)}</p>
+                  <p className="mt-1 text-[10px] text-slate-500 dark:text-slate-400">{formatDate(invoice.fecha)}</p>
                 </div>
               </div>
 
@@ -133,7 +164,15 @@ export default function InvoiceTable({ invoices, categories, compact = false }: 
                   className="cursor-pointer transition hover:bg-slate-50 dark:hover:bg-white/5"
                 >
                   <td className="max-w-[18rem] px-5 py-4 font-medium text-slate-900 dark:text-slate-100">
-                    <span className="block truncate">{invoice.nombre_emisor || "Proveedor sin nombre"}</span>
+                    <span className="block truncate">{getInvoiceDisplayName(invoice)}</span>
+                    {invoice.nombre_emisor && getInvoiceDisplayName(invoice) !== invoice.nombre_emisor ? (
+                      <span className="block text-[10px] text-slate-400 truncate mt-0.5">{invoice.nombre_emisor}</span>
+                    ) : null}
+                    {invoice.description && (
+                      <span className="block text-[10px] text-brand-cerulean font-medium truncate mt-0.5 italic">
+                        "{invoice.description}"
+                      </span>
+                    )}
                   </td>
                   {!compact ? <td className="px-5 py-4 font-mono text-xs text-slate-500 dark:text-slate-400">{invoice.rfc_emisor || "Sin RFC"}</td> : null}
                   <td className="px-5 py-4 text-slate-500 dark:text-slate-400">{formatDate(invoice.fecha)}</td>
@@ -168,6 +207,7 @@ export default function InvoiceTable({ invoices, categories, compact = false }: 
         isOpen={!!selectedInvoice}
         onClose={() => setSelectedInvoice(null)}
         categories={categories || []}
+        providerMappings={localProviderMappings}
         onCategoryChange={(invoiceId, newCategoryId) => {
           const newCategory = (categories || []).find(c => c.id === newCategoryId);
           setLocalInvoices(prev => prev.map(inv => 
@@ -177,6 +217,31 @@ export default function InvoiceTable({ invoices, categories, compact = false }: 
           ));
           if (selectedInvoice && selectedInvoice.id === invoiceId) {
             setSelectedInvoice(prev => prev ? { ...prev, category_id: newCategoryId, categories: newCategory } : null);
+          }
+        }}
+        onProviderMappingChange={(rfc, newCommercialName) => {
+          const upperRfc = rfc.trim().toUpperCase();
+          setLocalProviderMappings(prev => {
+            const exists = prev.some(m => m.rfc?.trim().toUpperCase() === upperRfc);
+            if (exists) {
+              if (!newCommercialName.trim()) {
+                return prev.filter(m => m.rfc?.trim().toUpperCase() !== upperRfc);
+              }
+              return prev.map(m => m.rfc?.trim().toUpperCase() === upperRfc ? { ...m, commercial_name: newCommercialName } : m);
+            } else {
+              if (!newCommercialName.trim()) return prev;
+              return [...prev, { rfc: upperRfc, commercial_name: newCommercialName }];
+            }
+          });
+        }}
+        onDescriptionChange={(invoiceId, newDescription) => {
+          setLocalInvoices(prev => prev.map(inv => 
+            inv.id === invoiceId 
+              ? { ...inv, description: newDescription } 
+              : inv
+          ));
+          if (selectedInvoice && selectedInvoice.id === invoiceId) {
+            setSelectedInvoice(prev => prev ? { ...prev, description: newDescription } : null);
           }
         }}
       />
