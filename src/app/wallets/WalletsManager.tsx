@@ -6,7 +6,7 @@ import {
   DollarSign, Tag, Receipt, Building2, CheckCircle2, X, PlusCircle,
   FileImage, Eye, RefreshCw, Upload,
   ShoppingCart, Fuel, Zap, HeartPulse, Utensils, MoreHorizontal,
-  Tv, GraduationCap, Gift, PiggyBank, CreditCard, Coins, Edit
+  Tv, GraduationCap, Gift, PiggyBank, CreditCard, Coins, Edit, Check
 } from 'lucide-react';
 import { createWorker } from 'tesseract.js';
 import { 
@@ -167,13 +167,15 @@ interface WalletsManagerProps {
   initialTransactions: any[];
   initialUnlinkedInvoices: any[];
   categories: any[];
+  providerMappings?: any[];
 }
 
 export default function WalletsManager({ 
   initialWallets, 
   initialTransactions, 
   initialUnlinkedInvoices,
-  categories 
+  categories,
+  providerMappings = []
 }: WalletsManagerProps) {
   const [wallets, setWallets] = useState(initialWallets);
   const [transactions, setTransactions] = useState(initialTransactions);
@@ -251,6 +253,21 @@ export default function WalletsManager({
   const [localCategories, setLocalCategories] = useState(categories);
   const [showInlineCategoryForm, setShowInlineCategoryForm] = useState(false);
   const [inlineCatName, setInlineCatName] = useState('');
+
+  const getTransactionDisplayName = (tx: any) => {
+    if (tx.invoices) {
+      const mapping = providerMappings.find(
+        (m: any) => m.rfc?.trim().toUpperCase() === tx.invoices.rfc_emisor?.trim().toUpperCase()
+      );
+      const displayName = mapping ? mapping.commercial_name : tx.invoices.nombre_emisor;
+      const isIncome = tx.type === 'income';
+      const prefix = isIncome 
+        ? (tx.invoices.invoice_type === 'nomina' ? 'Depósito de Nómina' : 'Ingreso Facturado')
+        : 'Pago Facturado';
+      return `${prefix}: ${displayName}`;
+    }
+    return tx.concept;
+  };
   const [inlineCatColor, setInlineCatColor] = useState('bg-brand-cerulean');
   const [inlineCatIcon, setInlineCatIcon] = useState('ShoppingCart');
   const [inlineError, setInlineError] = useState<string | null>(null);
@@ -1222,16 +1239,22 @@ export default function WalletsManager({
                       </div>
                       
                       <div className="min-w-0">
-                        <p className="text-sm font-bold text-brand-carbon dark:text-white truncate max-w-[170px] sm:max-w-[280px]">
-                          {tx.concept}
+                        <p className="text-sm font-bold text-brand-carbon dark:text-white flex flex-wrap items-center gap-1.5 truncate max-w-[170px] sm:max-w-[280px]">
+                          <span className="truncate">{getTransactionDisplayName(tx)}</span>
+                          {tx.invoice_id && (
+                            <span className="inline-flex items-center gap-0.5 text-[8px] font-black text-emerald-600 dark:text-emerald-450 bg-emerald-500/10 px-1.5 py-0.5 rounded-full uppercase tracking-wider shrink-0 select-none">
+                              <Check className="w-2.5 h-2.5" strokeWidth={3} />
+                              Comprobado SAT
+                            </span>
+                          )}
                         </p>
                         <div className="flex flex-wrap items-center gap-1.5 mt-1 text-[11px] text-brand-graphite dark:text-zinc-500 font-medium">
                           <span>{tx.wallets?.name || 'Cuenta'}</span>
-                          <span>â€¢</span>
+                          <span>•</span>
                           <span>{formatDate(tx.date)}</span>
                           {tx.categories && (
                             <>
-                              <span>â€¢</span>
+                              <span>•</span>
                               <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold text-white ${tx.categories.color}`}>
                                 {tx.categories.name}
                               </span>

@@ -2,6 +2,8 @@ import React from "react";
 import type { LucideIcon } from "lucide-react";
 import { createClient } from "@/utils/supabase/server";
 import InvoiceTable from "@/components/invoices/InvoiceTable";
+import { getProviderMappings } from "@/app/actions/invoices";
+import { getCategories } from "@/app/actions/categories";
 import {
   ArrowDownRight,
   ArrowUpRight,
@@ -64,7 +66,7 @@ export default async function FinancialOverview() {
 
   if (!user) return null;
 
-  const [invoicesResponse, walletsResponse, transactionsResponse] = await Promise.all([
+  const [invoicesResponse, walletsResponse, transactionsResponse, providerMappings, categories] = await Promise.all([
     supabase
       .from("invoices")
       .select("*, categories(*)")
@@ -72,6 +74,8 @@ export default async function FinancialOverview() {
       .order("fecha", { ascending: false }),
     supabase.from("wallets").select("*").eq("user_id", user.id),
     supabase.from("transactions").select("*, categories(*)").eq("user_id", user.id),
+    getProviderMappings(),
+    getCategories()
   ]);
 
   const validInvoices = (invoicesResponse.data || []) as InvoiceRow[];
@@ -347,7 +351,7 @@ export default async function FinancialOverview() {
             <p className="text-sm text-slate-500 dark:text-slate-400">Los XML de egreso más recientes.</p>
           </div>
         </div>
-        <InvoiceTable invoices={latestTransactions} compact />
+        <InvoiceTable invoices={latestTransactions} compact categories={categories} providerMappings={providerMappings} />
       </section>
     </div>
   );
