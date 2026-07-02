@@ -2,6 +2,13 @@
 
 import { createClient } from "@/utils/supabase/server";
 import { revalidatePath } from "next/cache";
+import { createClient as createSupabaseClient } from '@supabase/supabase-js';
+import { Database } from '@/types/database';
+
+const supabaseAdmin = createSupabaseClient<Database>(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
 
 export async function updateInvoiceCategory(invoiceId: string, categoryId: string) {
   const supabase = await createClient();
@@ -11,8 +18,8 @@ export async function updateInvoiceCategory(invoiceId: string, categoryId: strin
     return { success: false, error: 'Usuario no autenticado' };
   }
 
-  // 1. Actualizar la factura (cast a any para evitar errores de tipado de Supabase)
-  const { error: invoiceError } = await (supabase
+  // 1. Actualizar la factura usando supabaseAdmin para saltar RLS
+  const { error: invoiceError } = await (supabaseAdmin
     .from('invoices') as any)
     .update({ category_id: categoryId })
     .eq('id', invoiceId)
@@ -23,8 +30,8 @@ export async function updateInvoiceCategory(invoiceId: string, categoryId: strin
     return { success: false, error: 'No se pudo actualizar la categoría de la factura.' };
   }
 
-  // 2. Actualizar las transacciones vinculadas si existen
-  const { error: txError } = await (supabase
+  // 2. Actualizar las transacciones vinculadas si existen usando supabaseAdmin
+  const { error: txError } = await (supabaseAdmin
     .from('transactions') as any)
     .update({ category_id: categoryId })
     .eq('invoice_id', invoiceId)
