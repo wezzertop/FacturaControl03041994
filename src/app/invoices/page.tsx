@@ -1,9 +1,10 @@
-﻿import React from "react";
+import React from "react";
 import { createClient } from "@/utils/supabase/server";
 import { AlertCircle } from "lucide-react";
 import InvoiceTable, { type InvoiceTableRow } from "@/components/invoices/InvoiceTable";
 import ExportCSVButton from "@/components/invoices/ExportCSVButton";
 import PageShell from "@/components/layout/PageShell";
+import { getCategories } from "@/app/actions/categories";
 
 export default async function InvoicesPage() {
   const supabase = await createClient();
@@ -19,11 +20,12 @@ export default async function InvoicesPage() {
     .from("invoices")
     .select(`
       *,
-      categories (name, color, icon)
+      categories (id, name, color, icon)
     `)
     .eq("user_id", user.id)
     .order("fecha", { ascending: false });
 
+  const categories = await getCategories();
   const validInvoices = (invoices || []) as InvoiceTableRow[];
 
   return (
@@ -41,9 +43,8 @@ export default async function InvoicesPage() {
           </div>
         </div>
       ) : (
-        <InvoiceTable invoices={validInvoices} />
+        <InvoiceTable invoices={validInvoices} categories={categories} />
       )}
     </PageShell>
   );
 }
-

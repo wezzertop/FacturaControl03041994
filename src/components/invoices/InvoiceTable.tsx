@@ -1,6 +1,6 @@
-﻿"use client";
+"use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { FileText, Search } from "lucide-react";
 import InvoiceDetailsDrawer from "./InvoiceDetailsDrawer";
 
@@ -11,7 +11,9 @@ export interface InvoiceTableRow {
   total?: number | string | null;
   fecha?: string | null;
   status?: string | null;
+  category_id?: string | null;
   categories?: {
+    id?: string | null;
     name?: string | null;
     color?: string | null;
   } | null;
@@ -20,6 +22,7 @@ export interface InvoiceTableRow {
 
 interface InvoiceTableProps {
   invoices: InvoiceTableRow[];
+  categories?: any[];
   compact?: boolean;
 }
 
@@ -36,10 +39,15 @@ const formatDate = (dateString: string | null | undefined) => {
   });
 };
 
-export default function InvoiceTable({ invoices, compact = false }: InvoiceTableProps) {
+export default function InvoiceTable({ invoices, categories, compact = false }: InvoiceTableProps) {
+  const [localInvoices, setLocalInvoices] = useState<InvoiceTableRow[]>(invoices);
   const [selectedInvoice, setSelectedInvoice] = useState<InvoiceTableRow | null>(null);
 
-  if (invoices.length === 0) {
+  useEffect(() => {
+    setLocalInvoices(invoices);
+  }, [invoices]);
+
+  if (localInvoices.length === 0) {
     return (
       <div className="grid min-h-72 place-items-center rounded-lg border border-dashed border-slate-300 bg-white/60 p-8 text-center dark:border-white/10 dark:bg-white/5">
         <div className="max-w-sm">
@@ -57,9 +65,10 @@ export default function InvoiceTable({ invoices, compact = false }: InvoiceTable
 
   return (
     <>
+      {/* Mobile view */}
       <div className="md:hidden">
         <div className="grid grid-cols-1 gap-3">
-          {invoices.map((invoice) => (
+          {localInvoices.map((invoice) => (
             <button
               key={`mobile-${invoice.id}`}
               type="button"
@@ -96,11 +105,12 @@ export default function InvoiceTable({ invoices, compact = false }: InvoiceTable
         </div>
       </div>
 
+      {/* Desktop view */}
       <div className="hidden overflow-hidden rounded-lg border border-slate-200 bg-white/80 shadow-sm dark:border-white/10 dark:bg-zinc-950/45 md:block">
         <div className="flex items-center justify-between border-b border-slate-200/80 px-5 py-4 dark:border-white/10">
           <div className="flex items-center gap-2 text-sm font-medium text-slate-500 dark:text-slate-400">
             <Search className="h-4 w-4" />
-            {invoices.length} registro{invoices.length === 1 ? "" : "s"}
+            {localInvoices.length} registro{localInvoices.length === 1 ? "" : "s"}
           </div>
         </div>
         <div className="overflow-x-auto custom-scrollbar">
@@ -116,7 +126,7 @@ export default function InvoiceTable({ invoices, compact = false }: InvoiceTable
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-white/10">
-              {invoices.map((invoice) => (
+              {localInvoices.map((invoice) => (
                 <tr
                   key={`desktop-${invoice.id}`}
                   onClick={() => setSelectedInvoice(invoice)}
@@ -157,6 +167,18 @@ export default function InvoiceTable({ invoices, compact = false }: InvoiceTable
         invoice={selectedInvoice}
         isOpen={!!selectedInvoice}
         onClose={() => setSelectedInvoice(null)}
+        categories={categories || []}
+        onCategoryChange={(invoiceId, newCategoryId) => {
+          const newCategory = (categories || []).find(c => c.id === newCategoryId);
+          setLocalInvoices(prev => prev.map(inv => 
+            inv.id === invoiceId 
+              ? { ...inv, category_id: newCategoryId, categories: newCategory } 
+              : inv
+          ));
+          if (selectedInvoice && selectedInvoice.id === invoiceId) {
+            setSelectedInvoice(prev => prev ? { ...prev, category_id: newCategoryId, categories: newCategory } : null);
+          }
+        }}
       />
     </>
   );

@@ -1,16 +1,26 @@
 'use client';
 
-import React, { useEffect } from 'react';
-import { X, Receipt, Building2, Calendar, FileText, CheckCircle2 } from 'lucide-react';
-import { Invoice } from '@/types/database';
+import React, { useEffect, useTransition } from 'react';
+import { X, Receipt, Building2, Calendar, FileText, CheckCircle2, ChevronDown } from 'lucide-react';
+import { updateInvoiceCategory } from '@/app/actions/invoices';
 
 interface InvoiceDetailsDrawerProps {
   invoice: any | null;
   isOpen: boolean;
   onClose: () => void;
+  categories: any[];
+  onCategoryChange?: (invoiceId: string, newCategoryId: string) => void;
 }
 
-export default function InvoiceDetailsDrawer({ invoice, isOpen, onClose }: InvoiceDetailsDrawerProps) {
+export default function InvoiceDetailsDrawer({ 
+  invoice, 
+  isOpen, 
+  onClose, 
+  categories, 
+  onCategoryChange 
+}: InvoiceDetailsDrawerProps) {
+  const [isPending, startTransition] = useTransition();
+
   // Evitar scroll en el body cuando el panel está abierto
   useEffect(() => {
     if (isOpen) {
@@ -39,7 +49,24 @@ export default function InvoiceDetailsDrawer({ invoice, isOpen, onClose }: Invoi
     return new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(amount);
   };
 
+  const handleCategoryChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const newCategoryId = e.target.value;
+    if (!invoice || !newCategoryId) return;
+
+    startTransition(async () => {
+      const res = await updateInvoiceCategory(invoice.id, newCategoryId);
+      if (res.success) {
+        if (onCategoryChange) {
+          onCategoryChange(invoice.id, newCategoryId);
+        }
+      } else {
+        alert(res.error || 'No se pudo actualizar la categoría');
+      }
+    });
+  };
+
   const items = invoice.items || [];
+  const currentCategoryId = invoice.category_id || invoice.categories?.id || '';
 
   return (
     <>
@@ -96,12 +123,28 @@ export default function InvoiceDetailsDrawer({ invoice, isOpen, onClose }: Invoi
               {formatDate(invoice.fecha)}
             </div>
 
-            {invoice.categories && (
-              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-gray-200 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-900">
-                <div className={`w-2.5 h-2.5 rounded-full ${invoice.categories.color}`} />
-                <span className="text-sm font-medium text-brand-carbon dark:text-zinc-300">{invoice.categories.name}</span>
+            {/* Categoría Seleccionable */}
+            <div className="flex flex-col space-y-1.5 pt-2">
+              <label className="text-[10px] font-bold text-gray-500 dark:text-zinc-400 uppercase tracking-wider">Categoría de la Factura</label>
+              <div className="relative">
+                <select
+                  value={currentCategoryId}
+                  onChange={handleCategoryChange}
+                  disabled={isPending}
+                  className="w-full pl-3.5 pr-10 py-2.5 text-xs border border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 rounded-xl focus:ring-2 focus:ring-brand-cerulean focus:outline-none dark:text-white appearance-none disabled:opacity-50 font-medium"
+                >
+                  <option value="" disabled>Selecciona una categoría</option>
+                  {categories.map((cat) => (
+                    <option key={cat.id} value={cat.id}>
+                      {cat.name}
+                    </option>
+                  ))}
+                </select>
+                <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-gray-400">
+                  <ChevronDown className="w-4 h-4" />
+                </div>
               </div>
-            )}
+            </div>
           </div>
 
           {/* Ticket de Compra (Conceptos) */}
