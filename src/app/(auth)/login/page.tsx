@@ -1,9 +1,20 @@
 import React from 'react';
 import Link from 'next/link';
 import { login } from '@/app/actions/auth';
-import { Zap, Mail, Lock, ArrowRight } from 'lucide-react';
+import { Zap, Mail, Lock, AlertCircle, ArrowRight } from 'lucide-react';
 
-export default function LoginPage() {
+interface LoginPageProps {
+  searchParams: Promise<{
+    error?: string;
+    message?: string;
+  }>;
+}
+
+export default async function LoginPage({ searchParams }: LoginPageProps) {
+  const params = await searchParams;
+  const errorMsg = params.error ? decodeURIComponent(params.error) : null;
+  const infoMsg = params.message ? decodeURIComponent(params.message) : null;
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-brand-white dark:bg-brand-carbon p-4 relative overflow-hidden">
       {/* Background Orbs */}
@@ -25,6 +36,20 @@ export default function LoginPage() {
                 Ingresa a tu cuenta para continuar
               </p>
             </div>
+
+            {errorMsg && (
+              <div className="mb-6 p-3.5 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/50 flex items-start gap-3 text-rose-700 dark:text-rose-300 text-xs font-medium">
+                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                <span>{errorMsg}</span>
+              </div>
+            )}
+
+            {infoMsg && (
+              <div className="mb-6 p-3.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900/50 flex items-start gap-3 text-emerald-700 dark:text-emerald-300 text-xs font-medium">
+                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                <span>{infoMsg}</span>
+              </div>
+            )}
 
             <form action={login} className="space-y-5">
               <div className="space-y-1">
@@ -89,7 +114,7 @@ export default function LoginPage() {
             <p className="text-sm text-brand-graphite dark:text-zinc-400">
               ¿No tienes una cuenta?{' '}
               <Link href="/register" className="text-brand-cerulean hover:text-blue-500 font-medium transition-colors">
-                Regístrate ahora
+                Regístrate gratis
               </Link>
             </p>
           </div>
