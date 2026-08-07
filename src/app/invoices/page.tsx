@@ -17,18 +17,27 @@ export default async function InvoicesPage() {
     return <div className="p-8 text-center text-sm text-slate-500">No autenticado</div>;
   }
 
-  const { data: invoices, error } = await supabase
-    .from("invoices")
-    .select(`
-      *,
-      categories (id, name, color, icon)
-    `)
-    .eq("user_id", user.id)
-    .order("fecha", { ascending: false });
+  const [categories, providerMappings, { data: rawInvoices, error }] = await Promise.all([
+    getCategories(),
+    getProviderMappings(),
+    supabase
+      .from("invoices")
+      .select("*")
+      .eq("user_id", user.id)
+      .order("fecha", { ascending: false })
+  ]);
 
-  const categories = await getCategories();
-  const providerMappings = await getProviderMappings();
-  const validInvoices = (invoices || []) as InvoiceTableRow[];
+  if (error) {
+    console.error("Error al obtener facturas desde Supabase:", error);
+  }
+
+  const validInvoices: InvoiceTableRow[] = (rawInvoices || []).map((inv: any) => {
+    const cat = categories.find((c: any) => c.id === inv.category_id);
+    return {
+      ...inv,
+      categories: cat || null
+    };
+  });
 
   return (
     <PageShell

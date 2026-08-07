@@ -1,8 +1,9 @@
-﻿import React from "react";
+import React from "react";
 import { createClient } from "@/utils/supabase/server";
 import { CategoryBarChart, TrendAreaChart } from "@/components/analytics/AnalyticsCharts";
 import { CalendarDays, PieChart, Target, TrendingUp } from "lucide-react";
 import PageShell from "@/components/layout/PageShell";
+import { getCategories } from "@/app/actions/categories";
 
 export const dynamic = "force-dynamic";
 
@@ -40,17 +41,25 @@ export default async function AnalyticsPage() {
     return <div className="p-8 text-center text-sm text-slate-500">No autenticado</div>;
   }
 
-  const [invoicesResponse, transactionsResponse] = await Promise.all([
+  const [categories, invoicesResponse, transactionsResponse] = await Promise.all([
+    getCategories(),
     supabase
       .from("invoices")
-      .select("*, categories(name, color)")
+      .select("*")
       .eq("user_id", user.id)
       .order("fecha", { ascending: true }),
-    supabase.from("transactions").select("*, categories(name, color)").eq("user_id", user.id),
+    supabase.from("transactions").select("*").eq("user_id", user.id),
   ]);
 
-  const validInvoices = (invoicesResponse.data || []) as InvoiceAnalyticsRow[];
-  const validTransactions = (transactionsResponse.data || []) as TransactionAnalyticsRow[];
+  const validInvoices = ((invoicesResponse.data || []) as any[]).map(inv => ({
+    ...inv,
+    categories: categories.find((c: any) => c.id === inv.category_id) || null
+  })) as InvoiceAnalyticsRow[];
+
+  const validTransactions = ((transactionsResponse.data || []) as any[]).map(tx => ({
+    ...tx,
+    categories: categories.find((c: any) => c.id === tx.category_id) || null
+  })) as TransactionAnalyticsRow[];
 
   const tailwindToHex: Record<string, string> = {
     "bg-brand-cerulean": "#007EA7",

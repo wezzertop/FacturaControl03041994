@@ -66,21 +66,29 @@ export default async function FinancialOverview() {
 
   if (!user) return null;
 
-  const [invoicesResponse, walletsResponse, transactionsResponse, providerMappings, categories] = await Promise.all([
+  const [categories, providerMappings, invoicesResponse, walletsResponse, transactionsResponse] = await Promise.all([
+    getCategories(),
+    getProviderMappings(),
     supabase
       .from("invoices")
-      .select("*, categories(*)")
+      .select("*")
       .eq("user_id", user.id)
       .order("fecha", { ascending: false }),
     supabase.from("wallets").select("*").eq("user_id", user.id),
-    supabase.from("transactions").select("*, categories(*)").eq("user_id", user.id),
-    getProviderMappings(),
-    getCategories()
+    supabase.from("transactions").select("*").eq("user_id", user.id),
   ]);
 
-  const validInvoices = (invoicesResponse.data || []) as InvoiceRow[];
+  const validInvoices = ((invoicesResponse.data || []) as any[]).map(inv => ({
+    ...inv,
+    categories: categories.find((c: any) => c.id === inv.category_id) || null
+  })) as InvoiceRow[];
+
   const validWallets = (walletsResponse.data || []) as WalletRow[];
-  const validTransactions = (transactionsResponse.data || []) as TransactionRow[];
+
+  const validTransactions = ((transactionsResponse.data || []) as any[]).map(tx => ({
+    ...tx,
+    categories: categories.find((c: any) => c.id === tx.category_id) || null
+  })) as TransactionRow[];
 
   // Helper para identificar saldo inicial / deuda inicial y excluirlos de ingresos y gastos
   const isInitialBalance = (concept?: string | null) => {
