@@ -89,3 +89,70 @@ export async function signout() {
   await supabase.auth.signOut()
   redirect('/login')
 }
+
+export async function resetPassword(formData: FormData) {
+  const supabase = await createClient()
+
+  const email = (formData.get('email') as string)?.trim().toLowerCase()
+  const newPassword = formData.get('password') as string
+
+  if (!email || !newPassword) {
+    redirect('/forgot-password?error=' + encodeURIComponent('Por favor ingresa tu correo y la nueva contraseña.'))
+  }
+
+  if (newPassword.length < 6) {
+    redirect('/forgot-password?error=' + encodeURIComponent('La nueva contraseña debe tener al menos 6 caracteres.'))
+  }
+
+  let targetUserId: string | null = null
+
+  // 1. Buscar primero en la tabla public.users por email
+  const { data: publicUser } = await (supabaseAdmin.from('users') as any)
+    .select('id')
+    .ilike('email', email)
+    .maybeSingle()
+
+  if (publicUser?.id) {
+    targetUserId = publicUser.id
+  } else {
+    // 2. Si no se encuentra en public.users, buscar en Auth vía admin.listUsers
+    const { data: usersData, error: listError } = await supabaseAdmin.auth.admin.listUsers()
+    if (listError) {
+      console.error('Error al listar usuarios:', listError.message)
+      redirect('/forgot-password?error=' + encodeURIComponent(listError.message || 'Error al verificar la cuenta.'))
+    }
+    const foundUser = usersData?.users?.find(u => u.email?.toLowerCase() === email)
+    if (foundUser?.id) {
+      targetUserId = foundUser.id
+    }
+  }
+
+  if (!targetUserId) {
+    redirect('/forgot-password?error=' + encodeURIComponent('No encontramos ninguna cuenta vinculada a este correo.'))
+  }
+
+  // 3. Actualizar la contraseña del usuario y asegurar que esté confirmado
+  const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(targetUserId, {
+    password: newPassword,
+    email_confirm: true,
+  })
+
+  if (updateError) {
+    console.error('Error al actualizar contraseña:', updateError.message)
+    redirect('/forgot-password?error=' + encodeURIComponent(updateError.message || 'No se pudo actualizar la contraseña.'))
+  }
+
+  // 4. Iniciar sesión automáticamente
+  const { error: signInError } = await supabase.auth.signInWithPassword({
+    email,
+    password: newPassword,
+  })
+
+  if (signInError) {
+    redirect('/login?message=' + encodeURIComponent('Contraseña restablecida con éxito. Inicia sesión con tus nuevos datos.'))
+  }
+
+  revalidatePath('/', 'layout')
+  redirect('/')
+}
+
