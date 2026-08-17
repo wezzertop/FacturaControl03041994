@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTheme } from "next-themes";
 import {
+  Calendar,
   Calculator,
   ChevronLeft,
   ChevronRight,
@@ -14,9 +15,11 @@ import {
   LogOut,
   Moon,
   PieChart,
+  Repeat,
   Settings,
   Sparkles,
   Sun,
+  Tag,
   UploadCloud,
   Wallet,
   Zap,
@@ -31,6 +34,9 @@ const navItems = [
   { name: "Historial", href: "/invoices", icon: FileText },
   { name: "Carteras", href: "/wallets", icon: Wallet },
   { name: "Préstamos", href: "/loans", icon: Landmark },
+  { name: "Calendario", href: "/calendar", icon: Calendar },
+  { name: "Categorías", href: "/categories", icon: Tag },
+  { name: "Recurrentes", href: "/recurring", icon: Repeat },
   { name: "Análisis", href: "/analytics", icon: PieChart },
   { name: "Simulación fiscal", href: "/simulation", icon: Calculator },
   { name: "Configuración", href: "/settings", icon: Settings },

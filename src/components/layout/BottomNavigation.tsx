@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
+  Calendar,
   Camera,
   FileText,
   Landmark,
@@ -11,7 +12,9 @@ import {
   PieChart,
   Plus,
   PlusCircle,
+  Repeat,
   Settings,
+  Tag,
   UploadCloud,
   Wallet,
   X,
@@ -74,6 +77,36 @@ export default function BottomNavigation() {
               <X className="h-4 w-4" />
             </button>
           </div>
+
+          <Link href="/calendar" onClick={() => setIsMenuOpen(false)} className="flex items-center gap-3 rounded-lg p-3 transition hover:bg-slate-100 dark:hover:bg-white/10">
+            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+              <Calendar className="h-5 w-5" />
+            </span>
+            <span>
+              <span className="block text-sm font-semibold text-slate-950 dark:text-white">Calendario Financiero</span>
+              <span className="block text-xs text-slate-500 dark:text-slate-400">Ver ingresos, egresos y deudas</span>
+            </span>
+          </Link>
+
+          <Link href="/categories" onClick={() => setIsMenuOpen(false)} className="flex items-center gap-3 rounded-lg p-3 transition hover:bg-slate-100 dark:hover:bg-white/10">
+            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-purple-500/10 text-purple-600 dark:text-purple-400">
+              <Tag className="h-5 w-5" />
+            </span>
+            <span>
+              <span className="block text-sm font-semibold text-slate-950 dark:text-white">Categorías</span>
+              <span className="block text-xs text-slate-500 dark:text-slate-400">Gestionar grupos de ingresos y gastos</span>
+            </span>
+          </Link>
+
+          <Link href="/recurring" onClick={() => setIsMenuOpen(false)} className="flex items-center gap-3 rounded-lg p-3 transition hover:bg-slate-100 dark:hover:bg-white/10">
+            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-rose-500/10 text-rose-600 dark:text-rose-400">
+              <Repeat className="h-5 w-5" />
+            </span>
+            <span>
+              <span className="block text-sm font-semibold text-slate-950 dark:text-white">Pagos Recurrentes</span>
+              <span className="block text-xs text-slate-500 dark:text-slate-400">Suscripciones y nómina periódica</span>
+            </span>
+          </Link>
 
           <Link href="/upload" onClick={() => setIsMenuOpen(false)} className="flex items-center gap-3 rounded-lg p-3 transition hover:bg-slate-100 dark:hover:bg-white/10">
             <span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-brand-cerulean/10 text-brand-cerulean">
