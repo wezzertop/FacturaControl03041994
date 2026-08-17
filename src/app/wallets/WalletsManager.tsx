@@ -15,6 +15,7 @@ import {
   updateTransaction
 } from '@/app/actions/wallets';
 import { createCategory } from '@/app/actions/categories';
+import CurrencyInput from '@/components/ui/CurrencyInput';
 
 // Mapeo simple de iconos para la creación de categorías en la modal
 const InlineIconMap: Record<string, any> = {
@@ -1527,13 +1528,10 @@ export default function WalletsManager({
 
                   <div className="space-y-1">
                     <label className="text-xs font-semibold text-brand-graphite dark:text-zinc-400">Pago para no generar intereses (Corte Actual)</label>
-                    <input 
-                      type="number"
-                      step="0.01"
-                      placeholder="0.00"
+                    <CurrencyInput 
                       value={statementPaymentDue}
-                      onChange={(e) => setStatementPaymentDue(e.target.value)}
-                      className="w-full bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-lg px-3 py-2.5 md:py-2 text-base md:text-sm text-brand-carbon dark:text-white placeholder:text-zinc-650 focus:outline-none focus:border-brand-cerulean transition-colors"
+                      onChange={(val) => setStatementPaymentDue(val.toString())}
+                      placeholder="0.00"
                     />
                   </div>
                 </>
@@ -1545,13 +1543,10 @@ export default function WalletsManager({
                     ? (walletType === 'credit' ? 'Deuda Actual ($)' : 'Saldo Actual ($)') 
                     : (walletType === 'credit' ? 'Deuda Inicial ($)' : 'Saldo Inicial ($)')}
                 </label>
-                <input 
-                  type="number"
-                  step="0.01"
-                  placeholder="0.00"
+                <CurrencyInput 
                   value={newWalletBalance}
-                  onChange={(e) => setNewWalletBalance(e.target.value)}
-                  className="w-full bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-lg px-3 py-2.5 md:py-2 text-base md:text-sm text-brand-carbon dark:text-white placeholder:text-zinc-650 focus:outline-none focus:border-brand-cerulean transition-colors"
+                  onChange={(val) => setNewWalletBalance(val.toString())}
+                  placeholder="0.00"
                 />
               </div>
 
@@ -1646,14 +1641,11 @@ export default function WalletsManager({
 
               <div className="space-y-1">
                 <label className="text-xs font-semibold text-brand-graphite dark:text-zinc-400">Monto ($)</label>
-                <input 
-                  type="number"
-                  step="0.01"
-                  required
-                  placeholder="0.00"
+                <CurrencyInput 
                   value={txAmount}
-                  onChange={(e) => setTxAmount(e.target.value)}
-                  className="w-full bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-lg px-3 py-2.5 md:py-2 text-base md:text-sm text-brand-carbon dark:text-white placeholder:text-zinc-600 focus:outline-none focus:border-brand-cerulean transition-colors"
+                  onChange={(val) => setTxAmount(val.toString())}
+                  placeholder="0.00"
+                  required
                 />
               </div>
 

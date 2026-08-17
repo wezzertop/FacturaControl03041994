@@ -24,6 +24,7 @@ import {
   Upload
 } from 'lucide-react';
 import { createLoan, deleteLoan, addLoanPayment, addLoanPrincipalPayment, updateLoan } from '@/app/actions/loans';
+import CurrencyInput from '@/components/ui/CurrencyInput';
 
 interface Wallet {
   id: string;
@@ -1296,18 +1297,12 @@ export default function LoansManager({ initialLoans, wallets, categories }: Loan
             <form onSubmit={handleRecordCapitalPayment} className="space-y-4">
               <div className="flex flex-col space-y-1.5">
                 <label className="text-[10px] font-bold text-gray-600 dark:text-zinc-400 uppercase tracking-wider">Monto del Abono ($)</label>
-                <div className="relative">
-                  <DollarSign className="absolute left-3 top-3 w-3.5 h-3.5 text-gray-400" />
-                  <input
-                    type="number"
-                    value={capitalAmount}
-                    onChange={(e) => setCapitalAmount(e.target.value)}
-                    placeholder="2000.00"
-                    min="1"
-                    className="w-full pl-8 pr-3 py-2 text-xs border border-gray-250 dark:border-zinc-800 bg-transparent rounded-xl focus:ring-2 focus:ring-brand-cerulean focus:outline-none dark:text-white"
-                    required
-                  />
-                </div>
+                <CurrencyInput
+                  value={capitalAmount}
+                  onChange={(val) => setCapitalAmount(val.toString())}
+                  placeholder="2,000.00"
+                  required
+                />
               </div>
 
               <div className="flex flex-col space-y-1.5">

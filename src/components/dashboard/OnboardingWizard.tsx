@@ -19,6 +19,7 @@ import {
   X
 } from 'lucide-react';
 import { setupInitialData } from '@/app/actions/onboarding';
+import CurrencyInput from '@/components/ui/CurrencyInput';
 
 interface WalletSetup {
   name: string;
@@ -339,17 +340,11 @@ export default function OnboardingWizard() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="flex flex-col space-y-1.5">
                       <label className="text-xs font-bold text-gray-700 dark:text-gray-300">Monto Neto Estimado ($)</label>
-                      <div className="relative">
-                        <DollarSign className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
-                        <input 
-                          type="number"
-                          value={payrollAmount}
-                          onChange={(e) => setPayrollAmount(Number(e.target.value))}
-                          placeholder="Monto de pago"
-                          className="w-full pl-9 pr-4 py-2 text-xs border border-gray-200 dark:border-zinc-800 bg-transparent rounded-xl focus:ring-2 focus:ring-brand-cerulean focus:outline-none dark:text-white"
-                          min="1"
-                        />
-                      </div>
+                      <CurrencyInput 
+                        value={payrollAmount}
+                        onChange={(val) => setPayrollAmount(val)}
+                        placeholder="Monto de pago"
+                      />
                     </div>
 
                     <div className="flex flex-col space-y-1.5">
