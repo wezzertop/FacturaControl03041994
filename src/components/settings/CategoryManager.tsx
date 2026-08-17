@@ -569,7 +569,7 @@ export default function CategoryManager({ initialCategories }: CategoryManagerPr
                             type="button"
                             onClick={() => handleDelete(cat.id, cat.name)}
                             disabled={isPending}
-                            className="p-2 rounded-xl text-slate-400 hover:text-rose-500 hover:bg-rose-500/10 transition"
+                            className="p-2 rounded-xl text-slate-500 dark:text-zinc-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-500/10 transition"
                             title="Eliminar Categoría"
                           >
                             <Trash2 className="w-4 h-4" />
