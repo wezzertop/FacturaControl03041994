@@ -3,35 +3,78 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useTheme } from "next-themes";
 import {
   Calendar,
   Camera,
   FileText,
   Landmark,
   LayoutDashboard,
+  LogOut,
+  Menu,
+  Moon,
   PieChart,
-  Plus,
   PlusCircle,
   Repeat,
   Settings,
+  Sparkles,
+  Sun,
   Tag,
   UploadCloud,
   Wallet,
   X,
+  Zap,
+  Calculator
 } from "lucide-react";
+import { signout } from "@/app/actions/auth";
 
-const navItems = [
+const cn = (...classes: (string | undefined | null | false)[]) => classes.filter(Boolean).join(" ");
+
+const mainDockItems = [
   { name: "Inicio", href: "/", icon: LayoutDashboard },
-  { name: "Historial", href: "/invoices", icon: FileText },
-  { name: "Análisis", href: "/analytics", icon: PieChart },
-  { name: "Ajustes", href: "/settings", icon: Settings },
+  { name: "Facturas", href: "/invoices", icon: FileText },
+  { name: "Carteras", href: "/wallets", icon: Wallet },
+  { name: "Calendario", href: "/calendar", icon: Calendar },
+];
+
+const mobileGroups = [
+  {
+    title: "Principal",
+    items: [
+      { name: "Dashboard", href: "/", icon: LayoutDashboard, desc: "Panel de control general" },
+      { name: "Cargar XML", href: "/upload", icon: UploadCloud, desc: "Procesar comprobantes SAT" },
+      { name: "Historial CFDI", href: "/invoices", icon: FileText, desc: "Facturas e ingresos" },
+    ],
+  },
+  {
+    title: "Finanzas & Control",
+    items: [
+      { name: "Mis Carteras", href: "/wallets", icon: Wallet, desc: "Bancos, efectivo y crédito" },
+      { name: "Préstamos", href: "/loans", icon: Landmark, desc: "Cuotas y amortizaciones" },
+      { name: "Calendario Financiero", href: "/calendar", icon: Calendar, desc: "Flujo de caja y vencimientos" },
+    ],
+  },
+  {
+    title: "Herramientas & Ajustes",
+    items: [
+      { name: "Categorías", href: "/categories", icon: Tag, desc: "Personalizar gastos" },
+      { name: "Pagos Recurrentes", href: "/recurring", icon: Repeat, desc: "Suscripciones y nómina" },
+      { name: "Análisis Financiero", href: "/analytics", icon: PieChart, desc: "Reportes y gráficos" },
+      { name: "Simulación Fiscal", href: "/simulation", icon: Calculator, desc: "Cálculo de impuestos" },
+      { name: "Configuración", href: "/settings", icon: Settings, desc: "RFC y preferencias" },
+    ],
+  },
 ];
 
 export default function BottomNavigation() {
   const pathname = usePathname();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const { theme, setTheme } = useTheme();
+
   const isAuthPage = pathname.startsWith("/login") || pathname.startsWith("/register");
   if (isAuthPage) return null;
+
+  const nextTheme = theme === "dark" ? "light" : "dark";
 
   const handleOcrClick = (e: React.MouseEvent) => {
     setIsMenuOpen(false);
@@ -51,152 +94,195 @@ export default function BottomNavigation() {
 
   return (
     <>
-      {isMenuOpen ? (
+      {/* Drawer Overlay Móvil */}
+      {isMenuOpen && (
         <div
-          className="fixed inset-0 z-40 bg-slate-950/55 backdrop-blur-sm md:hidden"
+          className="fixed inset-0 z-50 bg-black/60 backdrop-blur-md transition-opacity md:hidden"
           onClick={() => setIsMenuOpen(false)}
         />
-      ) : null}
+      )}
 
+      {/* Slide-over Drawer Móvil Completo */}
       <div
-        className={`fixed inset-x-3 bottom-[82px] z-40 transition duration-300 md:hidden ${
-          isMenuOpen ? "translate-y-0 opacity-100" : "translate-y-5 opacity-0 pointer-events-none"
-        }`}
+        className={cn(
+          "fixed inset-x-0 bottom-0 z-50 flex max-h-[92vh] flex-col rounded-t-[32px] border-t border-slate-200/80 bg-white/95 backdrop-blur-2xl transition-transform duration-300 dark:border-zinc-800/80 dark:bg-zinc-950/95 md:hidden shadow-2xl overflow-hidden",
+          isMenuOpen ? "translate-y-0" : "translate-y-full pointer-events-none"
+        )}
       >
-        <div className="surface-card rounded-lg p-2">
-          <div className="mb-1 flex items-center justify-between border-b border-slate-200/80 px-3 py-2 dark:border-white/10">
-            <span className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">
-              Acciones rápidas
-            </span>
+        {/* Indicador táctil superior */}
+        <div className="flex justify-center pt-3 pb-1">
+          <div className="w-12 h-1.5 rounded-full bg-slate-200 dark:bg-zinc-800" />
+        </div>
+
+        {/* Header del Drawer Móvil */}
+        <div className="flex items-center justify-between px-6 py-3 border-b border-slate-100 dark:border-zinc-900 shrink-0">
+          <div className="flex items-center gap-3">
+            <div className="grid h-10 w-10 place-items-center rounded-xl bg-gradient-to-br from-brand-cerulean to-blue-600 text-white shadow-md shadow-brand-cerulean/20">
+              <Zap className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-base font-extrabold text-slate-900 dark:text-white tracking-tight">
+                Factura<span className="text-brand-cerulean">Control</span>
+              </p>
+              <p className="text-[10px] font-bold uppercase tracking-wider text-brand-cerulean">Plan Pro SAT</p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setTheme(nextTheme)}
+              className="grid h-10 w-10 place-items-center rounded-2xl border border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800 transition"
+              title="Cambiar tema"
+              suppressHydrationWarning
+            >
+              {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
+            </button>
             <button
               type="button"
               onClick={() => setIsMenuOpen(false)}
-              className="grid h-8 w-8 place-items-center rounded-lg text-slate-500 transition hover:bg-slate-100 hover:text-slate-950 dark:hover:bg-white/10 dark:hover:text-white"
-              title="Cerrar"
+              className="grid h-10 w-10 place-items-center rounded-2xl bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 transition"
             >
-              <X className="h-4 w-4" />
+              <X className="h-5 w-5" />
             </button>
           </div>
+        </div>
 
-          <Link href="/calendar" onClick={() => setIsMenuOpen(false)} className="flex items-center gap-3 rounded-lg p-3 transition hover:bg-slate-100 dark:hover:bg-white/10">
-            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
-              <Calendar className="h-5 w-5" />
-            </span>
-            <span>
-              <span className="block text-sm font-semibold text-slate-950 dark:text-white">Calendario Financiero</span>
-              <span className="block text-xs text-slate-500 dark:text-slate-400">Ver ingresos, egresos y deudas</span>
-            </span>
-          </Link>
+        {/* Contenido Scrolleable del Drawer Móvil */}
+        <div className="flex-1 overflow-y-auto px-5 py-4 space-y-6 custom-scrollbar">
 
-          <Link href="/categories" onClick={() => setIsMenuOpen(false)} className="flex items-center gap-3 rounded-lg p-3 transition hover:bg-slate-100 dark:hover:bg-white/10">
-            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-purple-500/10 text-purple-600 dark:text-purple-400">
-              <Tag className="h-5 w-5" />
-            </span>
-            <span>
-              <span className="block text-sm font-semibold text-slate-950 dark:text-white">Categorías</span>
-              <span className="block text-xs text-slate-500 dark:text-slate-400">Gestionar grupos de ingresos y gastos</span>
-            </span>
-          </Link>
+          {/* Tarjetas de Acceso Rápido Táctiles */}
+          <div>
+            <p className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 dark:text-zinc-500 mb-2">
+              Acciones Rápidas
+            </p>
+            <div className="grid grid-cols-3 gap-2.5">
+              <Link
+                href="/upload"
+                onClick={() => setIsMenuOpen(false)}
+                className="flex flex-col items-center justify-center p-3 rounded-2xl bg-brand-cerulean/10 text-brand-cerulean border border-brand-cerulean/20 active:scale-95 transition text-center"
+              >
+                <UploadCloud className="h-6 w-6 mb-1.5" />
+                <span className="text-[11px] font-bold leading-tight">Subir XML</span>
+              </Link>
 
-          <Link href="/recurring" onClick={() => setIsMenuOpen(false)} className="flex items-center gap-3 rounded-lg p-3 transition hover:bg-slate-100 dark:hover:bg-white/10">
-            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-rose-500/10 text-rose-600 dark:text-rose-400">
-              <Repeat className="h-5 w-5" />
-            </span>
-            <span>
-              <span className="block text-sm font-semibold text-slate-950 dark:text-white">Pagos Recurrentes</span>
-              <span className="block text-xs text-slate-500 dark:text-slate-400">Suscripciones y nómina periódica</span>
-            </span>
-          </Link>
+              <Link
+                href="/wallets?triggerOcr=true"
+                onClick={handleOcrClick}
+                className="flex flex-col items-center justify-center p-3 rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 active:scale-95 transition text-center"
+              >
+                <Camera className="h-6 w-6 mb-1.5" />
+                <span className="text-[11px] font-bold leading-tight">Escanear</span>
+              </Link>
 
-          <Link href="/upload" onClick={() => setIsMenuOpen(false)} className="flex items-center gap-3 rounded-lg p-3 transition hover:bg-slate-100 dark:hover:bg-white/10">
-            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-brand-cerulean/10 text-brand-cerulean">
-              <UploadCloud className="h-5 w-5" />
-            </span>
-            <span>
-              <span className="block text-sm font-semibold text-slate-950 dark:text-white">Cargar XML</span>
-              <span className="block text-xs text-slate-500 dark:text-slate-400">Procesa facturas CFDI del SAT</span>
-            </span>
-          </Link>
+              <Link
+                href="/wallets?triggerTx=true"
+                onClick={handleTxClick}
+                className="flex flex-col items-center justify-center p-3 rounded-2xl bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20 active:scale-95 transition text-center"
+              >
+                <PlusCircle className="h-6 w-6 mb-1.5" />
+                <span className="text-[11px] font-bold leading-tight">Movimiento</span>
+              </Link>
+            </div>
+          </div>
 
-          <Link href="/wallets?triggerOcr=true" onClick={handleOcrClick} className="flex items-center gap-3 rounded-lg p-3 transition hover:bg-slate-100 dark:hover:bg-white/10">
-            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
-              <Camera className="h-5 w-5" />
-            </span>
-            <span>
-              <span className="block text-sm font-semibold text-slate-950 dark:text-white">Escanear transferencia</span>
-              <span className="block text-xs text-slate-500 dark:text-slate-400">Extrae datos desde una captura</span>
-            </span>
-          </Link>
+          {/* Secciones de Navegación Agrupadas */}
+          {mobileGroups.map((group) => (
+            <div key={group.title} className="space-y-1.5">
+              <p className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 dark:text-zinc-500 px-1">
+                {group.title}
+              </p>
+              <div className="space-y-1">
+                {group.items.map((item) => {
+                  const isActive = pathname === item.href;
+                  const Icon = item.icon;
 
-          <Link href="/wallets?triggerTx=true" onClick={handleTxClick} className="flex items-center gap-3 rounded-lg p-3 transition hover:bg-slate-100 dark:hover:bg-white/10">
-            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400">
-              <PlusCircle className="h-5 w-5" />
-            </span>
-            <span>
-              <span className="block text-sm font-semibold text-slate-950 dark:text-white">Movimiento manual</span>
-              <span className="block text-xs text-slate-500 dark:text-slate-400">Registra efectivo o cuenta bancaria</span>
-            </span>
-          </Link>
+                  return (
+                    <Link
+                      key={item.name}
+                      href={item.href}
+                      onClick={() => setIsMenuOpen(false)}
+                      className={cn(
+                        "flex items-center gap-3.5 p-3 rounded-2xl transition-all active:scale-[0.98]",
+                        isActive
+                          ? "bg-gradient-to-r from-brand-cerulean to-blue-600 text-white shadow-md shadow-brand-cerulean/20 font-semibold"
+                          : "bg-slate-50/80 dark:bg-zinc-900/60 text-slate-900 dark:text-white border border-slate-100 dark:border-zinc-800/60"
+                      )}
+                    >
+                      <div
+                        className={cn(
+                          "grid h-10 w-10 shrink-0 place-items-center rounded-xl",
+                          isActive ? "bg-white/20 text-white" : "bg-brand-cerulean/10 text-brand-cerulean"
+                        )}
+                      >
+                        <Icon className="h-5 w-5" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className={cn("text-sm font-bold truncate", isActive ? "text-white" : "text-slate-900 dark:text-white")}>
+                          {item.name}
+                        </p>
+                        <p className={cn("text-xs truncate", isActive ? "text-white/80" : "text-slate-500 dark:text-zinc-400")}>
+                          {item.desc}
+                        </p>
+                      </div>
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
 
-          <Link href="/loans" onClick={() => setIsMenuOpen(false)} className="flex items-center gap-3 rounded-lg p-3 transition hover:bg-slate-100 dark:hover:bg-white/10">
-            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-indigo-500/10 text-indigo-600 dark:text-indigo-400">
-              <Landmark className="h-5 w-5" />
-            </span>
-            <span>
-              <span className="block text-sm font-semibold text-slate-950 dark:text-white">Mis Préstamos</span>
-              <span className="block text-xs text-slate-500 dark:text-slate-400">Amortizaciones, cuotas y abonos</span>
-            </span>
-          </Link>
+          {/* Botón de Salir en el Drawer */}
+          <form action={signout} className="pt-2 pb-4">
+            <button
+              type="submit"
+              className="flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-rose-50 text-rose-600 dark:bg-rose-950/40 dark:text-rose-400 text-sm font-bold transition active:scale-98"
+            >
+              <LogOut className="h-5 w-5" />
+              <span>Cerrar sesión de FacturaControl</span>
+            </button>
+          </form>
 
-          <Link href="/wallets" onClick={() => setIsMenuOpen(false)} className="flex items-center gap-3 rounded-lg p-3 transition hover:bg-slate-100 dark:hover:bg-white/10">
-            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400">
-              <Wallet className="h-5 w-5" />
-            </span>
-            <span>
-              <span className="block text-sm font-semibold text-slate-950 dark:text-white">Carteras</span>
-              <span className="block text-xs text-slate-500 dark:text-slate-400">Consulta saldos y movimientos</span>
-            </span>
-          </Link>
         </div>
       </div>
 
-      <div className="fixed bottom-0 left-0 z-50 grid h-[72px] w-full grid-cols-5 border-t border-slate-200/80 bg-white/90 px-2 pt-2 shadow-[0_-18px_45px_-30px_rgba(15,23,42,0.6)] backdrop-blur-xl dark:border-white/10 dark:bg-zinc-950/90 md:hidden">
-        {navItems.slice(0, 2).map((item) => {
+      {/* Dock Inferior Fijo para Celular */}
+      <div className="fixed bottom-0 left-0 z-40 grid h-16 w-full grid-cols-5 border-t border-slate-200/80 bg-white/90 px-2 shadow-[0_-10px_30px_-15px_rgba(15,23,42,0.3)] backdrop-blur-xl dark:border-zinc-800/80 dark:bg-zinc-950/90 md:hidden">
+        {mainDockItems.map((item) => {
           const isActive = pathname === item.href;
           const Icon = item.icon;
           return (
-            <Link key={item.name} href={item.href} onClick={() => setIsMenuOpen(false)} className="flex flex-col items-center justify-center gap-1 rounded-lg transition active:scale-95">
-              <Icon className={`h-5 w-5 ${isActive ? "text-brand-cerulean" : "text-slate-500 dark:text-slate-400"}`} strokeWidth={isActive ? 2.5 : 2} />
-              <span className={`text-[10px] font-semibold ${isActive ? "text-brand-cerulean" : "text-slate-500 dark:text-slate-400"}`}>{item.name}</span>
+            <Link
+              key={item.name}
+              href={item.href}
+              onClick={() => setIsMenuOpen(false)}
+              className="flex flex-col items-center justify-center gap-1 transition active:scale-95"
+            >
+              <Icon
+                className={cn("h-5 w-5 transition-transform", isActive ? "text-brand-cerulean scale-110" : "text-slate-500 dark:text-zinc-400")}
+                strokeWidth={isActive ? 2.5 : 2}
+              />
+              <span className={cn("text-[10px] font-bold", isActive ? "text-brand-cerulean" : "text-slate-500 dark:text-zinc-400")}>
+                {item.name}
+              </span>
             </Link>
           );
         })}
 
-        <div className="relative flex items-center justify-center">
-          <button
-            type="button"
-            onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className={`absolute -top-6 grid h-14 w-14 place-items-center rounded-full text-white shadow-lg shadow-brand-cerulean/30 transition active:scale-95 ${
-              isMenuOpen ? "rotate-45 bg-slate-900 dark:bg-white dark:text-slate-950" : "bg-brand-cerulean"
-            }`}
-            title="Acciones rápidas"
-          >
-            <Plus className="h-6 w-6" strokeWidth={3} />
-          </button>
-        </div>
-
-        {navItems.slice(2).map((item) => {
-          const isActive = pathname === item.href;
-          const Icon = item.icon;
-          return (
-            <Link key={item.name} href={item.href} onClick={() => setIsMenuOpen(false)} className="flex flex-col items-center justify-center gap-1 rounded-lg transition active:scale-95">
-              <Icon className={`h-5 w-5 ${isActive ? "text-brand-cerulean" : "text-slate-500 dark:text-slate-400"}`} strokeWidth={isActive ? 2.5 : 2} />
-              <span className={`text-[10px] font-semibold ${isActive ? "text-brand-cerulean" : "text-slate-500 dark:text-slate-400"}`}>{item.name}</span>
-            </Link>
-          );
-        })}
+        {/* Botón táctil para desplegar el Menú Completo */}
+        <button
+          type="button"
+          onClick={() => setIsMenuOpen(!isMenuOpen)}
+          className="flex flex-col items-center justify-center gap-1 transition active:scale-95"
+        >
+          <div className={cn("grid h-7 w-7 place-items-center rounded-xl transition", isMenuOpen ? "bg-brand-cerulean text-white" : "text-slate-500 dark:text-zinc-400")}>
+            <Menu className="h-5 w-5" strokeWidth={2.5} />
+          </div>
+          <span className={cn("text-[10px] font-bold", isMenuOpen ? "text-brand-cerulean" : "text-slate-500 dark:text-zinc-400")}>
+            Menú
+          </span>
+        </button>
       </div>
     </>
   );
 }
-
