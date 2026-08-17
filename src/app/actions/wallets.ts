@@ -132,9 +132,14 @@ export async function createWallet(
 
   if (walletError || !wallet) {
     console.error('Error final al crear cartera:', walletError);
+    const msg = walletError?.message || '';
+    let userMsg = msg;
+    if (msg.includes('permission denied')) {
+      userMsg = 'Permiso denegado en la tabla wallets. Asegúrate de ejecutar los comandos GRANT en el SQL Editor de tu Supabase.';
+    }
     return { 
       success: false, 
-      error: walletError?.message || 'Error al crear la cartera en la base de datos.' 
+      error: userMsg || 'Error al crear la cartera en la base de datos.' 
     };
   }
 

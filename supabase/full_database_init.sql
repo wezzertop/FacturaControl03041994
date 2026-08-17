@@ -353,9 +353,18 @@ CREATE TRIGGER trigger_update_loan_balance
 -- 12. BUCKETS DE STORAGE (Archivos y Comprobantes)
 -- --------------------------------------------------------
 INSERT INTO storage.buckets (id, name, public) 
-VALUES ('facturas', 'facturas', false)
-ON CONFLICT (id) DO NOTHING;
-
-INSERT INTO storage.buckets (id, name, public) 
 VALUES ('comprobantes', 'comprobantes', false)
 ON CONFLICT (id) DO NOTHING;
+
+-- --------------------------------------------------------
+-- 13. PERMISOS DE ESQUEMA Y TABLAS (GRANT ALL TO SUPABASE ROLES)
+-- --------------------------------------------------------
+GRANT USAGE ON SCHEMA public TO postgres, anon, authenticated, service_role;
+GRANT ALL ON ALL TABLES IN SCHEMA public TO postgres, anon, authenticated, service_role;
+GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO postgres, anon, authenticated, service_role;
+GRANT ALL ON ALL ROUTINES IN SCHEMA public TO postgres, anon, authenticated, service_role;
+
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO postgres, anon, authenticated, service_role;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO postgres, anon, authenticated, service_role;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON ROUTINES TO postgres, anon, authenticated, service_role;
+
