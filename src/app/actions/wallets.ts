@@ -15,20 +15,23 @@ const supabaseAdmin = createSupabaseClient<Database>(
  */
 export async function ensureUserExists(userId: string, email?: string) {
   try {
-    const { data } = await (supabaseAdmin.from('users') as any)
-      .select('id')
-      .eq('id', userId)
-      .maybeSingle();
-
-    if (!data) {
-      await (supabaseAdmin.from('users') as any).insert({
+    const userEmail = email && email.trim() ? email.trim().toLowerCase() : `${userId}@facturacontrol.com`;
+    
+    // Upsert para garantizar que el registro exista con id y email válidos en public.users
+    const { error } = await (supabaseAdmin.from('users') as any)
+      .upsert({
         id: userId,
-        email: email || '',
-        full_name: email ? email.split('@')[0] : 'Usuario'
-      });
+        email: userEmail,
+        plan: 'pro'
+      }, { onConflict: 'id' });
+
+    if (error) {
+      console.error('[ensureUserExists] Error al hacer upsert de usuario:', error.message);
+    } else {
+      console.log(`[ensureUserExists] Usuario ${userId} verificado/creado con éxito en public.users.`);
     }
   } catch (e) {
-    console.warn('ensureUserExists non-fatal error:', e);
+    console.error('[ensureUserExists] Excepción inesperada:', e);
   }
 }
 

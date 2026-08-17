@@ -1,7 +1,7 @@
 "use server";
 
 import { createClient } from "@/utils/supabase/server";
-import { resetUserData, createWallet, saveUserRFC } from "@/app/actions/wallets";
+import { resetUserData, createWallet, saveUserRFC, ensureUserExists } from "@/app/actions/wallets";
 import { revalidatePath } from "next/cache";
 
 interface OnboardingWallet {
@@ -48,6 +48,9 @@ export async function setupInitialData(data: OnboardingData) {
   if (!user) {
     return { success: false, error: "Usuario no autenticado" };
   }
+
+  // 0. Garantizar existencia del registro de usuario en public.users de forma infalible
+  await ensureUserExists(user.id, user.email);
 
   // 1. Resetear todos los datos existentes para empezar limpio
   const resetRes = await resetUserData();
