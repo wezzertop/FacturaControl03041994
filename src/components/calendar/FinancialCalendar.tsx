@@ -643,41 +643,66 @@ export default function FinancialCalendar({
                         )}
                       </div>
 
+                      {/* Insignias de Eventos del Día (Optimizado para Celular y Escritorio) */}
                       <div className="space-y-1 mt-1 w-full overflow-hidden">
-                        {events.incomeSum > 0 && (
-                          <div className="px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px] font-bold truncate flex items-center gap-1">
-                            <ArrowUpRight className="w-3 h-3 shrink-0" />
-                            <span className="truncate">{formatCurrency(events.incomeSum)}</span>
-                          </div>
-                        )}
+                        
+                        {/* Vista en Celulares (< md): Puntos de colores compactos con micro importes */}
+                        <div className="flex md:hidden flex-wrap items-center justify-center gap-1 mt-1">
+                          {events.incomeSum > 0 && (
+                            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-sm" title={`Ingreso: ${formatCurrency(events.incomeSum)}`} />
+                          )}
+                          {events.expenseSum > 0 && (
+                            <span className="w-2.5 h-2.5 rounded-full bg-rose-500 shadow-sm" title={`Egreso: ${formatCurrency(events.expenseSum)}`} />
+                          )}
+                          {events.creditCutOffs.length > 0 && (
+                            <span className="w-2.5 h-2.5 rounded-full bg-amber-400 shadow-sm" title="Corte de Tarjeta" />
+                          )}
+                          {events.creditDues.length > 0 && (
+                            <span className="w-2.5 h-2.5 rounded-full bg-amber-600 shadow-sm" title="Pago de Tarjeta" />
+                          )}
+                          {events.loanPayments.length > 0 && (
+                            <span className="w-2.5 h-2.5 rounded-full bg-indigo-500 shadow-sm" title="Cuota Préstamo" />
+                          )}
+                        </div>
 
-                        {events.expenseSum > 0 && (
-                          <div className="px-1.5 py-0.5 rounded bg-rose-500/10 text-rose-600 dark:text-rose-400 text-[10px] font-bold truncate flex items-center gap-1">
-                            <ArrowDownLeft className="w-3 h-3 shrink-0" />
-                            <span className="truncate">{formatCurrency(events.expenseSum)}</span>
-                          </div>
-                        )}
+                        {/* Vista en Escritorio (>= md): Tarjetas con texto e importes completos */}
+                        <div className="hidden md:block space-y-1">
+                          {events.incomeSum > 0 && (
+                            <div className="px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px] font-bold truncate flex items-center gap-1">
+                              <ArrowUpRight className="w-3 h-3 shrink-0" />
+                              <span className="truncate">{formatCurrency(events.incomeSum)}</span>
+                            </div>
+                          )}
 
-                        {events.creditCutOffs.length > 0 && (
-                          <div className="px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-700 dark:text-amber-400 text-[9px] font-bold truncate flex items-center gap-1">
-                            <CreditCard className="w-3 h-3 shrink-0" />
-                            <span className="truncate">Corte {events.creditCutOffs[0].name}</span>
-                          </div>
-                        )}
+                          {events.expenseSum > 0 && (
+                            <div className="px-1.5 py-0.5 rounded bg-rose-500/10 text-rose-600 dark:text-rose-400 text-[10px] font-bold truncate flex items-center gap-1">
+                              <ArrowDownLeft className="w-3 h-3 shrink-0" />
+                              <span className="truncate">{formatCurrency(events.expenseSum)}</span>
+                            </div>
+                          )}
 
-                        {events.creditDues.length > 0 && (
-                          <div className="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-800 dark:text-amber-300 text-[9px] font-bold truncate flex items-center gap-1">
-                            <CreditCard className="w-3 h-3 shrink-0" />
-                            <span className="truncate">Pago {events.creditDues[0].name}</span>
-                          </div>
-                        )}
+                          {events.creditCutOffs.length > 0 && (
+                            <div className="px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-700 dark:text-amber-400 text-[9px] font-bold truncate flex items-center gap-1">
+                              <CreditCard className="w-3 h-3 shrink-0" />
+                              <span className="truncate">Corte {events.creditCutOffs[0].name}</span>
+                            </div>
+                          )}
 
-                        {events.loanPayments.length > 0 && (
-                          <div className="px-1.5 py-0.5 rounded bg-indigo-500/15 text-indigo-700 dark:text-indigo-400 text-[9px] font-bold truncate flex items-center gap-1">
-                            <Landmark className="w-3 h-3 shrink-0" />
-                            <span className="truncate">Pago {events.loanPayments[0].name}</span>
-                          </div>
-                        )}
+                          {events.creditDues.length > 0 && (
+                            <div className="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-800 dark:text-amber-300 text-[9px] font-bold truncate flex items-center gap-1">
+                              <CreditCard className="w-3 h-3 shrink-0" />
+                              <span className="truncate">Pago {events.creditDues[0].name}</span>
+                            </div>
+                          )}
+
+                          {events.loanPayments.length > 0 && (
+                            <div className="px-1.5 py-0.5 rounded bg-indigo-500/15 text-indigo-700 dark:text-indigo-400 text-[9px] font-bold truncate flex items-center gap-1">
+                              <Landmark className="w-3 h-3 shrink-0" />
+                              <span className="truncate">Pago {events.loanPayments[0].name}</span>
+                            </div>
+                          )}
+                        </div>
+
                       </div>
                     </button>
                   );
@@ -1020,10 +1045,14 @@ export default function FinancialCalendar({
         </div>
       )}
 
-      {/* Modal / Panel Deslizable de Detalle del Día Seleccionado */}
+      {/* Modal / Panel Deslizable de Detalle del Día Seleccionado (Bottom Sheet en Móvil) */}
       {selectedDay && selectedDayEvents && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="surface-card w-full max-w-lg rounded-3xl border border-slate-200 dark:border-zinc-800 shadow-2xl overflow-hidden flex flex-col max-h-[85vh] animate-in fade-in zoom-in-95">
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4">
+          <div className="surface-card w-full max-w-lg rounded-t-[32px] sm:rounded-3xl border border-slate-200 dark:border-zinc-800 shadow-2xl overflow-hidden flex flex-col max-h-[85vh] animate-in fade-in slide-in-from-bottom-5 sm:zoom-in-95">
+            {/* Tirador táctil solo en celular */}
+            <div className="flex justify-center pt-2.5 sm:hidden">
+              <div className="w-12 h-1.5 rounded-full bg-slate-300 dark:bg-zinc-700" />
+            </div>
             <div className="p-5 border-b border-slate-200/80 dark:border-zinc-800 bg-slate-50 dark:bg-zinc-900/80 flex items-center justify-between">
               <div>
                 <h3 className="text-base font-bold text-slate-900 dark:text-white capitalize">
