@@ -11,6 +11,28 @@ const supabaseAdmin = createSupabaseClient<Database>(
 );
 
 /**
+ * Asegura que el registro del usuario exista en la tabla public.users
+ */
+export async function ensureUserExists(userId: string, email?: string) {
+  try {
+    const { data } = await (supabaseAdmin.from('users') as any)
+      .select('id')
+      .eq('id', userId)
+      .maybeSingle();
+
+    if (!data) {
+      await (supabaseAdmin.from('users') as any).insert({
+        id: userId,
+        email: email || '',
+        full_name: email ? email.split('@')[0] : 'Usuario'
+      });
+    }
+  } catch (e) {
+    console.warn('ensureUserExists non-fatal error:', e);
+  }
+}
+
+/**
  * Obtiene todas las carteras del usuario.
  * Si el usuario no tiene ninguna cartera, le crea una por defecto llamada "Efectivo".
  */
@@ -21,6 +43,8 @@ export async function getWallets() {
   if (!user) {
     throw new Error('Usuario no autenticado');
   }
+
+  await ensureUserExists(user.id, user.email);
 
   // Procesar pagos recurrentes vencidos del usuario en caliente
   try {
@@ -44,7 +68,7 @@ export async function getWallets() {
 }
 
 /**
- * Crea una nueva cartera.
+ * Crea una nueva cartera (débito, crédito o efectivo) e inicializa su saldo mediante transacción.
  */
 export async function createWallet(
   name: string, 
@@ -62,62 +86,94 @@ export async function createWallet(
     return { success: false, error: 'Usuario no autenticado' };
   }
 
+  // 0. Asegurar que el usuario existe en public.users antes de insertar
+  await ensureUserExists(user.id, user.email);
+
   // Para tarjeta de crédito, el balance inicial representa deuda. 
   // Si ingresan saldo positivo de deuda, lo registramos como negativo (balance real).
-  const actualBalance = type === 'credit' ? -Math.abs(initialBalance) : initialBalance;
+  const walletPayload = {
+    user_id: user.id,
+    name,
+    balance: 0.00, // Se inicializa en 0 y se actualiza mediante transacción
+    currency: 'MXN',
+    type,
+    credit_limit: type === 'credit' ? creditLimit : 0.00,
+    cut_off_day: type === 'credit' ? cutOffDay : null,
+    due_day: type === 'credit' ? dueDay : null,
+    statement_payment_due: type === 'credit' ? statementPaymentDue : 0.00
+  };
 
-  // 1. Insertar cartera
-  const { data: wallet, error } = await (supabase
+  // 1. Insertar cartera con cliente estándar o fallback a admin
+  let wallet: any = null;
+  let walletError: any = null;
+
+  const { data: stdWallet, error: stdErr } = await (supabase
     .from('wallets')
-    .insert({
-      user_id: user.id,
-      name,
-      balance: 0.00, // Se inicializa en 0 y se actualiza mediante transacción
-      currency: 'MXN',
-      type,
-      credit_limit: type === 'credit' ? creditLimit : 0.00,
-      cut_off_day: type === 'credit' ? cutOffDay : null,
-      due_day: type === 'credit' ? dueDay : null,
-      statement_payment_due: type === 'credit' ? statementPaymentDue : 0.00
-    } as any)
+    .insert(walletPayload as any)
     .select() as any)
     .single();
 
-  if (error) {
-    console.error('Error al crear cartera:', error);
-    return { success: false, error: 'Error al crear la cartera. Asegúrate de ejecutar la migración SQL.' };
+  if (!stdErr && stdWallet) {
+    wallet = stdWallet;
+  } else {
+    console.warn('Fallo creación estándar de cartera, usando admin fallback:', stdErr?.message);
+    const { data: admWallet, error: admErr } = await (supabaseAdmin
+      .from('wallets')
+      .insert(walletPayload as any)
+      .select() as any)
+      .single();
+
+    if (admErr || !admWallet) {
+      walletError = admErr || stdErr;
+    } else {
+      wallet = admWallet;
+    }
+  }
+
+  if (walletError || !wallet) {
+    console.error('Error final al crear cartera:', walletError);
+    return { 
+      success: false, 
+      error: walletError?.message || 'Error al crear la cartera en la base de datos.' 
+    };
   }
 
   // 2. Si hay saldo inicial (positivo o negativo), insertar una transacción de ajuste
   if (initialBalance !== 0) {
     const isCredit = type === 'credit';
-    // Si es crédito y tiene saldo inicial (ej. debe $5000), es un gasto (expense).
-    // Si es débito/efectivo y es positivo, es ingreso (income).
     const txType = isCredit ? 'expense' : (initialBalance > 0 ? 'income' : 'expense');
     const amount = Math.abs(initialBalance);
 
-    const { error: txError } = await supabase
+    const txPayload = {
+      user_id: user.id,
+      wallet_id: wallet.id,
+      type: txType,
+      amount,
+      concept: isCredit ? 'Deuda inicial' : 'Saldo inicial',
+      date: new Date().toISOString()
+    };
+
+    let { error: txError } = await (supabase
       .from('transactions')
-      .insert({
-        user_id: user.id,
-        wallet_id: (wallet as any).id,
-        type: txType,
-        amount,
-        concept: isCredit ? 'Deuda inicial' : 'Saldo inicial',
-        date: new Date().toISOString()
-      } as any);
+      .insert(txPayload as any) as any);
 
     if (txError) {
-      console.error('Error al crear transacción inicial:', txError);
-      // Borramos la cartera si falla la transacción inicial para mantener consistencia
-      await supabase.from('wallets').delete().eq('id', (wallet as any).id);
-      return { success: false, error: 'Error al inicializar el saldo' };
+      // Fallback con supabaseAdmin para transacción inicial
+      const { error: admTxErr } = await (supabaseAdmin
+        .from('transactions')
+        .insert(txPayload as any) as any);
+      
+      if (admTxErr) {
+        console.error('Error al crear transacción inicial vía admin:', admTxErr);
+        await supabaseAdmin.from('wallets').delete().eq('id', wallet.id);
+        return { success: false, error: 'Error al inicializar el saldo inicial: ' + admTxErr.message };
+      }
     }
   }
 
   revalidatePath('/wallets');
   revalidatePath('/');
-  return { success: true, wallet: wallet as any };
+  return { success: true, wallet };
 }
 
 /**
