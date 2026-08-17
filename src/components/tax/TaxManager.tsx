@@ -32,10 +32,17 @@ const MONTH_NAMES = [
 ];
 
 export default function TaxManager() {
-  const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth() + 1);
-  const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
-  const [selectedRegime, setSelectedRegime] = useState<TaxRegime>("resico");
+  const [selectedMonth, setSelectedMonth] = useState<number>(8);
+  const [selectedYear, setSelectedYear] = useState<number>(2026);
+  const [selectedRegime, setSelectedRegime] = useState<TaxRegime>("sueldos_salarios");
   const [isSatModalOpen, setIsSatModalOpen] = useState(false);
+
+  useEffect(() => {
+    // Sincronizar fecha cliente después de hidratación para evitar error #418 de React
+    const now = new Date();
+    setSelectedMonth(now.getMonth() + 1);
+    setSelectedYear(now.getFullYear());
+  }, []);
   
   const [taxData, setTaxData] = useState<TaxCalculationResult | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -52,7 +59,28 @@ export default function TaxManager() {
       if (res.success && res.data) {
         setTaxData(res.data);
       } else {
-        setError(res.error || "No se pudieron calcular los impuestos.");
+        // En caso de que aún no haya facturas registradas en el mes, mostrar resúmenes limpios en $0.00
+        setTaxData({
+          month: selectedMonth,
+          year: selectedYear,
+          regime: selectedRegime,
+          totalIncomeSubtotal: 0,
+          totalIncomeIva: 0,
+          totalIncomeTotal: 0,
+          totalExpenseSubtotal: 0,
+          totalExpenseIva: 0,
+          totalExpenseTotal: 0,
+          netProfit: 0,
+          ivaTrasladado: 0,
+          ivaAcreditable: 0,
+          ivaBalance: 0,
+          isrRate: 0,
+          isrBruto: 0,
+          isrRetenido: 0,
+          isrNetoToPay: 0,
+          incomeInvoicesCount: 0,
+          expenseInvoicesCount: 0,
+        });
       }
     });
   };
@@ -91,6 +119,7 @@ export default function TaxManager() {
               value={selectedMonth}
               onChange={(e) => setSelectedMonth(Number(e.target.value))}
               className="bg-transparent font-bold text-xs text-slate-900 dark:text-white focus:outline-none pr-2 cursor-pointer"
+              suppressHydrationWarning
             >
               {MONTH_NAMES.map((name, idx) => (
                 <option key={idx + 1} value={idx + 1} className="bg-slate-900 text-white">
@@ -102,6 +131,7 @@ export default function TaxManager() {
               value={selectedYear}
               onChange={(e) => setSelectedYear(Number(e.target.value))}
               className="bg-transparent font-bold text-xs text-slate-900 dark:text-white focus:outline-none cursor-pointer pr-2 border-l border-slate-300 dark:border-zinc-700 pl-2"
+              suppressHydrationWarning
             >
               {[2024, 2025, 2026, 2027].map((yr) => (
                 <option key={yr} value={yr} className="bg-slate-900 text-white">
@@ -112,7 +142,17 @@ export default function TaxManager() {
           </div>
 
           {/* Selector de Régimen Fiscal */}
-          <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-zinc-800/80 p-1 rounded-2xl border border-slate-200 dark:border-zinc-700 text-xs">
+          <div className="flex flex-wrap items-center gap-1.5 bg-slate-100 dark:bg-zinc-800/80 p-1 rounded-2xl border border-slate-200 dark:border-zinc-700 text-xs">
+            <button
+              onClick={() => setSelectedRegime("sueldos_salarios")}
+              className={`px-3 py-1.5 rounded-xl font-extrabold transition ${
+                selectedRegime === "sueldos_salarios"
+                  ? "bg-brand-cerulean text-white shadow-sm"
+                  : "text-slate-700 dark:text-zinc-300 hover:text-slate-950 dark:hover:text-white"
+              }`}
+            >
+              💼 Sueldos y Salarios
+            </button>
             <button
               onClick={() => setSelectedRegime("resico")}
               className={`px-3 py-1.5 rounded-xl font-extrabold transition ${

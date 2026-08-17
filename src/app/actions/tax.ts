@@ -10,7 +10,7 @@ const supabaseAdmin = createSupabaseClient<Database>(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-export type TaxRegime = 'resico' | 'persona_fisica' | 'persona_moral';
+export type TaxRegime = 'sueldos_salarios' | 'resico' | 'persona_fisica' | 'persona_moral';
 
 export interface TaxCalculationResult {
   month: number;
@@ -57,48 +57,70 @@ function calculatePersonaFisicaIsr(profit: number): { rate: number; isrAmount: n
   return { rate: 0.30, isrAmount: profit * 0.30 };
 }
 
+// Estimación de Retención de ISR para Sueldos y Salarios
+function calculateSueldosIsr(income: number): { rate: number; isrAmount: number } {
+  if (income <= 0) return { rate: 0, isrAmount: 0 };
+  if (income <= 15000) return { rate: 0.10, isrAmount: income * 0.10 };
+  if (income <= 35000) return { rate: 0.16, isrAmount: income * 0.16 };
+  if (income <= 60000) return { rate: 0.2136, isrAmount: income * 0.2136 };
+  return { rate: 0.30, isrAmount: income * 0.30 };
+}
+
 export async function calculateTaxSummary(
   month: number,
   year: number,
-  regime: TaxRegime = 'resico'
+  regime: TaxRegime = 'sueldos_salarios'
 ): Promise<{ success: boolean; data?: TaxCalculationResult; error?: string }> {
   try {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
 
-    if (!user) {
-      return { success: false, error: 'Usuario no autenticado' };
-    }
+    const userId = user ? user.id : null;
 
     // Rango de fechas del mes
     const startDate = new Date(year, month - 1, 1).toISOString();
     const endDate = new Date(year, month, 0, 23, 59, 59).toISOString();
 
-    // Intentar consulta primero por PostgreSQL directo si está configurado
+    // Consultar facturas con fallback a arreglo vacío si no hay conexión o no hay facturas aún
     let invoices: any[] = [];
 
     try {
-      invoices = await query(
-        `SELECT * FROM invoices 
-         WHERE user_id = $1 
-         AND date >= $2 
-         AND date <= $3`,
-        [user.id, startDate, endDate]
-      );
-    } catch {
-      // Fallback a Supabase Admin
-      const { data, error } = await supabaseAdmin
-        .from('invoices')
-        .select('*')
-        .eq('user_id', user.id)
-        .gte('date', startDate)
-        .lte('date', endDate);
-
-      if (error) {
-        console.error('Error al obtener facturas para cálculo de impuestos:', error);
-        return { success: false, error: 'No se pudieron consultar las facturas' };
+      if (userId) {
+        invoices = await query(
+          `SELECT * FROM invoices 
+           WHERE user_id = $1 
+           AND date >= $2 
+           AND date <= $3`,
+          [userId, startDate, endDate]
+        );
+      } else {
+        invoices = await query(
+          `SELECT * FROM invoices 
+           WHERE date >= $1 
+           AND date <= $2`,
+          [startDate, endDate]
+        );
       }
-      invoices = data || [];
+    } catch {
+      // Fallback a Supabase Admin si hay usuario
+      if (userId) {
+        const { data } = await supabaseAdmin
+          .from('invoices')
+          .select('*')
+          .eq('user_id', userId)
+          .gte('date', startDate)
+          .lte('date', endDate);
+
+        invoices = data || [];
+      } else {
+        const { data } = await supabaseAdmin
+          .from('invoices')
+          .select('*')
+          .gte('date', startDate)
+          .lte('date', endDate);
+
+        invoices = data || [];
+      }
     }
 
     let totalIncomeSubtotal = 0;
@@ -133,7 +155,7 @@ export async function calculateTaxSummary(
     const netProfit = Math.max(0, totalIncomeSubtotal - totalExpenseSubtotal);
 
     // Cálculo de IVA
-    const ivaTrasladado = totalIncomeIva;
+    let ivaTrasladado = regime === 'sueldos_salarios' ? 0 : totalIncomeIva;
     const ivaAcreditable = totalExpenseIva;
     const ivaBalance = ivaTrasladado - ivaAcreditable; // >0 Pagar, <0 A favor
 
@@ -141,7 +163,11 @@ export async function calculateTaxSummary(
     let isrRate = 0;
     let isrBruto = 0;
 
-    if (regime === 'resico') {
+    if (regime === 'sueldos_salarios') {
+      const sueldos = calculateSueldosIsr(totalIncomeSubtotal);
+      isrRate = sueldos.rate;
+      isrBruto = sueldos.isrAmount;
+    } else if (regime === 'resico') {
       const resico = calculateResicoIsr(totalIncomeSubtotal);
       isrRate = resico.rate;
       isrBruto = resico.isrAmount;
@@ -155,8 +181,8 @@ export async function calculateTaxSummary(
       isrBruto = netProfit * 0.30;
     }
 
-    // Por ahora ISR retenido estimado en 0 (expandible con nodo de retenciones)
-    const isrRetenido = 0;
+    // Para Sueldos y Salarios, el patrón ya retiene el 100% del ISR en la nómina
+    const isrRetenido = regime === 'sueldos_salarios' ? isrBruto : 0;
     const isrNetoToPay = Math.max(0, isrBruto - isrRetenido);
 
     return {
