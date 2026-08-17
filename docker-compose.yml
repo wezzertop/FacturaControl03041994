@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: facturacontrol_app
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=postgresql://factura_user:factura_secure_password@db:5432/facturacontrol
+      - NEXT_PUBLIC_SUPABASE_URL=http://localhost:3000
+      - NEXT_PUBLIC_SUPABASE_ANON_KEY=self-hosted-anon-key
+      - SUPABASE_SERVICE_ROLE_KEY=self-hosted-service-key
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: always
+
+  db:
+    image: postgres:16-alpine
+    container_name: facturacontrol_db
+    environment:
+      POSTGRES_USER: factura_user
+      POSTGRES_PASSWORD: factura_secure_password
+      POSTGRES_DB: facturacontrol
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U factura_user -d facturacontrol"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: always
+
+volumes:
+  postgres_data:

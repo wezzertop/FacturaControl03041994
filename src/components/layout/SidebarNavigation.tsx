@@ -23,7 +23,9 @@ import {
   UploadCloud,
   Wallet,
   Zap,
+  Coffee,
 } from "lucide-react";
+import DonationModal from "./DonationModal";
 import { signout } from "@/app/actions/auth";
 
 const cn = (...classes: (string | undefined | null | false)[]) => classes.filter(Boolean).join(" ");
@@ -60,6 +62,7 @@ const navGroups = [
 export default function SidebarNavigation() {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
+  const [isDonationOpen, setIsDonationOpen] = useState(false);
   const { theme, setTheme } = useTheme();
 
   const isAuthPage = pathname.startsWith("/login") || pathname.startsWith("/register");
@@ -188,6 +191,19 @@ export default function SidebarNavigation() {
           )}
         </div>
 
+        <button
+          type="button"
+          onClick={() => setIsDonationOpen(true)}
+          className={cn(
+            "flex h-10 w-full items-center gap-3 rounded-xl px-3 text-xs font-bold text-amber-600 dark:text-amber-400 bg-amber-500/10 hover:bg-amber-500/20 transition border border-amber-500/20 shadow-sm",
+            collapsed && "justify-center px-0",
+          )}
+          title="Invitar un café (Donar)"
+        >
+          <Coffee className="h-4.5 w-4.5 shrink-0" />
+          {!collapsed ? <span>Invítanos un café ☕</span> : null}
+        </button>
+
         <form action={signout}>
           <button
             type="submit"
@@ -201,6 +217,8 @@ export default function SidebarNavigation() {
             {!collapsed ? <span>Cerrar sesión</span> : null}
           </button>
         </form>
+
+        <DonationModal isOpen={isDonationOpen} onClose={() => setIsDonationOpen(false)} />
       </div>
     </aside>
   );

@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import PinLockModal from "@/components/auth/PinLockModal";
 
 interface PageShellProps {
   eyebrow?: string;
@@ -17,6 +18,7 @@ export default function PageShell({
 }: PageShellProps) {
   return (
     <div className="min-h-full w-full px-4 py-5 pb-24 sm:px-6 md:px-8 md:py-8 md:pb-10 xl:px-10">
+      <PinLockModal />
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
         <header className="flex flex-col gap-4 border-b border-slate-200/80 pb-5 dark:border-white/10 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-3xl">
