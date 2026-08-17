@@ -1,4 +1,4 @@
-﻿@import "tailwindcss";
+@import "tailwindcss";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -59,8 +59,22 @@ body::before {
   background-size: auto, auto, 30px 30px;
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 ::selection {
-  background: rgba(0, 126, 167, 0.2);
+  background-color: #007EA7;
+  color: #FFFFFF;
+}
+
+input, textarea {
+  caret-color: #007EA7;
+}
+
+*:focus-visible {
+  outline: 2px solid #007EA7;
+  outline-offset: 2px;
 }
 
 .custom-scrollbar {

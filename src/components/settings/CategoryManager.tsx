@@ -282,10 +282,10 @@ export default function CategoryManager({ initialCategories }: CategoryManagerPr
         <div className="surface-card rounded-2xl p-5 border border-slate-200/80 dark:border-white/10 flex items-center justify-between shadow-sm">
           <div>
             <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-zinc-400">Personalizadas</p>
-            <p className="text-2xl font-black text-purple-600 dark:text-purple-400 mt-1">{customCategoriesCount}</p>
+            <p className="text-2xl font-black text-brand-cerulean mt-1">{customCategoriesCount}</p>
             <p className="text-[10px] text-slate-400 mt-0.5">Creadas por ti</p>
           </div>
-          <div className="w-10 h-10 rounded-2xl bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center">
+          <div className="w-10 h-10 rounded-2xl bg-brand-cerulean/10 text-brand-cerulean flex items-center justify-center">
             <Sparkles className="w-5 h-5" />
           </div>
         </div>

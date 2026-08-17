@@ -20,15 +20,10 @@ export default function PageShell({
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
         <header className="flex flex-col gap-4 border-b border-slate-200/80 pb-5 dark:border-white/10 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-3xl">
-            {eyebrow ? (
-              <p className="mb-2 text-xs font-semibold uppercase text-brand-cerulean">
-                {eyebrow}
-              </p>
-            ) : null}
-            <h1 className="text-2xl font-semibold text-slate-950 dark:text-white md:text-3xl">
+            <h1 className="text-2xl font-black text-slate-900 dark:text-white md:text-3xl tracking-tight">
               {title}
             </h1>
-            <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-400">
+            <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-zinc-400 font-medium">
               {description}
             </p>
           </div>

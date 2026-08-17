@@ -1343,7 +1343,7 @@ export default function LoansManager({ initialLoans, wallets, categories }: Loan
                   type="file"
                   accept="image/*,application/pdf"
                   onChange={(e) => setCapitalVoucherFile(e.target.files?.[0] || null)}
-                  className="w-full text-xs text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-emerald-600/10 file:text-emerald-600 hover:file:bg-emerald-600/20"
+                  className="w-full text-xs text-slate-600 dark:text-zinc-400 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-emerald-600/10 file:text-emerald-600 hover:file:bg-emerald-600/20"
                 />
                 {capitalVoucherFile && (
                   <p className="text-[10px] text-gray-500 font-semibold truncate mt-1">

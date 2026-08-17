@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState } from 'react';
 import Link from 'next/link';
@@ -166,7 +166,7 @@ export default function LandingPage() {
           </div>
           
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight text-brand-carbon dark:text-white max-w-4xl mx-auto leading-[1.1]">
-            Toma el control absoluto de tus <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-cerulean via-blue-500 to-emerald-500">finanzas fiscales</span>
+            Toma el control absoluto de tus <span className="text-brand-cerulean">finanzas fiscales</span>
           </h1>
           
           <p className="text-lg sm:text-xl text-brand-graphite dark:text-zinc-400 max-w-2xl mx-auto leading-relaxed">
