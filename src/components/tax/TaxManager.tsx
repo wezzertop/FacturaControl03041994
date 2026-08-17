@@ -52,17 +52,19 @@ export default function TaxManager() {
   const [searchRfc, setSearchRfc] = useState<string>("");
   const [efosResult, setEfosResult] = useState<{ searched: boolean; clean: boolean; rfc: string } | null>(null);
 
-  const fetchTaxData = () => {
+  const fetchTaxData = (overrideMonth?: number, overrideYear?: number) => {
+    const m = overrideMonth !== undefined ? overrideMonth : selectedMonth;
+    const y = overrideYear !== undefined ? overrideYear : selectedYear;
     setError(null);
     startTransition(async () => {
-      const res = await calculateTaxSummary(selectedMonth, selectedYear, selectedRegime);
+      const res = await calculateTaxSummary(m, y, selectedRegime);
       if (res.success && res.data) {
         setTaxData(res.data);
       } else {
         // En caso de que aún no haya facturas registradas en el mes, mostrar resúmenes limpios en $0.00
         setTaxData({
-          month: selectedMonth,
-          year: selectedYear,
+          month: m,
+          year: y,
           regime: selectedRegime,
           totalIncomeSubtotal: 0,
           totalIncomeIva: 0,
@@ -83,6 +85,12 @@ export default function TaxManager() {
         });
       }
     });
+  };
+
+  const handleSyncSuccess = (syncedMonth: number, syncedYear: number) => {
+    setSelectedMonth(syncedMonth);
+    setSelectedYear(syncedYear);
+    fetchTaxData(syncedMonth, syncedYear);
   };
 
   useEffect(() => {
@@ -196,7 +204,7 @@ export default function TaxManager() {
           </button>
 
           <button
-            onClick={fetchTaxData}
+            onClick={() => fetchTaxData()}
             disabled={isPending}
             className="px-4 py-2 bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:opacity-90 font-extrabold text-xs rounded-2xl transition flex items-center justify-center gap-2 min-h-[44px]"
           >
@@ -209,7 +217,7 @@ export default function TaxManager() {
       <SatCredentialsModal
         isOpen={isSatModalOpen}
         onClose={() => setIsSatModalOpen(false)}
-        onSyncSuccess={fetchTaxData}
+        onSyncSuccess={handleSyncSuccess}
       />
 
       {error && (

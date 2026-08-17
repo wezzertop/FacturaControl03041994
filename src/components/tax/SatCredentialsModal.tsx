@@ -7,7 +7,7 @@ import { saveSatCredentials, syncMonthInvoicesFromSat } from "@/app/actions/satS
 interface SatCredentialsModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSyncSuccess?: () => void;
+  onSyncSuccess?: (month: number, year: number) => void;
 }
 
 export default function SatCredentialsModal({ isOpen, onClose, onSyncSuccess }: SatCredentialsModalProps) {
@@ -42,10 +42,10 @@ export default function SatCredentialsModal({ isOpen, onClose, onSyncSuccess }: 
 
       if (res.success) {
         setMsg({ type: "success", text: res.message || "Sincronización masiva con el SAT completada con éxito." });
-        if (onSyncSuccess) onSyncSuccess();
+        if (onSyncSuccess) onSyncSuccess(selectedMonth, selectedYear);
         setTimeout(() => {
           onClose();
-        }, 2000);
+        }, 1800);
       } else {
         setMsg({ type: "error", text: res.error || "No se pudo sincronizar con el SAT." });
       }
