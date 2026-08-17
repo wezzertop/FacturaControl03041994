@@ -19,10 +19,12 @@ import {
   Sparkles,
   ArrowUpRight,
   ArrowDownLeft,
-  DollarSign
+  DollarSign,
+  KeyRound
 } from "lucide-react";
 import { calculateTaxSummary, TaxCalculationResult, TaxRegime } from "@/app/actions/tax";
 import CurrencyInput from "@/components/ui/CurrencyInput";
+import SatCredentialsModal from "./SatCredentialsModal";
 
 const MONTH_NAMES = [
   "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
@@ -33,6 +35,7 @@ export default function TaxManager() {
   const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth() + 1);
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
   const [selectedRegime, setSelectedRegime] = useState<TaxRegime>("resico");
+  const [isSatModalOpen, setIsSatModalOpen] = useState(false);
   
   const [taxData, setTaxData] = useState<TaxCalculationResult | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -143,15 +146,31 @@ export default function TaxManager() {
           </div>
         </div>
 
-        <button
-          onClick={fetchTaxData}
-          disabled={isPending}
-          className="px-4 py-2 bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:opacity-90 font-extrabold text-xs rounded-2xl transition flex items-center justify-center gap-2 shrink-0 min-h-[44px]"
-        >
-          <RefreshCw className={`w-4 h-4 ${isPending ? "animate-spin" : ""}`} />
-          Recalcular Impuestos
-        </button>
+        <div className="flex items-center gap-2 shrink-0">
+          <button
+            onClick={() => setIsSatModalOpen(true)}
+            className="px-4 py-2 bg-gradient-to-r from-brand-cerulean to-blue-600 hover:opacity-95 text-white font-extrabold text-xs rounded-2xl transition flex items-center justify-center gap-2 shadow-md shadow-brand-cerulean/20 min-h-[44px]"
+          >
+            <Sparkles className="w-4 h-4 text-amber-300" />
+            Sincronizar SAT ⚡
+          </button>
+
+          <button
+            onClick={fetchTaxData}
+            disabled={isPending}
+            className="px-4 py-2 bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:opacity-90 font-extrabold text-xs rounded-2xl transition flex items-center justify-center gap-2 min-h-[44px]"
+          >
+            <RefreshCw className={`w-4 h-4 ${isPending ? "animate-spin" : ""}`} />
+            Recalcular Impuestos
+          </button>
+        </div>
       </div>
+
+      <SatCredentialsModal
+        isOpen={isSatModalOpen}
+        onClose={() => setIsSatModalOpen(false)}
+        onSyncSuccess={fetchTaxData}
+      />
 
       {error && (
         <div className="p-4 bg-rose-500/10 border border-rose-500/20 text-rose-500 text-xs font-bold rounded-2xl flex items-center gap-2">
