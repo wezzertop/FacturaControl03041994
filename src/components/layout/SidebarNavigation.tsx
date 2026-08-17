@@ -24,6 +24,7 @@ import {
   Wallet,
   Zap,
   Coffee,
+  Scale,
 } from "lucide-react";
 import DonationModal from "./DonationModal";
 import { signout } from "@/app/actions/auth";
@@ -45,6 +46,7 @@ const navGroups = [
       { name: "Mis Carteras", href: "/wallets", icon: Wallet },
       { name: "Préstamos", href: "/loans", icon: Landmark },
       { name: "Calendario", href: "/calendar", icon: Calendar },
+      { name: "Impuestos SAT", href: "/tax", icon: Scale },
     ],
   },
   {
