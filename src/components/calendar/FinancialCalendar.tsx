@@ -549,37 +549,37 @@ export default function FinancialCalendar({
                 </span>
                 <button
                   onClick={() => setEventTypeFilter('all')}
-                  className={`px-2.5 py-1 rounded-lg transition ${eventTypeFilter === 'all' ? 'bg-brand-cerulean text-white' : 'bg-slate-200/80 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 hover:bg-slate-300 dark:hover:bg-zinc-700'}`}
+                  className={`px-2.5 py-1 rounded-lg font-bold transition ${eventTypeFilter === 'all' ? 'bg-brand-cerulean text-white shadow-sm' : 'bg-slate-200/80 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 hover:bg-slate-300 dark:hover:bg-zinc-700'}`}
                 >
                   Todos
                 </button>
                 <button
                   onClick={() => setEventTypeFilter('income')}
-                  className={`px-2.5 py-1 rounded-lg transition ${eventTypeFilter === 'income' ? 'bg-emerald-600 text-white' : 'bg-slate-200/80 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 hover:bg-slate-300 dark:hover:bg-zinc-700'}`}
+                  className={`px-2.5 py-1 rounded-lg font-bold transition ${eventTypeFilter === 'income' ? 'bg-emerald-600 text-white shadow-sm' : 'bg-slate-200/80 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 hover:bg-slate-300 dark:hover:bg-zinc-700'}`}
                 >
                   🟢 Ingresos
                 </button>
                 <button
                   onClick={() => setEventTypeFilter('expense')}
-                  className={`px-2.5 py-1 rounded-lg transition ${eventTypeFilter === 'expense' ? 'bg-rose-600 text-white' : 'bg-slate-200/80 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 hover:bg-slate-300 dark:hover:bg-zinc-700'}`}
+                  className={`px-2.5 py-1 rounded-lg font-bold transition ${eventTypeFilter === 'expense' ? 'bg-rose-600 text-white shadow-sm' : 'bg-slate-200/80 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 hover:bg-slate-300 dark:hover:bg-zinc-700'}`}
                 >
                   🔴 Egresos
                 </button>
                 <button
                   onClick={() => setEventTypeFilter('credit')}
-                  className={`px-2.5 py-1 rounded-lg transition ${eventTypeFilter === 'credit' ? 'bg-amber-600 text-white' : 'bg-slate-200/80 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 hover:bg-slate-300 dark:hover:bg-zinc-700'}`}
+                  className={`px-2.5 py-1 rounded-lg font-bold transition ${eventTypeFilter === 'credit' ? 'bg-amber-600 text-white shadow-sm' : 'bg-slate-200/80 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 hover:bg-slate-300 dark:hover:bg-zinc-700'}`}
                 >
                   💳 Tarjetas
                 </button>
                 <button
                   onClick={() => setEventTypeFilter('loans')}
-                  className={`px-2.5 py-1 rounded-lg transition ${eventTypeFilter === 'loans' ? 'bg-indigo-600 text-white' : 'bg-slate-200/80 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 hover:bg-slate-300 dark:hover:bg-zinc-700'}`}
+                  className={`px-2.5 py-1 rounded-lg font-bold transition ${eventTypeFilter === 'loans' ? 'bg-indigo-600 text-white shadow-sm' : 'bg-slate-200/80 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 hover:bg-slate-300 dark:hover:bg-zinc-700'}`}
                 >
                   🏦 Préstamos
                 </button>
                 <button
                   onClick={() => setEventTypeFilter('recurring')}
-                  className={`px-2.5 py-1 rounded-lg transition ${eventTypeFilter === 'recurring' ? 'bg-purple-600 text-white' : 'bg-slate-200/80 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 hover:bg-slate-300 dark:hover:bg-zinc-700'}`}
+                  className={`px-2.5 py-1 rounded-lg font-bold transition ${eventTypeFilter === 'recurring' ? 'bg-purple-600 text-white shadow-sm' : 'bg-slate-200/80 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 hover:bg-slate-300 dark:hover:bg-zinc-700'}`}
                 >
                   🔄 Recurrentes
                 </button>
