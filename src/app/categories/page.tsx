@@ -14,7 +14,7 @@ export default async function CategoriesPage() {
       title="Administración de Categorías"
       description="Crea, edita y personaliza los grupos de gastos e ingresos para organizar tus finanzas con colores e iconos."
     >
-      <div className="mx-auto max-w-5xl">
+      <div className="mx-auto max-w-7xl">
         <CategoryManager initialCategories={categories} />
       </div>
     </PageShell>
