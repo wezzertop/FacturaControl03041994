@@ -4,6 +4,8 @@ import { createClient } from "@/utils/supabase/server";
 import InvoiceTable from "@/components/invoices/InvoiceTable";
 import { getProviderMappings } from "@/app/actions/invoices";
 import { getCategories } from "@/app/actions/categories";
+import VisualCardCarousel from "@/components/wallets/VisualCardCarousel";
+import MobileFintechWidgets from "@/components/dashboard/MobileFintechWidgets";
 import {
   ArrowDownRight,
   ArrowUpRight,
@@ -246,6 +248,20 @@ export default async function FinancialOverview() {
 
   return (
     <div className="space-y-6">
+      {/* Carrusel Táctil de Tarjetas & Carteras */}
+      {validWallets.length > 0 && (
+        <VisualCardCarousel wallets={validWallets as any} />
+      )}
+
+      {/* Widgets Financieros Móviles & Acciones Rápidas */}
+      <MobileFintechWidgets
+        wallets={validWallets as any}
+        categories={categories}
+        totalIncome={totalIngreso}
+        totalExpense={totalGasto}
+        invoicesCount={validInvoices.length}
+      />
+
       <section className="surface-card rounded-lg p-5 md:p-6">
         <div className="grid gap-5 lg:grid-cols-[1.4fr_0.9fr] lg:items-center">
           <div>

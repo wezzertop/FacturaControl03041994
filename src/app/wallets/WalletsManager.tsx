@@ -16,6 +16,8 @@ import {
 } from '@/app/actions/wallets';
 import { createCategory } from '@/app/actions/categories';
 import CurrencyInput from '@/components/ui/CurrencyInput';
+import VisualCardCarousel from '@/components/wallets/VisualCardCarousel';
+import SmartTransactionDetectorModal from '@/components/wallets/SmartTransactionDetectorModal';
 
 // Mapeo simple de iconos para la creación de categorías en la modal
 const InlineIconMap: Record<string, any> = {
@@ -216,6 +218,7 @@ export default function WalletsManager({
   const [showWalletModal, setShowWalletModal] = useState(false);
   const [showTxModal, setShowTxModal] = useState(false);
   const [showLinkModal, setShowLinkModal] = useState(false);
+  const [showSmartDetectorModal, setShowSmartDetectorModal] = useState(false);
 
   // Estados para edición de transacciones
   const [showEditTxModal, setShowEditTxModal] = useState(false);
@@ -863,7 +866,14 @@ export default function WalletsManager({
               Suma total de todas tus carteras activas en pesos mexicanos (MXN).
             </p>
           </div>
-          <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+          <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
+            <button
+              onClick={() => setShowSmartDetectorModal(true)}
+              className="w-full sm:w-auto bg-gradient-to-r from-brand-cerulean to-blue-600 hover:opacity-95 text-white px-4 py-2.5 rounded-lg text-sm font-semibold shadow-md shadow-brand-cerulean/20 active:scale-95 transition-all flex items-center justify-center gap-2"
+            >
+              <Zap className="w-4 h-4 text-amber-300" />
+              Detectar SMS / Banco ⚡
+            </button>
             <button 
               id="trigger-tx-modal-btn"
               onClick={() => {
@@ -890,6 +900,18 @@ export default function WalletsManager({
           </div>
         </div>
       </div>
+
+      {/* Carrusel Visual de Tarjetas Físicas */}
+      {wallets.length > 0 && (
+        <VisualCardCarousel
+          wallets={wallets}
+          onAddWalletClick={() => handleOpenNewWalletModal()}
+          onSelectWallet={(wId) => {
+            setActiveWalletFilter(wId === activeWalletFilter ? null : wId);
+          }}
+          selectedWalletId={activeWalletFilter || undefined}
+        />
+      )}
 
       {/* 2. Zona de Escaneo de Comprobantes (BBVA OCR) */}
       <div className="border border-gray-200 dark:border-zinc-800 rounded-2xl bg-white dark:bg-zinc-900/50 p-6 shadow-sm">
@@ -2006,6 +2028,18 @@ export default function WalletsManager({
           </div>
         </div>
       )}
+
+      {/* Modal Inteligente para Detectar Notificaciones de Bancos y SMS */}
+      <SmartTransactionDetectorModal
+        isOpen={showSmartDetectorModal}
+        onClose={() => setShowSmartDetectorModal(false)}
+        wallets={wallets}
+        categories={categories}
+        onTransactionCreated={() => {
+          // Re-trigger refresh or update
+          window.location.reload();
+        }}
+      />
 
     </div>
   );
