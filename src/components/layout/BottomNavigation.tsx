@@ -24,7 +24,8 @@ import {
   Wallet,
   X,
   Zap,
-  Calculator
+  Calculator,
+  Scale
 } from "lucide-react";
 import { signout } from "@/app/actions/auth";
 
@@ -52,6 +53,7 @@ const mobileGroups = [
       { name: "Mis Carteras", href: "/wallets", icon: Wallet, desc: "Bancos, efectivo y crédito" },
       { name: "Préstamos", href: "/loans", icon: Landmark, desc: "Cuotas y amortizaciones" },
       { name: "Calendario Financiero", href: "/calendar", icon: Calendar, desc: "Flujo de caja y vencimientos" },
+      { name: "Impuestos SAT", href: "/tax", icon: Scale, desc: "Cálculo de IVA e ISR estimado" },
     ],
   },
   {
@@ -246,8 +248,8 @@ export default function BottomNavigation() {
         </div>
       </div>
 
-      {/* Dock Inferior Fijo para Celular */}
-      <div className="fixed bottom-0 left-0 z-40 grid h-16 w-full grid-cols-5 border-t border-slate-200/80 bg-white/90 px-2 shadow-[0_-10px_30px_-15px_rgba(15,23,42,0.3)] backdrop-blur-xl dark:border-zinc-800/80 dark:bg-zinc-950/90 md:hidden">
+      {/* Dock Inferior Fijo para Celular con Soporte de Safe Areas para iPhone y Android */}
+      <div className="fixed bottom-0 left-0 z-40 grid w-full grid-cols-5 border-t border-slate-200/80 bg-white/95 px-2 pb-[env(safe-area-inset-bottom,0px)] h-[calc(4rem+env(safe-area-inset-bottom,0px))] shadow-[0_-10px_30px_-15px_rgba(15,23,42,0.3)] backdrop-blur-xl dark:border-zinc-800/80 dark:bg-zinc-950/95 md:hidden">
         {mainDockItems.map((item) => {
           const isActive = pathname === item.href;
           const Icon = item.icon;
@@ -255,8 +257,11 @@ export default function BottomNavigation() {
             <Link
               key={item.name}
               href={item.href}
-              onClick={() => setIsMenuOpen(false)}
-              className="flex flex-col items-center justify-center gap-1 transition active:scale-95"
+              onClick={() => {
+                if (typeof window !== "undefined" && navigator.vibrate) navigator.vibrate(10);
+                setIsMenuOpen(false);
+              }}
+              className="flex flex-col items-center justify-center gap-1 transition active:scale-90"
             >
               <Icon
                 className={cn("h-5 w-5 transition-transform", isActive ? "text-brand-cerulean scale-110" : "text-slate-500 dark:text-zinc-400")}
@@ -272,8 +277,11 @@ export default function BottomNavigation() {
         {/* Botón táctil para desplegar el Menú Completo */}
         <button
           type="button"
-          onClick={() => setIsMenuOpen(!isMenuOpen)}
-          className="flex flex-col items-center justify-center gap-1 transition active:scale-95"
+          onClick={() => {
+            if (typeof window !== "undefined" && navigator.vibrate) navigator.vibrate(10);
+            setIsMenuOpen(!isMenuOpen);
+          }}
+          className="flex flex-col items-center justify-center gap-1 transition active:scale-90"
         >
           <div className={cn("grid h-7 w-7 place-items-center rounded-xl transition", isMenuOpen ? "bg-brand-cerulean text-white" : "text-slate-500 dark:text-zinc-400")}>
             <Menu className="h-5 w-5" strokeWidth={2.5} />

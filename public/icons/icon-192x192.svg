@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192" width="192" height="192">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#007EA7"/>
+      <stop offset="100%" stop-color="#003459"/>
+    </linearGradient>
+    <linearGradient id="boltGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF"/>
+      <stop offset="100%" stop-color="#E0F2FE"/>
+    </linearGradient>
+  </defs>
+  <!-- Background with rounded corners -->
+  <rect width="192" height="192" rx="42" fill="url(#bgGrad)"/>
+  <!-- Subtle inner border -->
+  <rect x="2" y="2" width="188" height="188" rx="40" fill="none" stroke="#FFFFFF" stroke-opacity="0.15" stroke-width="2"/>
+  <!-- App Logo Icon: Lightning Bolt + Shield/Doc geometry -->
+  <path d="M106 38L54 102H98L86 154L138 90H94L106 38Z" fill="url(#boltGrad)" filter="drop-shadow(0 8px 16px rgba(0,0,0,0.3))"/>
+</svg>

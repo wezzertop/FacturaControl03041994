@@ -1,8 +1,9 @@
-﻿import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import SidebarNavigation from "@/components/layout/SidebarNavigation";
 import BottomNavigation from "@/components/layout/BottomNavigation";
+import InstallPrompt from "@/components/pwa/InstallPrompt";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { createClient } from "@/utils/supabase/server";
 
@@ -16,9 +17,31 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  viewportFit: "cover",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#F6F8FB" },
+    { media: "(prefers-color-scheme: dark)", color: "#0B1220" },
+  ],
+};
+
 export const metadata: Metadata = {
-  title: "FacturaControl - Control financiero",
-  description: "Controla facturas, carteras y gastos personales con datos CFDI.",
+  title: "FacturaControl - Control Financiero",
+  description: "Controla facturas, carteras, préstamos y gastos personales con datos CFDI del SAT.",
+  manifest: "/manifest.webmanifest",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "FacturaControl",
+  },
+  icons: {
+    icon: "/icons/icon-192x192.svg",
+    apple: "/icons/icon-192x192.svg",
+  },
 };
 
 export default async function RootLayout({
@@ -50,6 +73,7 @@ export default async function RootLayout({
               {children}
             </main>
             {user && <BottomNavigation />}
+            <InstallPrompt />
           </div>
         </ThemeProvider>
       </body>
