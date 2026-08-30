@@ -39,8 +39,14 @@ export const metadata: Metadata = {
     title: "FacturaControl",
   },
   icons: {
-    icon: "/icons/icon-192x192.svg",
-    apple: "/icons/icon-192x192.svg",
+    icon: [
+      { url: "/icon", sizes: "512x512", type: "image/png" },
+      { url: "/icons/icon-192x192.svg", sizes: "192x192", type: "image/svg+xml" },
+    ],
+    apple: [
+      { url: "/apple-icon", sizes: "180x180", type: "image/png" },
+      { url: "/icons/icon-192x192.svg", sizes: "192x192", type: "image/svg+xml" },
+    ],
   },
 };
 
