@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useRef } from "react";
+import React, { useRef, useState } from "react";
+import CardDetailsModal from "./CardDetailsModal";
 import { 
   CreditCard, 
   Wallet, 
@@ -28,18 +29,23 @@ interface WalletCardData {
 
 interface VisualCardCarouselProps {
   wallets: WalletCardData[];
+  transactions?: any[];
   onSelectWallet?: (walletId: string) => void;
   onAddWalletClick?: () => void;
+  onOpenNewTx?: (type: "expense" | "income", walletId: string) => void;
   selectedWalletId?: string;
 }
 
 export default function VisualCardCarousel({
   wallets,
+  transactions = [],
   onSelectWallet,
   onAddWalletClick,
+  onOpenNewTx,
   selectedWalletId,
 }: VisualCardCarouselProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
+  const [inspectingWallet, setInspectingWallet] = useState<WalletCardData | null>(null);
 
   const scroll = (direction: "left" | "right") => {
     if (scrollRef.current) {
@@ -170,7 +176,10 @@ export default function VisualCardCarousel({
           return (
             <div
               key={wallet.id}
-              onClick={() => onSelectWallet && onSelectWallet(wallet.id)}
+              onClick={() => {
+                if (onSelectWallet) onSelectWallet(wallet.id);
+                setInspectingWallet(wallet);
+              }}
               className={`snap-center shrink-0 w-[290px] sm:w-[320px] h-[185px] rounded-3xl p-5 bg-gradient-to-tr ${theme.bg} text-white shadow-xl relative overflow-hidden flex flex-col justify-between cursor-pointer transition-all duration-300 transform active:scale-95 ${
                 isSelected
                   ? "ring-4 ring-brand-cerulean shadow-2xl scale-[1.02]"
@@ -255,6 +264,15 @@ export default function VisualCardCarousel({
           </div>
         )}
       </div>
+
+      {/* Modal de Detalles de Tarjeta, Calendario y Transacciones */}
+      <CardDetailsModal
+        isOpen={!!inspectingWallet}
+        onClose={() => setInspectingWallet(null)}
+        wallet={inspectingWallet}
+        transactions={transactions}
+        onOpenNewTx={onOpenNewTx}
+      />
     </div>
   );
 }

@@ -4,6 +4,7 @@ import "./globals.css";
 import SidebarNavigation from "@/components/layout/SidebarNavigation";
 import BottomNavigation from "@/components/layout/BottomNavigation";
 import InstallPrompt from "@/components/pwa/InstallPrompt";
+import ServiceWorkerRegister from "@/components/pwa/ServiceWorkerRegister";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { createClient } from "@/utils/supabase/server";
 
@@ -80,6 +81,7 @@ export default async function RootLayout({
             </main>
             {user && <BottomNavigation />}
             <InstallPrompt />
+            <ServiceWorkerRegister />
           </div>
         </ThemeProvider>
       </body>

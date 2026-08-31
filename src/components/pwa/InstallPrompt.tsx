@@ -1,11 +1,12 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Download, Share, PlusSquare, X, Smartphone, Check } from "lucide-react";
+import { Download, Share, PlusSquare, X, Smartphone, MoreVertical, Check } from "lucide-react";
 
 export default function InstallPrompt() {
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [isIos, setIsIos] = useState(false);
+  const [isAndroid, setIsAndroid] = useState(false);
   const [isStandalone, setIsStandalone] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [isInstalled, setIsInstalled] = useState(false);
@@ -28,10 +29,13 @@ export default function InstallPrompt() {
       return; // No molestar por 7 días
     }
 
-    // 3. Detectar dispositivo iOS (iPhone / iPad)
+    // 3. Detectar dispositivo iOS o Android
     const userAgent = window.navigator.userAgent.toLowerCase();
     const isIosDevice = /iphone|ipad|ipod/.test(userAgent);
+    const isAndroidDevice = /android/.test(userAgent);
+
     setIsIos(isIosDevice);
+    setIsAndroid(isAndroidDevice);
 
     // 4. Capturar evento de instalación de Android / Chrome
     const handleBeforeInstall = (e: Event) => {
@@ -42,16 +46,14 @@ export default function InstallPrompt() {
 
     window.addEventListener("beforeinstallprompt", handleBeforeInstall);
 
-    // En iOS mostrar banner tras 3 segundos de navegación
-    if (isIosDevice) {
-      const timer = setTimeout(() => {
-        setIsOpen(true);
-      }, 3000);
-      return () => clearTimeout(timer);
-    }
+    // Mostrar banner tras 2.5 segundos tanto en iOS como en Android
+    const timer = setTimeout(() => {
+      setIsOpen(true);
+    }, 2500);
 
     return () => {
       window.removeEventListener("beforeinstallprompt", handleBeforeInstall);
+      clearTimeout(timer);
     };
   }, []);
 
@@ -98,29 +100,41 @@ export default function InstallPrompt() {
             </h4>
 
             {isIos ? (
-              <div className="text-[11px] text-slate-300 mt-1 leading-relaxed space-y-1">
-                <p>Usa la app a pantalla completa en tu iPhone:</p>
-                <div className="flex items-center gap-1 font-semibold text-brand-cerulean">
-                  1. Toca <Share className="w-3.5 h-3.5 inline" /> Compartir en Safari
+              <div className="text-[11px] text-slate-300 mt-1.5 leading-relaxed space-y-1">
+                <p>Instala la app en tu iPhone sin tiendas:</p>
+                <div className="flex items-center gap-1.5 font-semibold text-brand-cerulean">
+                  1. Toca <Share className="w-3.5 h-3.5 inline" /> <b>Compartir</b> en Safari
                 </div>
-                <div className="flex items-center gap-1 font-semibold text-brand-cerulean">
-                  2. Elige <PlusSquare className="w-3.5 h-3.5 inline" /> "Agregar a Inicio"
+                <div className="flex items-center gap-1.5 font-semibold text-brand-cerulean">
+                  2. Elige <PlusSquare className="w-3.5 h-3.5 inline" /> <b>"Agregar a Inicio"</b>
                 </div>
+              </div>
+            ) : isAndroid ? (
+              <div className="text-[11px] text-slate-300 mt-1.5 leading-relaxed space-y-1.5">
+                <p>Instala la app en tu Android:</p>
+                {deferredPrompt ? (
+                  <button
+                    onClick={handleInstallClick}
+                    className="w-full py-2 bg-gradient-to-r from-brand-cerulean to-blue-600 hover:from-blue-600 hover:to-brand-cerulean text-white font-extrabold text-xs rounded-xl transition shadow-md flex items-center justify-center gap-1.5 mt-1"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    Instalar en 1 Clic 📲
+                  </button>
+                ) : (
+                  <div className="space-y-1 text-slate-300">
+                    <div className="flex items-center gap-1.5 font-semibold text-brand-cerulean">
+                      1. Toca los 3 puntos <MoreVertical className="w-3.5 h-3.5 inline" /> en Chrome
+                    </div>
+                    <div className="flex items-center gap-1.5 font-semibold text-brand-cerulean">
+                      2. Elige <Download className="w-3.5 h-3.5 inline" /> <b>"Instalar aplicación"</b> o <b>"Agregar a pantalla principal"</b>
+                    </div>
+                  </div>
+                )}
               </div>
             ) : (
               <p className="text-[11px] text-slate-300 mt-1 leading-relaxed">
-                Instala la aplicación en tu Android para acceder en 1 toque a pantalla completa.
+                Instala la aplicación en tu pantalla de inicio para acceder en 1 toque a pantalla completa.
               </p>
-            )}
-
-            {!isIos && deferredPrompt && (
-              <button
-                onClick={handleInstallClick}
-                className="mt-3 w-full py-2 bg-gradient-to-r from-brand-cerulean to-blue-600 hover:from-blue-600 hover:to-brand-cerulean text-white font-extrabold text-xs rounded-xl transition shadow-md flex items-center justify-center gap-1.5"
-              >
-                <Download className="w-3.5 h-3.5" />
-                Instalar Ahora (1 Clic)
-              </button>
             )}
           </div>
         </div>

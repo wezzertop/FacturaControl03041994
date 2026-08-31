@@ -18,6 +18,7 @@ import { createCategory } from '@/app/actions/categories';
 import CurrencyInput from '@/components/ui/CurrencyInput';
 import VisualCardCarousel from '@/components/wallets/VisualCardCarousel';
 import SmartTransactionDetectorModal from '@/components/wallets/SmartTransactionDetectorModal';
+import ClipboardTransferListener from '@/components/wallets/ClipboardTransferListener';
 
 // Mapeo simple de iconos para la creación de categorías en la modal
 const InlineIconMap: Record<string, any> = {
@@ -901,13 +902,25 @@ export default function WalletsManager({
         </div>
       </div>
 
+      {/* Listener Automático de Portapapeles */}
+      <ClipboardTransferListener
+        wallets={wallets}
+        categories={categories}
+      />
+
       {/* Carrusel Visual de Tarjetas Físicas */}
       {wallets.length > 0 && (
         <VisualCardCarousel
           wallets={wallets}
+          transactions={transactions}
           onAddWalletClick={() => handleOpenNewWalletModal()}
           onSelectWallet={(wId) => {
             setActiveWalletFilter(wId === activeWalletFilter ? null : wId);
+          }}
+          onOpenNewTx={(type, walletId) => {
+            setTxWalletId(walletId);
+            setTxType(type);
+            setShowTxModal(true);
           }}
           selectedWalletId={activeWalletFilter || undefined}
         />

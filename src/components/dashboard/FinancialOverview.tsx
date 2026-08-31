@@ -7,6 +7,7 @@ import { getCategories } from "@/app/actions/categories";
 import VisualCardCarousel from "@/components/wallets/VisualCardCarousel";
 import MobileFintechWidgets from "@/components/dashboard/MobileFintechWidgets";
 import LukasMobileView from "@/components/dashboard/LukasMobileView";
+import ClipboardTransferListener from "@/components/wallets/ClipboardTransferListener";
 import {
   ArrowDownRight,
   ArrowUpRight,
@@ -249,10 +250,19 @@ export default async function FinancialOverview() {
 
   return (
     <div className="space-y-6">
+      {/* Listener Automático de Portapapeles para Transferencias Bancarias */}
+      <ClipboardTransferListener
+        wallets={validWallets as any}
+        categories={categories}
+      />
+
       {/* Vista Móvil Minimalista y Ergonómica (Inspirada en Lukas) */}
       <div className="md:hidden space-y-5">
         {validWallets.length > 0 && (
-          <VisualCardCarousel wallets={validWallets as any} />
+          <VisualCardCarousel
+            wallets={validWallets as any}
+            transactions={validTransactions as any}
+          />
         )}
         <LukasMobileView
           wallets={validWallets as any}
@@ -268,7 +278,10 @@ export default async function FinancialOverview() {
       <div className="hidden md:block space-y-6">
         {/* Carrusel Táctil de Tarjetas & Carteras */}
         {validWallets.length > 0 && (
-          <VisualCardCarousel wallets={validWallets as any} />
+          <VisualCardCarousel
+            wallets={validWallets as any}
+            transactions={validTransactions as any}
+          />
         )}
 
         {/* Widgets Financieros Móviles & Acciones Rápidas */}
