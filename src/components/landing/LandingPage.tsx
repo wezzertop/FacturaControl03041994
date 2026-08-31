@@ -82,8 +82,8 @@ export default function LandingPage() {
     <div className="min-h-screen bg-brand-smoke dark:bg-zinc-950 text-brand-carbon dark:text-zinc-100 transition-colors duration-300 font-sans selection:bg-brand-cerulean selection:text-white overflow-x-hidden">
       
       {/* Header / Navbar con soporte Safe Area para iPhone y Android */}
-      <header className="sticky top-0 z-50 pt-[env(safe-area-inset-top,0px)] bg-white/90 dark:bg-zinc-950/90 backdrop-blur-xl border-b border-gray-200/60 dark:border-zinc-900 transition-colors duration-300">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 sm:h-18 flex items-center justify-between">
+      <header className="sticky top-0 z-50 pt-[max(env(safe-area-inset-top,0px),16px)] pb-2 bg-white/95 dark:bg-zinc-950/95 backdrop-blur-xl border-b border-gray-200/60 dark:border-zinc-900 transition-colors duration-300">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-14 sm:h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-brand-cerulean to-blue-400 flex items-center justify-center shadow-lg shadow-brand-cerulean/25">
               <Zap className="text-white w-5 h-5" />
