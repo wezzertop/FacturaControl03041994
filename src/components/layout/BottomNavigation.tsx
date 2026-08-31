@@ -205,25 +205,25 @@ export default function BottomNavigation() {
                       href={item.href}
                       onClick={() => setIsMenuOpen(false)}
                       className={cn(
-                        "flex items-center gap-3.5 p-3 rounded-2xl transition-all active:scale-[0.98]",
+                        "flex items-center gap-3.5 p-3 rounded-xl transition-all active:scale-[0.98]",
                         isActive
-                          ? "bg-gradient-to-r from-brand-cerulean to-blue-600 text-white shadow-md shadow-brand-cerulean/20 font-semibold"
-                          : "bg-slate-50/80 dark:bg-zinc-900/60 text-slate-900 dark:text-white border border-slate-100 dark:border-zinc-800/60"
+                          ? "bg-brand-cerulean text-white shadow-md shadow-brand-cerulean/20 font-semibold"
+                          : "bg-slate-100/80 dark:bg-[#0F1626] text-slate-900 dark:text-white border border-slate-200/60 dark:border-white/10"
                       )}
                     >
                       <div
                         className={cn(
-                          "grid h-10 w-10 shrink-0 place-items-center rounded-xl",
-                          isActive ? "bg-white/20 text-white" : "bg-brand-cerulean/10 text-brand-cerulean"
+                          "grid h-9 w-9 shrink-0 place-items-center rounded-lg",
+                          isActive ? "bg-white/20 text-white" : "bg-brand-cerulean/15 text-brand-cerulean"
                         )}
                       >
                         <Icon className="h-5 w-5" />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className={cn("text-sm font-bold truncate", isActive ? "text-white" : "text-slate-900 dark:text-white")}>
+                        <p className={cn("text-xs font-black truncate", isActive ? "text-white" : "text-slate-900 dark:text-white")}>
                           {item.name}
                         </p>
-                        <p className={cn("text-xs truncate", isActive ? "text-white/80" : "text-slate-500 dark:text-zinc-400")}>
+                        <p className={cn("text-[11px] truncate mt-0.5", isActive ? "text-white/85" : "text-slate-600 dark:text-slate-300")}>
                           {item.desc}
                         </p>
                       </div>
@@ -238,9 +238,9 @@ export default function BottomNavigation() {
           <form action={signout} className="pt-2 pb-4">
             <button
               type="submit"
-              className="flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-rose-50 text-rose-600 dark:bg-rose-950/40 dark:text-rose-400 text-sm font-bold transition active:scale-98"
+              className="flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-rose-50 text-rose-600 dark:bg-rose-950/40 dark:text-rose-400 text-xs font-black transition active:scale-98 border border-rose-200/60 dark:border-rose-900/40"
             >
-              <LogOut className="h-5 w-5" />
+              <LogOut className="h-4 w-4" />
               <span>Cerrar sesión de FacturaControl</span>
             </button>
           </form>
@@ -249,7 +249,7 @@ export default function BottomNavigation() {
       </div>
 
       {/* Dock Inferior Fijo para Celular con Soporte de Safe Areas para iPhone y Android */}
-      <div className="fixed bottom-0 left-0 z-40 grid w-full grid-cols-5 border-t border-slate-200/80 bg-white/95 px-2 pb-[env(safe-area-inset-bottom,0px)] h-[calc(4rem+env(safe-area-inset-bottom,0px))] shadow-[0_-10px_30px_-15px_rgba(15,23,42,0.3)] backdrop-blur-xl dark:border-zinc-800/80 dark:bg-zinc-950/95 md:hidden">
+      <div className="fixed bottom-0 left-0 z-40 grid w-full grid-cols-5 border-t border-slate-200/80 bg-white/95 px-2 pb-[env(safe-area-inset-bottom,0px)] h-[calc(3.75rem+env(safe-area-inset-bottom,0px))] shadow-lg backdrop-blur-xl dark:border-white/10 dark:bg-[#080C14]/95 md:hidden">
         {mainDockItems.map((item) => {
           const isActive = pathname === item.href;
           const Icon = item.icon;
@@ -261,13 +261,13 @@ export default function BottomNavigation() {
                 if (typeof window !== "undefined" && navigator.vibrate) navigator.vibrate(10);
                 setIsMenuOpen(false);
               }}
-              className="flex flex-col items-center justify-center gap-1 transition active:scale-90"
+              className="flex flex-col items-center justify-center gap-0.5 transition active:scale-90"
             >
               <Icon
-                className={cn("h-5 w-5 transition-transform", isActive ? "text-brand-cerulean scale-110" : "text-slate-500 dark:text-zinc-400")}
+                className={cn("h-5 w-5 transition-transform", isActive ? "text-brand-cerulean scale-110" : "text-slate-500 dark:text-slate-400")}
                 strokeWidth={isActive ? 2.5 : 2}
               />
-              <span className={cn("text-[10px] font-bold", isActive ? "text-brand-cerulean" : "text-slate-500 dark:text-zinc-400")}>
+              <span className={cn("text-[10px] font-bold", isActive ? "text-brand-cerulean" : "text-slate-600 dark:text-slate-300")}>
                 {item.name}
               </span>
             </Link>
@@ -281,12 +281,12 @@ export default function BottomNavigation() {
             if (typeof window !== "undefined" && navigator.vibrate) navigator.vibrate(10);
             setIsMenuOpen(!isMenuOpen);
           }}
-          className="flex flex-col items-center justify-center gap-1 transition active:scale-90"
+          className="flex flex-col items-center justify-center gap-0.5 transition active:scale-90"
         >
-          <div className={cn("grid h-7 w-7 place-items-center rounded-xl transition", isMenuOpen ? "bg-brand-cerulean text-white" : "text-slate-500 dark:text-zinc-400")}>
+          <div className={cn("grid h-6 w-6 place-items-center rounded-md transition", isMenuOpen ? "bg-brand-cerulean text-white" : "text-slate-500 dark:text-slate-400")}>
             <Menu className="h-5 w-5" strokeWidth={2.5} />
           </div>
-          <span className={cn("text-[10px] font-bold", isMenuOpen ? "text-brand-cerulean" : "text-slate-500 dark:text-zinc-400")}>
+          <span className={cn("text-[10px] font-bold", isMenuOpen ? "text-brand-cerulean" : "text-slate-600 dark:text-slate-300")}>
             Menú
           </span>
         </button>

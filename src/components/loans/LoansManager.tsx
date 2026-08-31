@@ -38,6 +38,8 @@ interface Category {
   name: string;
 }
 
+const formatCurrency = (val: number) => `$${Number(val || 0).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
 interface Loan {
   id: string;
   name: string;
@@ -532,7 +534,7 @@ export default function LoansManager({ initialLoans, wallets, categories }: Loan
         {selectedLoan ? (
           <>
             {/* General Loan Info Card */}
-            <div className="border border-gray-200 dark:border-zinc-800 rounded-3xl bg-white dark:bg-zinc-900/50 p-6 md:p-8 shadow-sm">
+            <div className="surface-card rounded-2xl p-6 md:p-8 shadow-sm">
               <div className="flex flex-col sm:flex-row justify-between items-start gap-4 mb-6">
                 <div>
                   <span className="text-[10px] font-bold text-brand-cerulean uppercase tracking-wider bg-brand-cerulean/10 px-2.5 py-1 rounded-full">
@@ -643,7 +645,7 @@ export default function LoansManager({ initialLoans, wallets, categories }: Loan
             </div>
 
             {/* Amortization Table */}
-            <div className="border border-gray-200 dark:border-zinc-800 rounded-3xl bg-white dark:bg-zinc-900/50 p-6 md:p-8 shadow-sm">
+            <div className="surface-card rounded-2xl p-6 md:p-8 shadow-sm">
               <div className="flex justify-between items-center mb-6">
                 <div>
                   <h4 className="text-sm font-bold text-gray-900 dark:text-white">Tabla de Amortización con IVA (16%)</h4>
@@ -658,53 +660,49 @@ export default function LoansManager({ initialLoans, wallets, categories }: Loan
               </div>
 
               <div className="overflow-x-auto -mx-6 md:-mx-8">
-                <table className="w-full text-left border-collapse min-w-[650px]">
+                <table className="w-full text-left text-xs">
                   <thead>
-                    <tr className="border-b border-gray-100 dark:border-zinc-850 text-[10px] font-bold text-gray-400 uppercase tracking-wider">
-                      <th className="px-6 md:px-8 py-3.5">No.</th>
-                      <th className="px-4 py-3.5">Fecha</th>
-                      <th className="px-4 py-3.5 text-right">Pago Total</th>
-                      <th className="px-4 py-3.5 text-right">Interés (IVA)</th>
-                      <th className="px-4 py-3.5 text-right">Capital</th>
-                      <th className="px-4 py-3.5 text-right">Saldo Insoluto</th>
-                      <th className="px-6 md:px-8 py-3.5 text-center">Estado</th>
+                    <tr className="border-b border-gray-100 dark:border-zinc-800 text-gray-400 font-medium">
+                      <th className="py-3 px-4">#</th>
+                      <th className="py-3 px-4">Fecha Estimada</th>
+                      <th className="py-3 px-4">Pago Total</th>
+                      <th className="py-3 px-4">Capital</th>
+                      <th className="py-3 px-4">Interés (IVA)</th>
+                      <th className="py-3 px-4">Saldo Restante</th>
+                      <th className="py-3 px-4 text-center">Estado</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-50 dark:divide-zinc-900 text-xs">
+                  <tbody className="divide-y divide-gray-100 dark:divide-zinc-800/60 font-medium">
                     {selectedAmortization.map((row) => (
                       <tr 
-                        key={row.number}
-                        className={`transition-colors ${
-                          row.status === 'paid' 
-                            ? 'text-gray-400 bg-gray-50/10 dark:bg-zinc-900/10' 
-                            : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50/50 dark:hover:bg-zinc-900/20'
+                        key={row.number} 
+                        className={`hover:bg-gray-50/50 dark:hover:bg-zinc-800/30 transition-colors ${
+                          row.status === 'paid' ? 'bg-emerald-50/20 dark:bg-emerald-950/10 text-gray-400 dark:text-zinc-500' : ''
                         }`}
                       >
-                        <td className="px-6 md:px-8 py-3.5 font-semibold">#{row.number}</td>
-                        <td className="px-4 py-3.5 font-medium">
+                        <td className="py-3.5 px-4 font-bold">#{row.number}</td>
+                        <td className="py-3.5 px-4 text-gray-600 dark:text-zinc-300">
                           {new Date(row.date + 'T12:00:00').toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: 'numeric' })}
                         </td>
-                        <td className="px-4 py-3.5 font-bold text-right text-gray-900 dark:text-white">
-                          ${row.totalPayment.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+                        <td className="py-3.5 px-4 font-black text-gray-900 dark:text-white">
+                          {formatCurrency(row.totalPayment)}
                         </td>
-                        <td className="px-4 py-3.5 text-right font-medium">
-                          ${row.interest.toLocaleString('es-MX', { minimumFractionDigits: 2 })} <span className="text-[10px] text-gray-400">(${row.iva.toFixed(2)})</span>
+                        <td className="py-3.5 px-4 text-gray-600 dark:text-zinc-300">
+                          {formatCurrency(row.principal)}
                         </td>
-                        <td className="px-4 py-3.5 font-semibold text-right text-brand-cerulean">
-                          ${row.principal.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+                        <td className="py-3.5 px-4 text-gray-600 dark:text-zinc-300">
+                          {formatCurrency(row.interest)} <span className="text-[10px] text-gray-400">({formatCurrency(row.iva)})</span>
                         </td>
-                        <td className="px-4 py-3.5 font-semibold text-right text-gray-900 dark:text-white">
-                          ${row.remainingBalance.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+                        <td className="py-3.5 px-4 font-bold text-gray-800 dark:text-zinc-200">
+                          {formatCurrency(row.remainingBalance)}
                         </td>
-                        <td className="px-6 md:px-8 py-3.5 text-center">
+                        <td className="py-3.5 px-4 text-center">
                           {row.status === 'paid' ? (
-                            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-600 bg-emerald-500/10 px-2 py-0.5 rounded-full uppercase tracking-wider">
-                              <CheckCircle className="w-3 h-3" />
-                              Pagado
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300">
+                              <Check className="w-3 h-3" /> Pagado
                             </span>
                           ) : (
-                            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-600 bg-amber-500/10 px-2 py-0.5 rounded-full uppercase tracking-wider">
-                              <Clock className="w-3 h-3 animate-pulse" />
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300">
                               Pendiente
                             </span>
                           )}
@@ -717,11 +715,11 @@ export default function LoansManager({ initialLoans, wallets, categories }: Loan
             </div>
           </>
         ) : (
-          <div className="border border-dashed border-gray-200 dark:border-zinc-800 rounded-3xl p-16 text-center bg-white dark:bg-zinc-900/20">
+          <div className="surface-card border border-dashed border-gray-200 dark:border-white/10 rounded-2xl p-12 text-center">
             <Landmark className="w-12 h-12 text-gray-300 dark:text-zinc-700 mx-auto mb-4" />
             <h3 className="text-base font-bold text-gray-800 dark:text-white">Selecciona un Préstamo</h3>
             <p className="text-xs text-gray-400 mt-1 max-w-sm mx-auto">
-              Elige uno de tus créditos de la barra lateral para ver su tabla de amortización con IVA desglosado, saldo adeudado y abonos.
+              Elige uno de tus créditos de la barra lateral para ver su tabla de amortización con IVA desglosado.
             </p>
           </div>
         )}

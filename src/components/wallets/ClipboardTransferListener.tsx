@@ -75,16 +75,16 @@ export default function ClipboardTransferListener({
 
   return (
     <>
-      <div className="fixed bottom-24 left-4 right-4 z-40 animate-slide-up">
-        <div className="surface-card rounded-3xl p-4 border border-brand-cerulean shadow-2xl bg-gradient-to-r from-slate-900 to-zinc-950 text-white flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="w-10 h-10 rounded-2xl bg-brand-cerulean text-white flex items-center justify-center shrink-0 shadow-lg shadow-brand-cerulean/30">
-              <Zap className="w-5 h-5 text-amber-300 fill-current" />
+      <div className="fixed bottom-20 left-4 right-4 z-40 animate-slide-up">
+        <div className="surface-card rounded-2xl p-3.5 border border-brand-cerulean/50 shadow-2xl bg-[#0F1626] text-white flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-9 h-9 rounded-xl bg-brand-cerulean text-white flex items-center justify-center shrink-0 shadow-md">
+              <Zap className="w-4 h-4 text-amber-300 fill-current" />
             </div>
             <div className="min-w-0">
-              <h5 className="text-xs font-black text-white truncate flex items-center gap-1.5">
+              <h5 className="text-xs font-bold text-white truncate flex items-center gap-1.5">
                 Transferencia Copiada
-                <span className="text-[9px] font-extrabold bg-brand-cerulean/30 text-brand-cerulean px-2 py-0.5 rounded-full">
+                <span className="text-[9px] font-black bg-brand-cerulean/30 text-sky-300 px-1.5 py-0.5 rounded-md">
                   1-Toque
                 </span>
               </h5>
@@ -94,10 +94,10 @@ export default function ClipboardTransferListener({
             </div>
           </div>
 
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-1.5 shrink-0">
             <button
               onClick={() => setIsModalOpen(true)}
-              className="px-3.5 py-2 rounded-xl bg-brand-cerulean hover:bg-blue-500 text-white text-xs font-black transition active:scale-95 shadow-md flex items-center gap-1"
+              className="px-3 py-1.5 rounded-lg bg-brand-cerulean hover:bg-sky-600 text-white text-xs font-black transition active:scale-95 shadow-md flex items-center gap-1"
             >
               Registrar
               <ArrowRight className="w-3.5 h-3.5" />
@@ -107,7 +107,7 @@ export default function ClipboardTransferListener({
                 setDismissedKey(detectedText);
                 setDetectedText(null);
               }}
-              className="p-1.5 rounded-xl text-slate-400 hover:text-white"
+              className="p-1 rounded-lg text-slate-400 hover:text-white"
             >
               <X className="w-4 h-4" />
             </button>

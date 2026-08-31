@@ -13,7 +13,8 @@ import {
   Sparkles,
   TrendingUp,
   Landmark,
-  Coins
+  Coins,
+  PlusCircle
 } from "lucide-react";
 
 interface WalletCardData {
@@ -112,10 +113,10 @@ export default function VisualCardCarousel({
                 if (onSelectWallet) onSelectWallet(wallet.id);
                 setInspectingWallet(wallet);
               }}
-              className={`snap-center shrink-0 w-[290px] sm:w-[320px] h-[185px] rounded-3xl p-5 bg-gradient-to-tr ${theme.gradient} ${theme.textColor} shadow-xl relative overflow-hidden flex flex-col justify-between cursor-pointer transition-all duration-300 transform active:scale-95 ${
+              className={`snap-center shrink-0 w-[290px] sm:w-[320px] h-[180px] rounded-2xl p-4 sm:p-5 bg-gradient-to-tr ${theme.gradient} ${theme.textColor} shadow-lg relative overflow-hidden flex flex-col justify-between cursor-pointer transition-all duration-300 transform active:scale-95 border border-white/10 ${
                 isSelected
-                  ? "ring-4 ring-brand-cerulean shadow-2xl scale-[1.02]"
-                  : "hover:scale-[1.01] hover:shadow-2xl opacity-95 hover:opacity-100"
+                  ? "ring-2 ring-brand-cerulean shadow-xl scale-[1.01]"
+                  : "hover:scale-[1.01] hover:shadow-xl opacity-95 hover:opacity-100"
               }`}
             >
               {/* Reflejos de Luz y Textura de Fondo */}
@@ -133,15 +134,15 @@ export default function VisualCardCarousel({
                       </span>
                     )}
                   </div>
-                  <h4 className="text-sm font-extrabold tracking-tight truncate max-w-[170px] mt-0.5">
+                  <h4 className="text-xs font-bold tracking-tight truncate max-w-[170px] mt-0.5">
                     {wallet.name}
                   </h4>
                 </div>
 
                 <div className="flex items-center gap-2">
-                  <Wifi className="w-4 h-4 opacity-75 rotate-90" />
-                  <div className={`w-8 h-6 rounded-md ${theme.chipColor} border border-white/40 shadow-inner flex items-center justify-center`}>
-                    <div className="w-5 h-3 border-t border-b border-black/20" />
+                  <Wifi className="w-3.5 h-3.5 opacity-75 rotate-90" />
+                  <div className={`w-7 h-5 rounded-md ${theme.chipColor} border border-white/40 shadow-inner flex items-center justify-center`}>
+                    <div className="w-4 h-2.5 border-t border-b border-black/20" />
                   </div>
                 </div>
               </div>
@@ -188,17 +189,22 @@ export default function VisualCardCarousel({
 
         {/* Tarjeta de Agregar Nueva Cartera */}
         {onAddWalletClick && (
-          <div
+          <button
             onClick={onAddWalletClick}
-            className="snap-center shrink-0 w-[200px] sm:w-[220px] h-[185px] rounded-3xl border-2 border-dashed border-slate-300 dark:border-zinc-700 hover:border-brand-cerulean dark:hover:border-brand-cerulean p-5 flex flex-col items-center justify-center gap-3 cursor-pointer transition-all hover:bg-slate-50 dark:hover:bg-zinc-900/50 active:scale-95 group"
+            className="snap-center shrink-0 w-[240px] h-[180px] rounded-2xl p-5 border-2 border-dashed border-slate-300 dark:border-white/15 hover:border-brand-cerulean bg-slate-50/60 dark:bg-[#0F1626]/50 flex flex-col items-center justify-center gap-2.5 text-slate-500 dark:text-slate-400 hover:text-brand-cerulean transition group"
           >
-            <div className="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-zinc-800 group-hover:bg-brand-cerulean/15 group-hover:text-brand-cerulean text-slate-500 dark:text-zinc-400 flex items-center justify-center transition shadow-sm">
-              <Plus className="w-6 h-6" />
+            <div className="w-10 h-10 rounded-xl bg-slate-200/80 dark:bg-[#151E32] group-hover:bg-brand-cerulean group-hover:text-white flex items-center justify-center transition">
+              <PlusCircle className="w-5 h-5" />
             </div>
-            <p className="text-xs font-black text-slate-700 dark:text-zinc-300 group-hover:text-brand-cerulean transition text-center">
-              + Agregar Tarjeta o Cartera
-            </p>
-          </div>
+            <div className="text-center">
+              <span className="text-xs font-bold block text-slate-900 dark:text-white">
+                Nueva Cartera
+              </span>
+              <span className="text-[10px] text-slate-500 dark:text-slate-400">
+                Banco, Débito o Crédito
+              </span>
+            </div>
+          </button>
         )}
       </div>
 

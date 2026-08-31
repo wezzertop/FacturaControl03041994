@@ -468,7 +468,7 @@ export default function FinancialCalendar({
           </div>
 
           {/* Encabezado del Calendario y Controles */}
-          <div className="surface-card rounded-3xl border border-slate-200/80 dark:border-white/10 overflow-hidden shadow-sm">
+          <div className="surface-card rounded-2xl border border-slate-200/80 dark:border-white/10 overflow-hidden shadow-sm">
             <div className="p-5 md:p-6 flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200/80 dark:border-white/10 bg-slate-50/50 dark:bg-zinc-900/50">
               
               <div className="flex flex-col sm:flex-row sm:items-center gap-4">
@@ -795,43 +795,41 @@ export default function FinancialCalendar({
       {activeTab === 'projections' && (
         <div className="space-y-6 animate-in fade-in zoom-in-95">
           {/* Header del Simulador */}
-          <div className="surface-card rounded-3xl p-6 border border-slate-200/80 dark:border-white/10 bg-gradient-to-br from-emerald-500/10 via-brand-cerulean/10 to-transparent">
+          <div className="surface-card rounded-2xl p-6 border border-slate-200/80 dark:border-white/10 bg-gradient-to-br from-emerald-500/10 via-brand-cerulean/10 to-transparent">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div>
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs font-bold mb-2">
-                  <Sparkles className="w-3.5 h-3.5" /> Motor de Proyección Financiera Inteligente
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-md bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs font-bold mb-2">
+                  <Sparkles className="w-3.5 h-3.5" /> Motor de Proyección Financiera
                 </span>
-                <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
+                <h2 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">
                   ¿Cuánto podrías acumular si ahorras mes a mes?
                 </h2>
-                <p className="text-sm text-slate-600 dark:text-zinc-400 mt-1 max-w-2xl">
-                  Simula tu crecimiento patrimonial a 1, 3 y 5 años según tu flujo neto de caja real o ajustando tu tasa de ahorro.
+                <p className="text-xs text-slate-600 dark:text-slate-300 mt-1 max-w-2xl">
+                  Simula tu crecimiento patrimonial a 1, 3 y 5 años según tu flujo neto real.
                 </p>
               </div>
 
-              <div className="surface-card rounded-2xl p-4 border border-slate-200 dark:border-zinc-800 text-right shrink-0">
-                <p className="text-xs text-slate-500 dark:text-zinc-400 font-medium">Flujo Neto Disponible Actual</p>
-                <p className="text-2xl font-black text-emerald-600 dark:text-emerald-400">
+              <div className="surface-card rounded-xl p-3.5 border border-slate-200 dark:border-white/10 text-right shrink-0">
+                <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">Flujo Disponible</p>
+                <p className="text-xl font-black text-emerald-600 dark:text-emerald-400">
                   {formatCurrency(monthlyNetCashflow)}<span className="text-xs text-slate-400 font-normal">/mes</span>
                 </p>
-                <p className="text-[11px] text-slate-500 mt-0.5">Tasa de Ahorro: <strong>{currentSavingsRate.toFixed(1)}%</strong> de tus ingresos</p>
               </div>
             </div>
           </div>
 
           {/* Controles de Configuración del Ahorro */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             
             {/* Control 1: Porcentaje de Ahorro */}
-            <div className="surface-card rounded-3xl p-6 border border-slate-200/80 dark:border-white/10 space-y-4">
+            <div className="surface-card rounded-2xl p-5 border border-slate-200/80 dark:border-white/10 space-y-3">
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-xl bg-brand-cerulean/10 text-brand-cerulean flex items-center justify-center font-bold text-xs">1</div>
-                <h3 className="text-sm font-bold text-slate-900 dark:text-white">Porcentaje de Ahorro Mensual</h3>
+                <div className="w-7 h-7 rounded-lg bg-brand-cerulean/15 text-brand-cerulean flex items-center justify-center font-bold text-xs">1</div>
+                <h3 className="text-xs font-bold text-slate-900 dark:text-white">% Ahorro Mensual</h3>
               </div>
-              <p className="text-xs text-slate-500 dark:text-zinc-400">Selecciona el % de tus ingresos totales ({formatCurrency(monthlyTotalIncome)}) que deseas guardar.</p>
               
               <div className="space-y-2">
-                <div className="flex justify-between text-xs font-extrabold text-brand-cerulean">
+                <div className="flex justify-between text-xs font-bold text-brand-cerulean">
                   <span>{savingsPercentage}%</span>
                   <span>{formatCurrency(monthlyTotalIncome * (savingsPercentage / 100))}/mes</span>
                 </div>
@@ -845,55 +843,53 @@ export default function FinancialCalendar({
                     setSavingsPercentage(Number(e.target.value));
                     setCustomMonthlySavings('');
                   }}
-                  className="w-full h-2 bg-slate-200 dark:bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-brand-cerulean"
+                  className="w-full h-2 bg-slate-200 dark:bg-[#151E32] rounded-lg appearance-none cursor-pointer accent-brand-cerulean"
                 />
               </div>
             </div>
 
             {/* Control 2: Monto Fijo Mensual */}
-            <div className="surface-card rounded-3xl p-6 border border-slate-200/80 dark:border-white/10 space-y-4">
+            <div className="surface-card rounded-2xl p-5 border border-slate-200/80 dark:border-white/10 space-y-3">
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center font-bold text-xs">2</div>
-                <h3 className="text-sm font-bold text-slate-900 dark:text-white">O Ingresa un Monto Fijo ($)</h3>
+                <div className="w-7 h-7 rounded-lg bg-emerald-500/15 text-emerald-600 flex items-center justify-center font-bold text-xs">2</div>
+                <h3 className="text-xs font-bold text-slate-900 dark:text-white">Monto Fijo ($)</h3>
               </div>
-              <p className="text-xs text-slate-500 dark:text-zinc-400">Define una cantidad exacta en Pesos Mexicanos a guardar cada mes.</p>
               
               <div className="relative">
-                <DollarSign className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
+                <DollarSign className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
                 <input
                   type="number"
                   value={customMonthlySavings}
                   onChange={(e) => setCustomMonthlySavings(e.target.value)}
                   placeholder={`Ej: ${formatCurrency(monthlyNetCashflow > 0 ? monthlyNetCashflow : 2000)}`}
-                  className="w-full pl-9 pr-3 py-2 bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-xl text-sm font-bold text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  className="w-full pl-9 pr-3 py-2 bg-slate-50 dark:bg-[#0F1626] border border-slate-200 dark:border-white/10 rounded-xl text-xs font-bold text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 />
               </div>
             </div>
 
             {/* Control 3: Tasa de Rendimiento de Inversión */}
-            <div className="surface-card rounded-3xl p-6 border border-slate-200/80 dark:border-white/10 space-y-4">
+            <div className="surface-card rounded-2xl p-5 border border-slate-200/80 dark:border-white/10 space-y-3">
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-xl bg-amber-500/10 text-amber-600 flex items-center justify-center font-bold text-xs">3</div>
-                <h3 className="text-sm font-bold text-slate-900 dark:text-white">Rendimiento Estimado (Anual)</h3>
+                <div className="w-7 h-7 rounded-lg bg-amber-500/15 text-amber-600 flex items-center justify-center font-bold text-xs">3</div>
+                <h3 className="text-xs font-bold text-slate-900 dark:text-white">Rendimiento (CETES/Fintech)</h3>
               </div>
-              <p className="text-xs text-slate-500 dark:text-zinc-400">Compara el ahorro clásico vs. invertir en CETES / Fintechs de México.</p>
               
               <div className="grid grid-cols-3 gap-2">
                 <button
                   onClick={() => setAnnualInvestmentReturn(0)}
-                  className={`py-1.5 px-2 rounded-xl text-xs font-bold border transition ${annualInvestmentReturn === 0 ? 'bg-slate-900 text-white border-slate-900 dark:bg-white dark:text-slate-900' : 'bg-slate-50 dark:bg-zinc-900 text-slate-600 dark:text-zinc-400 border-slate-200 dark:border-zinc-800'}`}
+                  className={`py-1.5 px-2 rounded-lg text-xs font-bold border transition ${annualInvestmentReturn === 0 ? 'bg-brand-cerulean text-white border-brand-cerulean' : 'bg-slate-50 dark:bg-[#0F1626] text-slate-600 dark:text-slate-300 border-slate-200 dark:border-white/10'}`}
                 >
-                  0% Sin Interés
+                  0%
                 </button>
                 <button
                   onClick={() => setAnnualInvestmentReturn(10)}
-                  className={`py-1.5 px-2 rounded-xl text-xs font-bold border transition ${annualInvestmentReturn === 10 ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-slate-50 dark:bg-zinc-900 text-slate-600 dark:text-zinc-400 border-slate-200 dark:border-zinc-800'}`}
+                  className={`py-1.5 px-2 rounded-lg text-xs font-bold border transition ${annualInvestmentReturn === 10 ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-slate-50 dark:bg-[#0F1626] text-slate-600 dark:text-slate-300 border-slate-200 dark:border-white/10'}`}
                 >
-                  10% CETES MX
+                  10% CETES
                 </button>
                 <button
                   onClick={() => setAnnualInvestmentReturn(13)}
-                  className={`py-1.5 px-2 rounded-xl text-xs font-bold border transition ${annualInvestmentReturn === 13 ? 'bg-brand-cerulean text-white border-brand-cerulean' : 'bg-slate-50 dark:bg-zinc-900 text-slate-600 dark:text-zinc-400 border-slate-200 dark:border-zinc-800'}`}
+                  className={`py-1.5 px-2 rounded-lg text-xs font-bold border transition ${annualInvestmentReturn === 13 ? 'bg-purple-600 text-white border-purple-600' : 'bg-slate-50 dark:bg-[#0F1626] text-slate-600 dark:text-slate-300 border-slate-200 dark:border-white/10'}`}
                 >
                   13% Nu/Stori
                 </button>
@@ -903,82 +899,46 @@ export default function FinancialCalendar({
           </div>
 
           {/* Tarjetas de Proyección Temporal (1 Año, 3 Años, 5 Años) */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             
             {/* Proyección a 1 Año */}
-            <div className="surface-card rounded-3xl p-6 border border-slate-200/80 dark:border-white/10 space-y-4 hover:border-emerald-500/40 transition">
+            <div className="surface-card rounded-2xl p-5 border border-slate-200/80 dark:border-white/10 space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-extrabold uppercase tracking-wider text-slate-400 dark:text-zinc-500">En 1 Año (12 Meses)</span>
-                <span className="w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center font-bold text-xs">12M</span>
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">En 1 Año (12 Meses)</span>
+                <span className="w-7 h-7 rounded-lg bg-emerald-500/15 text-emerald-600 flex items-center justify-center font-bold text-xs">12M</span>
               </div>
 
               <div>
-                <p className="text-3xl font-black text-slate-900 dark:text-white">
+                <p className="text-2xl font-black text-slate-900 dark:text-white">
                   {formatCurrency(annualInvestmentReturn > 0 ? savingsIn1YearInvested : savingsIn1YearNet)}
                 </p>
-                {annualInvestmentReturn > 0 && (
-                  <p className="text-xs font-bold text-emerald-600 dark:text-emerald-400 mt-1 flex items-center gap-1">
-                    <TrendingUp className="w-3.5 h-3.5" /> +{formatCurrency(savingsIn1YearInvested - savingsIn1YearNet)} ganados en intereses
-                  </p>
-                )}
-              </div>
-
-              <div className="pt-3 border-t border-slate-100 dark:border-zinc-900 text-xs text-slate-500 dark:text-zinc-400 space-y-1">
-                <p>• Ahorro directo: {formatCurrency(savingsIn1YearNet)}</p>
-                <p>• Equivale a {((savingsIn1YearNet / (monthlyTotalExpense || 1))).toFixed(1)} meses de tus gastos actuales.</p>
               </div>
             </div>
 
             {/* Proyección a 3 Años */}
-            <div className="surface-card rounded-3xl p-6 border-2 border-emerald-500/40 bg-emerald-500/5 space-y-4 relative overflow-hidden">
-              <div className="absolute top-3 right-3">
-                <span className="px-2.5 py-0.5 rounded-full bg-emerald-500 text-white text-[10px] font-extrabold uppercase tracking-wider shadow-sm">
-                  Recomendado
-                </span>
-              </div>
-
+            <div className="surface-card rounded-2xl p-5 border-2 border-emerald-500/40 bg-emerald-500/5 space-y-3 relative overflow-hidden">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-extrabold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">En 3 Años (36 Meses)</span>
+                <span className="text-xs font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">En 3 Años (36 Meses)</span>
               </div>
 
               <div>
-                <p className="text-3xl font-black text-slate-900 dark:text-white">
+                <p className="text-2xl font-black text-slate-900 dark:text-white">
                   {formatCurrency(annualInvestmentReturn > 0 ? savingsIn3YearsInvested : savingsIn3YearsNet)}
                 </p>
-                {annualInvestmentReturn > 0 && (
-                  <p className="text-xs font-bold text-emerald-600 dark:text-emerald-400 mt-1 flex items-center gap-1">
-                    <TrendingUp className="w-3.5 h-3.5" /> +{formatCurrency(savingsIn3YearsInvested - savingsIn3YearsNet)} ganados en intereses
-                  </p>
-                )}
-              </div>
-
-              <div className="pt-3 border-t border-slate-200/80 dark:border-zinc-800 text-xs text-slate-600 dark:text-zinc-300 space-y-1">
-                <p>• Fondo de enganche o inversión inicial sólida.</p>
-                <p>• Equivale a {((savingsIn3YearsNet / (monthlyTotalExpense || 1))).toFixed(1)} meses de libertad financiera.</p>
               </div>
             </div>
 
             {/* Proyección a 5 Años */}
-            <div className="surface-card rounded-3xl p-6 border border-slate-200/80 dark:border-white/10 space-y-4 hover:border-brand-cerulean/40 transition">
+            <div className="surface-card rounded-2xl p-5 border border-slate-200/80 dark:border-white/10 space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-extrabold uppercase tracking-wider text-slate-400 dark:text-zinc-500">En 5 Años (60 Meses)</span>
-                <span className="w-8 h-8 rounded-xl bg-brand-cerulean/10 text-brand-cerulean flex items-center justify-center font-bold text-xs">60M</span>
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">En 5 Años (60 Meses)</span>
+                <span className="w-7 h-7 rounded-lg bg-brand-cerulean/15 text-brand-cerulean flex items-center justify-center font-bold text-xs">60M</span>
               </div>
 
               <div>
-                <p className="text-3xl font-black text-brand-cerulean">
+                <p className="text-2xl font-black text-brand-cerulean">
                   {formatCurrency(annualInvestmentReturn > 0 ? savingsIn5YearsInvested : savingsIn5YearsNet)}
                 </p>
-                {annualInvestmentReturn > 0 && (
-                  <p className="text-xs font-bold text-emerald-600 dark:text-emerald-400 mt-1 flex items-center gap-1">
-                    <TrendingUp className="w-3.5 h-3.5" /> +{formatCurrency(savingsIn5YearsInvested - savingsIn5YearsNet)} ganados en intereses
-                  </p>
-                )}
-              </div>
-
-              <div className="pt-3 border-t border-slate-100 dark:border-zinc-900 text-xs text-slate-500 dark:text-zinc-400 space-y-1">
-                <p>• Patrimonio acumulado a largo plazo.</p>
-                <p>• Ahorro base estimado: {formatCurrency(savingsIn5YearsNet)}</p>
               </div>
             </div>
 
@@ -988,54 +948,53 @@ export default function FinancialCalendar({
 
       {/* --- SECCIÓN 3: LISTADO DE COMPROMISOS Y VENCIMIENTOS CRÍTICOS --- */}
       {activeTab === 'critical' && (
-        <div className="surface-card rounded-3xl border border-slate-200/80 dark:border-white/10 p-6 space-y-4 animate-in fade-in zoom-in-95">
-          <div className="flex items-center justify-between border-b border-slate-200/80 dark:border-zinc-800 pb-4">
+        <div className="surface-card rounded-2xl border border-slate-200/80 dark:border-white/10 p-5 space-y-4 animate-in fade-in zoom-in-95">
+          <div className="flex items-center justify-between border-b border-slate-200/80 dark:border-white/10 pb-3">
             <div>
-              <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                <ShieldAlert className="w-5 h-5 text-amber-500" />
-                Compromisos Financieros y Fechas Límite del Mes
+              <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <ShieldAlert className="w-4 h-4 text-amber-500" />
+                Compromisos Financieros y Fechas Límite
               </h3>
-              <p className="text-xs text-slate-500 dark:text-zinc-400">Ordenados por proximidad de vencimiento para evitar intereses o recargos</p>
             </div>
-            <span className="px-3 py-1 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 text-xs font-bold">
+            <span className="px-2.5 py-0.5 rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400 text-xs font-bold">
               {criticalCommitments.length} Vencimientos
             </span>
           </div>
 
           {criticalCommitments.length === 0 ? (
-            <div className="py-12 text-center text-slate-500 dark:text-zinc-400">
-              <CheckCircle2 className="w-12 h-12 text-emerald-500 mx-auto mb-2" />
-              <p className="text-sm font-bold text-slate-900 dark:text-white">¡No tienes deudas ni vencimientos pendientes registrados para este mes!</p>
+            <div className="py-8 text-center text-slate-500 dark:text-slate-400">
+              <CheckCircle2 className="w-10 h-10 text-emerald-500 mx-auto mb-2" />
+              <p className="text-xs font-bold text-slate-900 dark:text-white">¡No tienes deudas ni vencimientos pendientes este mes!</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {criticalCommitments
                 .sort((a, b) => a.date.getTime() - b.date.getTime())
                 .map((item, idx) => (
                   <div
                     key={idx}
-                    className={`p-4 rounded-2xl border flex items-center justify-between transition ${
+                    className={`p-3 rounded-xl border flex items-center justify-between transition ${
                       item.isUrgent
                         ? 'bg-rose-500/10 border-rose-500/30'
-                        : 'bg-slate-50 dark:bg-zinc-900 border-slate-200 dark:border-zinc-800'
+                        : 'bg-slate-50 dark:bg-[#0F1626] border-slate-200/80 dark:border-white/10'
                     }`}
                   >
-                    <div className="flex items-center gap-3">
-                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${item.type === 'Préstamo' ? 'bg-indigo-500/20 text-indigo-600' : 'bg-amber-500/20 text-amber-600'}`}>
-                        {item.type === 'Préstamo' ? <Landmark className="w-5 h-5" /> : <CreditCard className="w-5 h-5" />}
+                    <div className="flex items-center gap-2.5">
+                      <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${item.type === 'Préstamo' ? 'bg-indigo-500/15 text-indigo-600' : 'bg-amber-500/15 text-amber-600'}`}>
+                        {item.type === 'Préstamo' ? <Landmark className="w-4 h-4" /> : <CreditCard className="w-4 h-4" />}
                       </div>
                       <div>
-                        <p className="text-sm font-bold text-slate-900 dark:text-white">{item.title}</p>
-                        <p className="text-xs text-slate-500 dark:text-zinc-400">
-                          {item.date.toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long' })}
+                        <p className="text-xs font-bold text-slate-900 dark:text-white">{item.title}</p>
+                        <p className="text-[10px] text-slate-500 dark:text-slate-400">
+                          {item.date.toLocaleDateString('es-MX', { weekday: 'short', day: 'numeric', month: 'short' })}
                         </p>
                       </div>
                     </div>
 
                     <div className="text-right">
-                      <p className="text-sm font-extrabold text-slate-900 dark:text-white">{formatCurrency(item.amount)}</p>
+                      <p className="text-xs font-extrabold text-slate-900 dark:text-white">{formatCurrency(item.amount)}</p>
                       {item.isUrgent && (
-                        <span className="text-[10px] font-bold text-rose-600 dark:text-rose-400 uppercase tracking-wider">¡Próximo!</span>
+                        <span className="text-[9px] font-bold text-rose-600 dark:text-rose-400 uppercase tracking-wider">¡Próximo!</span>
                       )}
                     </div>
                   </div>
@@ -1045,20 +1004,20 @@ export default function FinancialCalendar({
         </div>
       )}
 
-      {/* Modal / Panel Deslizable de Detalle del Día Seleccionado (Bottom Sheet en Móvil) */}
+      {/* Modal / Panel Deslizable de Detalle del Día Seleccionado */}
       {selectedDay && selectedDayEvents && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4">
-          <div className="surface-card w-full max-w-lg rounded-t-[32px] sm:rounded-3xl border border-slate-200 dark:border-zinc-800 shadow-2xl overflow-hidden flex flex-col max-h-[85vh] animate-in fade-in slide-in-from-bottom-5 sm:zoom-in-95">
+        <div className="fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4">
+          <div className="surface-card w-full max-w-lg rounded-t-2xl sm:rounded-2xl border border-slate-200 dark:border-white/10 shadow-2xl overflow-hidden flex flex-col max-h-[85vh] animate-slide-up bg-white dark:bg-[#080C14]">
             {/* Tirador táctil solo en celular */}
-            <div className="flex justify-center pt-2.5 sm:hidden">
-              <div className="w-12 h-1.5 rounded-full bg-slate-300 dark:bg-zinc-700" />
+            <div className="flex justify-center pt-2 sm:hidden">
+              <div className="w-10 h-1 rounded-full bg-slate-300 dark:bg-white/20" />
             </div>
-            <div className="p-5 border-b border-slate-200/80 dark:border-zinc-800 bg-slate-50 dark:bg-zinc-900/80 flex items-center justify-between">
+            <div className="p-4 border-b border-slate-200/80 dark:border-white/10 bg-slate-50 dark:bg-[#0F1626] flex items-center justify-between">
               <div>
-                <h3 className="text-base font-bold text-slate-900 dark:text-white capitalize">
+                <h3 className="text-sm font-bold text-slate-900 dark:text-white capitalize">
                   {selectedDay.toLocaleDateString("es-MX", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
                 </h3>
-                <p className="text-xs text-slate-500 dark:text-zinc-400">Detalle completo de movimientos y vencimientos</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400">Detalle completo de movimientos y vencimientos</p>
               </div>
               <button
                 onClick={() => setSelectedDay(null)}

@@ -53,31 +53,31 @@ export default function SatCredentialsModal({ isOpen, onClose, onSyncSuccess }: 
   };
 
   return (
-    <div className="fixed inset-0 z-[100] bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
-      <div className="surface-card rounded-3xl p-6 sm:p-8 max-w-lg w-full border border-slate-700/80 shadow-2xl relative animate-slide-up max-h-[90vh] overflow-y-auto custom-scrollbar">
+    <div className="fixed inset-0 z-[100] bg-slate-950/75 backdrop-blur-md flex items-center justify-center p-4">
+      <div className="surface-card rounded-2xl p-6 sm:p-7 max-w-lg w-full border border-slate-200 dark:border-white/10 shadow-2xl relative animate-slide-up max-h-[90vh] overflow-y-auto custom-scrollbar bg-white dark:bg-[#080C14]">
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 text-slate-400 hover:text-white p-2 rounded-xl hover:bg-slate-800 transition"
+          className="absolute top-4 right-4 text-slate-400 hover:text-slate-900 dark:hover:text-white p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-white/10 transition"
         >
           <X className="w-5 h-5" />
         </button>
 
-        <div className="w-14 h-14 bg-brand-cerulean/15 text-brand-cerulean rounded-2xl flex items-center justify-center mx-auto mb-4 border border-brand-cerulean/30">
-          <KeyRound className="w-7 h-7" />
+        <div className="w-12 h-12 bg-brand-cerulean/15 text-brand-cerulean rounded-xl flex items-center justify-center mx-auto mb-3.5 border border-brand-cerulean/30">
+          <KeyRound className="w-6 h-6" />
         </div>
 
-        <h3 className="text-xl font-black text-white text-center tracking-tight">
+        <h3 className="text-lg font-black text-slate-900 dark:text-white text-center tracking-tight">
           Sincronización Masiva SAT (Llaves FIEL / CIEC)
         </h3>
-        <p className="text-xs text-slate-400 text-center mt-1.5 leading-relaxed font-medium">
-          Ingresa las llaves de tu e.firma (.cer, .key) o contraseña CIEC del SAT para importar automáticamente todas tus facturas de ingresos y egresos del mes.
+        <p className="text-xs text-slate-600 dark:text-slate-300 text-center mt-1 leading-relaxed font-medium">
+          Ingresa las llaves de tu e.firma (.cer, .key) o contraseña CIEC del SAT para importar automáticamente tus facturas.
         </p>
 
         {msg && (
-          <div className={`p-3.5 my-4 text-xs font-bold rounded-2xl border ${
+          <div className={`p-3 my-3 text-xs font-bold rounded-xl border ${
             msg.type === "success" 
-              ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400"
-              : "bg-rose-500/10 border-rose-500/30 text-rose-400"
+              ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-600 dark:text-emerald-400"
+              : "bg-rose-500/10 border-rose-500/30 text-rose-600 dark:text-rose-400"
           }`}>
             {msg.text}
           </div>

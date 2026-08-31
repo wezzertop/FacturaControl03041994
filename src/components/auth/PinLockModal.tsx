@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Lock, Unlock, ShieldCheck, KeyRound, Sparkles, X } from "lucide-react";
+import { Lock, Unlock, ShieldCheck, KeyRound, Sparkles, X, Delete } from "lucide-react";
 
 interface PinLockModalProps {
   onUnlockSuccess?: () => void;
@@ -90,68 +90,68 @@ export default function PinLockModal({ onUnlockSuccess }: PinLockModalProps) {
   if (!isLocked) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] bg-slate-950/90 backdrop-blur-xl flex items-center justify-center p-4">
-      <div className="surface-card rounded-3xl p-6 sm:p-8 max-w-sm w-full border border-slate-700/80 shadow-2xl text-center relative animate-slide-up">
+    <div className="fixed inset-0 z-[100] bg-slate-950/80 backdrop-blur-xl flex items-center justify-center p-4">
+      <div className="surface-card rounded-2xl p-6 sm:p-7 max-w-sm w-full border border-slate-200 dark:border-white/10 shadow-2xl text-center relative animate-slide-up bg-white dark:bg-[#080C14]">
         {/* Encabezado */}
-        <div className="w-14 h-14 bg-brand-cerulean/15 text-brand-cerulean rounded-2xl flex items-center justify-center mx-auto mb-4 border border-brand-cerulean/30 shadow-inner">
-          {isSettingUp ? <KeyRound className="w-7 h-7" /> : <Lock className="w-7 h-7" />}
+        <div className="w-12 h-12 bg-brand-cerulean/15 text-brand-cerulean rounded-xl flex items-center justify-center mx-auto mb-3.5 border border-brand-cerulean/30">
+          {isSettingUp ? <KeyRound className="w-6 h-6" /> : <Lock className="w-6 h-6" />}
         </div>
 
-        <h3 className="text-xl font-black text-white tracking-tight">
+        <h3 className="text-lg font-black text-slate-900 dark:text-white tracking-tight">
           {isSettingUp ? "Crea tu PIN de Seguridad" : "FacturaControl Bloqueado"}
         </h3>
-        <p className="text-xs text-slate-400 mt-1.5 leading-relaxed font-medium">
+        <p className="text-xs text-slate-600 dark:text-slate-300 mt-1 leading-relaxed font-medium">
           {isSettingUp
-            ? "Configura un PIN de 4 a 6 dígitos para proteger tus datos financieros en tu Dokploy/servidor."
+            ? "Configura un PIN de 4 a 6 dígitos para proteger tus datos financieros."
             : "Ingresa tu PIN de seguridad para acceder a tus carteras y facturas."}
         </p>
 
         {/* Círculos de progreso del PIN */}
-        <div className="flex justify-center gap-3 my-6">
+        <div className="flex justify-center gap-3 my-5">
           {[0, 1, 2, 3, 4, 5].map((idx) => (
             <div
               key={idx}
-              className={`w-4 h-4 rounded-full transition-all duration-200 ${
+              className={`w-3.5 h-3.5 rounded-full transition-all duration-200 ${
                 idx < pin.length
                   ? "bg-brand-cerulean scale-110 shadow-sm shadow-brand-cerulean/50"
-                  : "bg-slate-800 border border-slate-700"
+                  : "bg-slate-200 dark:bg-[#151E32] border border-slate-300 dark:border-white/10"
               }`}
             />
           ))}
         </div>
 
         {errorMsg && (
-          <p className="text-xs font-bold text-rose-500 mb-4 animate-shake">{errorMsg}</p>
+          <p className="text-xs font-bold text-rose-600 dark:text-rose-400 mb-3 animate-shake">{errorMsg}</p>
         )}
 
-        {/* Teclado numérico táctil (Ideal Móvil y Escritorio) */}
-        <div className="grid grid-cols-3 gap-3 mb-6">
+        {/* Teclado numérico táctil */}
+        <div className="grid grid-cols-3 gap-2 mb-5">
           {["1", "2", "3", "4", "5", "6", "7", "8", "9"].map((num) => (
             <button
               key={num}
               onClick={() => handleKeyPress(num)}
-              className="py-3.5 bg-slate-900/90 hover:bg-slate-800 border border-slate-800/90 active:scale-95 text-white font-black text-lg rounded-2xl transition-all shadow-sm"
+              className="py-3 bg-slate-100 dark:bg-[#0F1626] hover:bg-slate-200 dark:hover:bg-[#151E32] border border-slate-200/80 dark:border-white/10 active:scale-95 text-slate-900 dark:text-white font-black text-base rounded-xl transition-all shadow-sm"
             >
               {num}
             </button>
           ))}
           <button
             onClick={handleClear}
-            className="py-3.5 bg-slate-900/50 hover:bg-slate-800 text-slate-400 font-bold text-xs rounded-2xl transition-all"
+            className="py-3 bg-slate-100/60 dark:bg-[#0F1626]/60 hover:bg-slate-200 dark:hover:bg-[#151E32] text-slate-600 dark:text-slate-400 font-bold text-xs rounded-xl transition-all"
           >
             Borrar
           </button>
           <button
             onClick={() => handleKeyPress("0")}
-            className="py-3.5 bg-slate-900/90 hover:bg-slate-800 border border-slate-800/90 active:scale-95 text-white font-black text-lg rounded-2xl transition-all shadow-sm"
+            className="py-3 bg-slate-100 dark:bg-[#0F1626] hover:bg-slate-200 dark:hover:bg-[#151E32] border border-slate-200/80 dark:border-white/10 active:scale-95 text-slate-900 dark:text-white font-black text-base rounded-xl transition-all shadow-sm"
           >
             0
           </button>
           <button
             onClick={handleDelete}
-            className="py-3.5 bg-slate-900/50 hover:bg-slate-800 text-slate-400 font-bold text-xs rounded-2xl transition-all"
+            className="py-3 bg-slate-100/60 dark:bg-[#0F1626]/60 hover:bg-slate-200 dark:hover:bg-[#151E32] text-slate-600 dark:text-slate-400 font-bold text-xs rounded-xl transition-all flex items-center justify-center"
           >
-            ⌫
+            <Delete className="w-5 h-5" />
           </button>
         </div>
 

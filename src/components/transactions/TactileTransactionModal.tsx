@@ -135,36 +135,36 @@ export default function TactileTransactionModal({
   };
 
   return (
-    <div className="fixed inset-0 z-[100] bg-slate-950/80 backdrop-blur-md flex items-end sm:items-center justify-center p-0 sm:p-4">
-      <div className="w-full max-w-lg bg-white dark:bg-zinc-950 rounded-t-3xl sm:rounded-3xl border-t sm:border border-slate-200 dark:border-zinc-800 shadow-2xl overflow-hidden flex flex-col max-h-[95vh] animate-slide-up safe-bottom">
+    <div className="fixed inset-0 z-[100] bg-slate-950/75 backdrop-blur-md flex items-end sm:items-center justify-center p-0 sm:p-4">
+      <div className="w-full max-w-lg bg-white dark:bg-[#080C14] rounded-t-2xl sm:rounded-2xl border-t sm:border border-slate-200 dark:border-white/10 shadow-2xl overflow-hidden flex flex-col max-h-[92vh] animate-slide-up safe-bottom">
         
         {/* Header del Modal */}
-        <div className="p-4 border-b border-slate-200/80 dark:border-zinc-800 flex items-center justify-between">
+        <div className="p-3.5 border-b border-slate-200/80 dark:border-white/10 flex items-center justify-between">
           <button
             onClick={onClose}
-            className="flex items-center gap-1 text-xs font-bold text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white"
+            className="flex items-center gap-1 text-xs font-bold text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
           >
             <ChevronLeft className="w-4 h-4" />
             Volver
           </button>
 
-          <div className="flex items-center gap-1 bg-slate-100 dark:bg-zinc-900 p-1 rounded-xl">
+          <div className="flex items-center gap-1 bg-slate-100 dark:bg-[#151E32] p-1 rounded-lg border border-slate-200/60 dark:border-white/5">
             <button
               onClick={() => setType("expense")}
-              className={`px-3 py-1 rounded-lg text-xs font-extrabold transition ${
+              className={`px-3 py-1 rounded-md text-xs font-black transition ${
                 type === "expense"
                   ? "bg-rose-600 text-white shadow-sm"
-                  : "text-slate-600 dark:text-zinc-400"
+                  : "text-slate-700 dark:text-slate-300"
               }`}
             >
               Gasto
             </button>
             <button
               onClick={() => setType("income")}
-              className={`px-3 py-1 rounded-lg text-xs font-extrabold transition ${
+              className={`px-3 py-1 rounded-md text-xs font-black transition ${
                 type === "income"
                   ? "bg-emerald-600 text-white shadow-sm"
-                  : "text-slate-600 dark:text-zinc-400"
+                  : "text-slate-700 dark:text-slate-300"
               }`}
             >
               Ingreso
@@ -173,51 +173,51 @@ export default function TactileTransactionModal({
 
           <button
             onClick={onClose}
-            className="p-1.5 rounded-xl text-slate-400 hover:text-slate-900 dark:hover:text-white"
+            className="p-1.5 rounded-lg text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {error && (
-          <div className="mx-4 mt-3 p-3 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-500 text-xs font-bold flex items-center gap-2">
+          <div className="mx-4 mt-3 p-3 rounded-xl bg-rose-500/10 border border-rose-500/25 text-rose-600 dark:text-rose-400 text-xs font-bold flex items-center gap-2">
             <AlertCircle className="w-4 h-4 shrink-0" />
             {error}
           </div>
         )}
 
         {success && (
-          <div className="mx-4 mt-3 p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 text-xs font-bold flex items-center gap-2">
+          <div className="mx-4 mt-3 p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/25 text-emerald-600 dark:text-emerald-400 text-xs font-bold flex items-center gap-2">
             <Check className="w-4 h-4 shrink-0" />
             ¡Transacción registrada correctamente!
           </div>
         )}
 
-        <div className="flex-1 overflow-y-auto custom-scrollbar p-5 space-y-4">
-          {/* Display Gigante de Importe */}
-          <div className="text-center py-2">
-            <div className="flex items-center justify-center gap-1 text-4xl sm:text-5xl font-black text-slate-900 dark:text-white tracking-tight">
-              <span className={type === "expense" ? "text-rose-500" : "text-emerald-500"}>
+        <div className="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-4">
+          {/* Display de Importe */}
+          <div className="text-center py-1">
+            <div className="flex items-center justify-center gap-1 text-4xl font-black text-slate-900 dark:text-white tracking-tight">
+              <span className={type === "expense" ? "text-rose-600 dark:text-rose-400" : "text-emerald-600 dark:text-emerald-400"}>
                 {type === "expense" ? "-" : "+"} $
               </span>
               <span>{parseFloat(displayAmount).toLocaleString("es-MX", { minimumFractionDigits: displayAmount.includes(".") ? (displayAmount.split(".")[1]?.length || 0) : 0 })}</span>
             </div>
 
             {/* Fecha Selector Pill */}
-            <div className="mt-2 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 dark:bg-zinc-900 text-xs font-bold text-slate-600 dark:text-zinc-400 border border-slate-200 dark:border-zinc-800">
+            <div className="mt-1.5 inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-slate-100 dark:bg-[#151E32] text-xs font-bold text-slate-700 dark:text-slate-300 border border-slate-200/80 dark:border-white/10">
               <CalendarIcon className="w-3.5 h-3.5 text-brand-cerulean" />
               <input
                 type="date"
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
-                className="bg-transparent text-xs font-bold focus:outline-none cursor-pointer"
+                className="bg-transparent text-xs font-bold focus:outline-none cursor-pointer text-slate-900 dark:text-white"
               />
             </div>
           </div>
 
           {/* Campo Concepto / ¿En qué gastaste? */}
           <div className="space-y-1">
-            <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400">
+            <label className="text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300">
               Descripción / Comercio
             </label>
             <input
@@ -226,20 +226,20 @@ export default function TactileTransactionModal({
               value={concept}
               onChange={(e) => setConcept(e.target.value)}
               placeholder={type === "expense" ? "¿En qué gastaste? (ej. Netflix, Starbucks, OXXO)" : "¿De dónde proviene? (ej. Nómina, Venta)"}
-              className="w-full px-4 py-3 bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-2xl text-xs font-bold text-slate-900 dark:text-white placeholder:text-slate-400 focus:ring-2 focus:ring-brand-cerulean focus:outline-none"
+              className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-[#0F1626] border border-slate-200 dark:border-white/10 rounded-xl text-xs font-bold text-slate-900 dark:text-white placeholder:text-slate-400 focus:ring-2 focus:ring-brand-cerulean focus:outline-none"
             />
           </div>
 
           {/* Fila Doble: Cartera y Categoría */}
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1">
-              <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400">
+              <label className="text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300">
                 Cartera / Tarjeta
               </label>
               <select
                 value={selectedWalletId}
                 onChange={(e) => setSelectedWalletId(e.target.value)}
-                className="w-full px-3 py-2.5 bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-xl text-xs font-bold text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-cerulean focus:outline-none cursor-pointer"
+                className="w-full px-3 py-2 bg-slate-50 dark:bg-[#0F1626] border border-slate-200 dark:border-white/10 rounded-lg text-xs font-bold text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-cerulean focus:outline-none cursor-pointer"
               >
                 {wallets.map((w) => (
                   <option key={w.id} value={w.id} className="bg-slate-900 text-white">
@@ -250,13 +250,13 @@ export default function TactileTransactionModal({
             </div>
 
             <div className="space-y-1">
-              <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400">
+              <label className="text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300">
                 Categoría
               </label>
               <select
                 value={selectedCategoryId}
                 onChange={(e) => setSelectedCategoryId(e.target.value)}
-                className="w-full px-3 py-2.5 bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-xl text-xs font-bold text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-cerulean focus:outline-none cursor-pointer"
+                className="w-full px-3 py-2 bg-slate-50 dark:bg-[#0F1626] border border-slate-200 dark:border-white/10 rounded-lg text-xs font-bold text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-cerulean focus:outline-none cursor-pointer"
               >
                 <option value="" className="bg-slate-900 text-white">
                   Sin Categoría
@@ -270,19 +270,19 @@ export default function TactileTransactionModal({
             </div>
           </div>
 
-          {/* Status Pills (como en la app de referencia Lukas) */}
-          <div className="space-y-1.5">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400">
+          {/* Status Pills */}
+          <div className="space-y-1">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300">
               Estado del Pago
             </span>
             <div className="grid grid-cols-3 gap-2">
               <button
                 type="button"
                 onClick={() => setStatus("paid")}
-                className={`py-2 rounded-xl text-xs font-black transition ${
+                className={`py-2 rounded-lg text-xs font-black transition ${
                   status === "paid"
-                    ? "bg-emerald-600 text-white shadow-md shadow-emerald-600/20"
-                    : "bg-slate-100 dark:bg-zinc-900 text-slate-600 dark:text-zinc-400"
+                    ? "bg-emerald-600 text-white shadow-sm"
+                    : "bg-slate-100 dark:bg-[#151E32] text-slate-700 dark:text-slate-300 border border-slate-200/60 dark:border-white/5"
                 }`}
               >
                 Pagado
@@ -290,10 +290,10 @@ export default function TactileTransactionModal({
               <button
                 type="button"
                 onClick={() => setStatus("pending")}
-                className={`py-2 rounded-xl text-xs font-black transition ${
+                className={`py-2 rounded-lg text-xs font-black transition ${
                   status === "pending"
-                    ? "bg-amber-500 text-white shadow-md shadow-amber-500/20"
-                    : "bg-slate-100 dark:bg-zinc-900 text-slate-600 dark:text-zinc-400"
+                    ? "bg-amber-500 text-white shadow-sm"
+                    : "bg-slate-100 dark:bg-[#151E32] text-slate-700 dark:text-slate-300 border border-slate-200/60 dark:border-white/5"
                 }`}
               >
                 Pendiente
@@ -301,10 +301,10 @@ export default function TactileTransactionModal({
               <button
                 type="button"
                 onClick={() => setStatus("planned")}
-                className={`py-2 rounded-xl text-xs font-black transition ${
+                className={`py-2 rounded-lg text-xs font-black transition ${
                   status === "planned"
-                    ? "bg-blue-600 text-white shadow-md shadow-blue-600/20"
-                    : "bg-slate-100 dark:bg-zinc-900 text-slate-600 dark:text-zinc-400"
+                    ? "bg-blue-600 text-white shadow-sm"
+                    : "bg-slate-100 dark:bg-[#151E32] text-slate-700 dark:text-slate-300 border border-slate-200/60 dark:border-white/5"
                 }`}
               >
                 Programado
@@ -313,14 +313,14 @@ export default function TactileTransactionModal({
           </div>
 
           {/* Action Chips: Nota y Recurrente */}
-          <div className="flex items-center gap-2 pt-1">
+          <div className="flex items-center gap-2">
             <button
               type="button"
               onClick={() => setShowNoteField(!showNoteField)}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition ${
                 showNoteField
                   ? "bg-brand-cerulean/15 border-brand-cerulean text-brand-cerulean"
-                  : "border-slate-200 dark:border-zinc-800 text-slate-600 dark:text-zinc-400"
+                  : "border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-300"
               }`}
             >
               + Agregar Nota
@@ -329,14 +329,14 @@ export default function TactileTransactionModal({
             <button
               type="button"
               onClick={() => setIsRecurring(!isRecurring)}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition flex items-center gap-1.5 ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition flex items-center gap-1.5 ${
                 isRecurring
                   ? "bg-purple-500/15 border-purple-500 text-purple-600 dark:text-purple-400"
-                  : "border-slate-200 dark:border-zinc-800 text-slate-600 dark:text-zinc-400"
+                  : "border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-300"
               }`}
             >
               <Repeat className="w-3.5 h-3.5" />
-              {isRecurring ? "Recurrente Activado" : "+ Hacer Recurrente"}
+              {isRecurring ? "Recurrente" : "+ Hacer Recurrente"}
             </button>
           </div>
 
@@ -346,19 +346,19 @@ export default function TactileTransactionModal({
               value={note}
               onChange={(e) => setNote(e.target.value)}
               placeholder="Escribe notas adicionales o detalles del movimiento..."
-              className="w-full px-4 py-2 bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-xl text-xs text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none"
+              className="w-full px-3 py-2 bg-slate-50 dark:bg-[#0F1626] border border-slate-200 dark:border-white/10 rounded-lg text-xs text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none"
             />
           )}
 
-          {/* Teclado Numérico Táctil Integrado (1-9, 0, ., Backspace) */}
-          <div className="p-3 bg-slate-100 dark:bg-zinc-900/80 rounded-2xl border border-slate-200/80 dark:border-zinc-800">
+          {/* Teclado Numérico Táctil Integrado */}
+          <div className="p-2.5 bg-slate-100 dark:bg-[#0F1626] rounded-xl border border-slate-200/80 dark:border-white/10">
             <div className="grid grid-cols-3 gap-2">
               {["1", "2", "3", "4", "5", "6", "7", "8", "9", ".", "0", "backspace"].map((key) => (
                 <button
                   key={key}
                   type="button"
                   onClick={() => handleKeypadPress(key)}
-                  className="h-12 rounded-xl bg-white dark:bg-zinc-800 text-slate-900 dark:text-white font-black text-lg shadow-sm hover:bg-slate-50 dark:hover:bg-zinc-700 active:scale-95 transition flex items-center justify-center"
+                  className="h-11 rounded-lg bg-white dark:bg-[#151E32] text-slate-900 dark:text-white font-black text-base shadow-sm border border-slate-200/60 dark:border-white/5 hover:bg-slate-50 dark:hover:bg-white/10 active:scale-95 transition flex items-center justify-center"
                 >
                   {key === "backspace" ? <Delete className="w-5 h-5" /> : key}
                 </button>
@@ -371,13 +371,13 @@ export default function TactileTransactionModal({
             type="button"
             onClick={handleSubmit}
             disabled={isPending || success || parsedAmount <= 0}
-            className={`w-full py-4 rounded-2xl font-black text-sm text-white shadow-xl transition active:scale-98 flex items-center justify-center gap-2 ${
+            className={`w-full py-3.5 rounded-xl font-black text-xs text-white shadow-lg transition active:scale-98 flex items-center justify-center gap-2 ${
               type === "expense"
-                ? "bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-700 hover:to-rose-800 shadow-rose-600/25"
-                : "bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 shadow-emerald-600/25"
+                ? "bg-rose-600 hover:bg-rose-700 shadow-rose-600/25"
+                : "bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/25"
             }`}
           >
-            {isPending ? "Guardando Transacción..." : `Confirmar ${type === "expense" ? "Gasto" : "Ingreso"} de $${parsedAmount.toFixed(2)} ⚡`}
+            {isPending ? "Guardando..." : `Confirmar ${type === "expense" ? "Gasto" : "Ingreso"} de $${parsedAmount.toFixed(2)}`}
           </button>
         </div>
       </div>

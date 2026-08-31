@@ -322,7 +322,7 @@ export default function CategoryManager({ initialCategories }: CategoryManagerPr
 
         {/* --- COLUMNA IZQUIERDA (4 cols): FORMULARIO DE CREACIÓN & PREVISUALIZACIÓN --- */}
         <div className="lg:col-span-5 space-y-6">
-          <div className="surface-card rounded-3xl border border-slate-200/80 dark:border-white/10 p-6 shadow-sm space-y-5">
+          <div className="surface-card rounded-2xl border border-slate-200/80 dark:border-white/10 p-5 sm:p-6 shadow-sm space-y-5">
             
             <div className="flex items-center justify-between border-b border-slate-200/80 dark:border-zinc-800 pb-3">
               <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
@@ -457,7 +457,7 @@ export default function CategoryManager({ initialCategories }: CategoryManagerPr
           </div>
 
           {/* Plantillas Rápidas de Un Clic */}
-          <div className="surface-card rounded-3xl border border-slate-200/80 dark:border-white/10 p-5 space-y-3">
+          <div className="surface-card rounded-2xl border border-slate-200/80 dark:border-white/10 p-4 sm:p-5 space-y-3">
             <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-zinc-500 flex items-center gap-1.5">
               <Sparkles className="w-3.5 h-3.5 text-amber-500" /> Plantillas Rápidas
             </h4>
@@ -479,7 +479,7 @@ export default function CategoryManager({ initialCategories }: CategoryManagerPr
 
         {/* --- COLUMNA DERECHA (7 cols): GESTIÓN Y LISTADO DE CATEGORÍAS --- */}
         <div className="lg:col-span-7 space-y-4">
-          <div className="surface-card rounded-3xl border border-slate-200/80 dark:border-white/10 p-6 space-y-4 shadow-sm">
+          <div className="surface-card rounded-2xl border border-slate-200/80 dark:border-white/10 p-5 sm:p-6 space-y-4 shadow-sm">
             
             {/* Barra Superior: Buscador y Filtros */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200/80 dark:border-zinc-800 pb-4">

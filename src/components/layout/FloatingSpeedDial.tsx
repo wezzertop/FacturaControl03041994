@@ -62,19 +62,19 @@ export default function FloatingSpeedDial({
       )}
 
       {/* Menú Flotante de Acciones Rápidas (Speed Dial) */}
-      <div className="fixed bottom-24 right-4 z-50 md:hidden flex flex-col items-end gap-2.5">
+      <div className="fixed bottom-20 right-4 z-50 md:hidden flex flex-col items-end gap-2">
         {isOpen && (
-          <div className="flex flex-col items-end gap-2 mb-2 animate-slide-up">
+          <div className="flex flex-col items-end gap-1.5 mb-1.5 animate-slide-up">
             {/* Opción 1: Detectar SMS / Notificación Bancaria */}
             <button
               onClick={openDetector}
-              className="flex items-center gap-2.5 px-4 py-2.5 rounded-full bg-slate-900 text-white shadow-xl border border-brand-cerulean/40 active:scale-95 transition group"
+              className="flex items-center gap-2.5 px-3.5 py-2 rounded-xl bg-[#0F1626] text-white shadow-xl border border-white/15 active:scale-95 transition group"
             >
-              <span className="text-xs font-black text-slate-200">
+              <span className="text-xs font-bold text-slate-200">
                 Detectar SMS / Banco ⚡
               </span>
-              <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-brand-cerulean to-blue-500 text-white flex items-center justify-center shadow-md">
-                <Clipboard className="w-4 h-4" />
+              <div className="w-7 h-7 rounded-lg bg-brand-cerulean text-white flex items-center justify-center shadow-md">
+                <Clipboard className="w-3.5 h-3.5" />
               </div>
             </button>
 
@@ -82,39 +82,39 @@ export default function FloatingSpeedDial({
             <Link
               href="/wallets?triggerOcr=true"
               onClick={() => setIsOpen(false)}
-              className="flex items-center gap-2.5 px-4 py-2.5 rounded-full bg-slate-900 text-white shadow-xl border border-white/10 active:scale-95 transition group"
+              className="flex items-center gap-2.5 px-3.5 py-2 rounded-xl bg-[#0F1626] text-white shadow-xl border border-white/15 active:scale-95 transition group"
             >
-              <span className="text-xs font-black text-slate-200">
+              <span className="text-xs font-bold text-slate-200">
                 Escanear Ticket OCR 📸
               </span>
-              <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-purple-500 to-indigo-600 text-white flex items-center justify-center shadow-md">
-                <Camera className="w-4 h-4" />
+              <div className="w-7 h-7 rounded-lg bg-purple-600 text-white flex items-center justify-center shadow-md">
+                <Camera className="w-3.5 h-3.5" />
               </div>
             </Link>
 
             {/* Opción 3: Registrar Ingreso */}
             <button
               onClick={() => openTactile("income")}
-              className="flex items-center gap-2.5 px-4 py-2.5 rounded-full bg-slate-900 text-white shadow-xl border border-emerald-500/30 active:scale-95 transition group"
+              className="flex items-center gap-2.5 px-3.5 py-2 rounded-xl bg-[#0F1626] text-white shadow-xl border border-emerald-500/30 active:scale-95 transition group"
             >
-              <span className="text-xs font-black text-emerald-400">
+              <span className="text-xs font-bold text-emerald-400">
                 Nuevo Ingreso 🟢
               </span>
-              <div className="w-8 h-8 rounded-full bg-emerald-600 text-white flex items-center justify-center shadow-md shadow-emerald-600/30">
-                <ArrowUpRight className="w-4 h-4" />
+              <div className="w-7 h-7 rounded-lg bg-emerald-600 text-white flex items-center justify-center shadow-md shadow-emerald-600/30">
+                <ArrowUpRight className="w-3.5 h-3.5" />
               </div>
             </button>
 
             {/* Opción 4: Registrar Gasto */}
             <button
               onClick={() => openTactile("expense")}
-              className="flex items-center gap-2.5 px-4 py-2.5 rounded-full bg-slate-900 text-white shadow-xl border border-rose-500/30 active:scale-95 transition group"
+              className="flex items-center gap-2.5 px-3.5 py-2 rounded-xl bg-[#0F1626] text-white shadow-xl border border-rose-500/30 active:scale-95 transition group"
             >
-              <span className="text-xs font-black text-rose-400">
+              <span className="text-xs font-bold text-rose-400">
                 Nuevo Gasto 🔴
               </span>
-              <div className="w-8 h-8 rounded-full bg-rose-600 text-white flex items-center justify-center shadow-md shadow-rose-600/30">
-                <ArrowDownLeft className="w-4 h-4" />
+              <div className="w-7 h-7 rounded-lg bg-rose-600 text-white flex items-center justify-center shadow-md shadow-rose-600/30">
+                <ArrowDownLeft className="w-3.5 h-3.5" />
               </div>
             </button>
           </div>
@@ -123,14 +123,14 @@ export default function FloatingSpeedDial({
         {/* Botón Principal Flotante (FAB) */}
         <button
           onClick={toggleOpen}
-          className={`w-14 h-14 rounded-3xl shadow-2xl flex items-center justify-center transition-all duration-300 transform active:scale-90 ${
+          className={`w-12 h-12 rounded-xl shadow-xl flex items-center justify-center transition-all duration-300 transform active:scale-90 ${
             isOpen
               ? "bg-rose-600 text-white rotate-45 shadow-rose-600/40"
-              : "bg-gradient-to-tr from-brand-cerulean to-blue-600 hover:from-blue-600 hover:to-brand-cerulean text-white shadow-brand-cerulean/40 hover:scale-105"
+              : "bg-brand-cerulean text-white shadow-brand-cerulean/30 hover:scale-105"
           }`}
           aria-label={isOpen ? "Cerrar accesos rápidos" : "Abrir accesos rápidos"}
         >
-          <Plus className="w-7 h-7 stroke-[2.5]" />
+          <Plus className="w-6 h-6 stroke-[2.5]" />
         </button>
       </div>
 
