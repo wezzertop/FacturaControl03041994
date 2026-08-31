@@ -8,6 +8,7 @@ import VisualCardCarousel from "@/components/wallets/VisualCardCarousel";
 import MobileFintechWidgets from "@/components/dashboard/MobileFintechWidgets";
 import LukasMobileView from "@/components/dashboard/LukasMobileView";
 import ClipboardTransferListener from "@/components/wallets/ClipboardTransferListener";
+import FloatingSpeedDial from "@/components/layout/FloatingSpeedDial";
 import {
   ArrowDownRight,
   ArrowUpRight,
@@ -409,6 +410,12 @@ export default async function FinancialOverview() {
         </div>
         <InvoiceTable invoices={latestTransactions} compact categories={categories} providerMappings={providerMappings} />
       </section>
+
+      {/* Botón Flotante Ergonómico de Accesos Rápidos (Móvil) */}
+      <FloatingSpeedDial
+        wallets={validWallets as any}
+        categories={categories}
+      />
     </div>
   );
 }

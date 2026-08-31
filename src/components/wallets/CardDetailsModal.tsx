@@ -2,6 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
+import { getBankThemeConfig, BankLogo } from "./BankLogos";
 import { 
   X, 
   CreditCard, 
@@ -56,31 +57,7 @@ export default function CardDetailsModal({
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
     .slice(0, 10);
 
-  // Helper para asignar estética visual
-  const getCardTheme = () => {
-    const name = (wallet.name || "").toLowerCase();
-    if (name.includes("bbva")) {
-      return { bg: "from-[#072146] via-[#004481] to-[#04152d]", badge: "BBVA", chip: "bg-amber-300/80", brand: "VISA" };
-    }
-    if (name.includes("nu ") || name.includes("nubank")) {
-      return { bg: "from-[#820AD1] via-[#5B0891] to-[#2E0249]", badge: "Nu México", chip: "bg-amber-200/90", brand: "Mastercard" };
-    }
-    if (name.includes("santander")) {
-      return { bg: "from-[#EC0000] via-[#A80000] to-[#5C0000]", badge: "Santander", chip: "bg-amber-300/80", brand: "Mastercard" };
-    }
-    if (name.includes("mercado") || name.includes("mp")) {
-      return { bg: "from-[#009EE3] via-[#007EA7] to-[#003459]", badge: "Mercado Pago", chip: "bg-amber-200/90", brand: "VISA" };
-    }
-    if (isCredit) {
-      return { bg: "from-[#1E293B] via-[#0F172A] to-[#020617]", badge: "Crédito Platinum", chip: "bg-amber-400/90", brand: "Mastercard" };
-    }
-    if (wallet.type === "cash") {
-      return { bg: "from-[#065F46] via-[#047857] to-[#064E3B]", badge: "Efectivo / Caja", chip: "bg-emerald-300/80", brand: "Cash" };
-    }
-    return { bg: "from-[#007EA7] via-[#003459] to-[#00171F]", badge: wallet.name, chip: "bg-amber-300/80", brand: "Débito" };
-  };
-
-  const theme = getCardTheme();
+  const theme = getBankThemeConfig(wallet.name, wallet.type);
 
   return (
     <div className="fixed inset-0 z-[100] bg-slate-950/80 backdrop-blur-md flex items-end sm:items-center justify-center p-0 sm:p-4">
@@ -104,22 +81,27 @@ export default function CardDetailsModal({
 
         <div className="flex-1 overflow-y-auto custom-scrollbar p-5 space-y-5">
           {/* Tarjeta Visual Renderizada */}
-          <div className={`w-full h-[195px] rounded-3xl p-5 bg-gradient-to-tr ${theme.bg} text-white shadow-2xl relative overflow-hidden flex flex-col justify-between`}>
+          <div className={`w-full h-[195px] rounded-3xl p-5 bg-gradient-to-tr ${theme.gradient} ${theme.textColor} shadow-2xl relative overflow-hidden flex flex-col justify-between`}>
             <div className="absolute top-0 right-0 -mr-8 -mt-8 w-36 h-36 rounded-full bg-white/10 blur-2xl pointer-events-none" />
             <div className="absolute bottom-0 left-0 -ml-8 -mb-8 w-36 h-36 rounded-full bg-brand-cerulean/20 blur-2xl pointer-events-none" />
 
             <div className="flex items-start justify-between relative z-10">
               <div>
-                <span className="text-[11px] font-black uppercase tracking-wider opacity-80 block">
-                  {theme.badge}
-                </span>
-                <h4 className="text-base font-extrabold tracking-tight">
+                <div className="flex items-center gap-1.5 opacity-90">
+                  <BankLogo bank={theme.type} />
+                  {theme.type === "generic" && (
+                    <span className="text-[11px] font-black uppercase tracking-wider block">
+                      {theme.name}
+                    </span>
+                  )}
+                </div>
+                <h4 className="text-base font-extrabold tracking-tight mt-0.5">
                   {wallet.name}
                 </h4>
               </div>
               <div className="flex items-center gap-2">
                 <Wifi className="w-4 h-4 opacity-75 rotate-90" />
-                <div className={`w-8 h-6 rounded-md ${theme.chip} border border-white/40 shadow-inner`} />
+                <div className={`w-8 h-6 rounded-md ${theme.chipColor} border border-white/40 shadow-inner`} />
               </div>
             </div>
 
@@ -134,7 +116,7 @@ export default function CardDetailsModal({
 
             <div className="flex items-end justify-between relative z-10 pt-1 border-t border-white/10 text-xs font-mono">
               <span>•••• •••• •••• {wallet.name.match(/\d{4}/)?.[0] || "4589"}</span>
-              <span className="font-sans font-black italic">{theme.brand}</span>
+              <span className="font-sans font-black italic">{theme.network}</span>
             </div>
           </div>
 

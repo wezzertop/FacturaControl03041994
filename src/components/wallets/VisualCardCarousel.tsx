@@ -2,6 +2,7 @@
 
 import React, { useRef, useState } from "react";
 import CardDetailsModal from "./CardDetailsModal";
+import { getBankThemeConfig, BankLogo } from "./BankLogos";
 import { 
   CreditCard, 
   Wallet, 
@@ -58,75 +59,6 @@ export default function VisualCardCarousel({
     return val.toLocaleString("es-MX", { style: "currency", currency: "MXN" });
   };
 
-  // Helper para asignar estética visual según nombre y tipo de tarjeta
-  const getCardTheme = (wallet: WalletCardData) => {
-    const name = (wallet.name || "").toLowerCase();
-    
-    if (name.includes("bbva")) {
-      return {
-        bg: "from-[#072146] via-[#004481] to-[#04152d]",
-        badge: "BBVA",
-        textColor: "text-white",
-        chip: "bg-amber-300/80",
-        brandLogo: "VISA",
-      };
-    }
-    if (name.includes("nu ") || name.includes("nubank")) {
-      return {
-        bg: "from-[#820AD1] via-[#5B0891] to-[#2E0249]",
-        badge: "Nu México",
-        textColor: "text-white",
-        chip: "bg-amber-200/90",
-        brandLogo: "Mastercard",
-      };
-    }
-    if (name.includes("santander")) {
-      return {
-        bg: "from-[#EC0000] via-[#A80000] to-[#5C0000]",
-        badge: "Santander",
-        textColor: "text-white",
-        chip: "bg-amber-300/80",
-        brandLogo: "Mastercard",
-      };
-    }
-    if (name.includes("mercado") || name.includes("mp")) {
-      return {
-        bg: "from-[#009EE3] via-[#007EA7] to-[#003459]",
-        badge: "Mercado Pago",
-        textColor: "text-white",
-        chip: "bg-amber-200/90",
-        brandLogo: "VISA",
-      };
-    }
-    if (wallet.type === "credit") {
-      return {
-        bg: "from-[#1E293B] via-[#0F172A] to-[#020617]",
-        badge: "Crédito Platinum",
-        textColor: "text-white",
-        chip: "bg-amber-400/90",
-        brandLogo: "Mastercard",
-      };
-    }
-    if (wallet.type === "cash") {
-      return {
-        bg: "from-[#065F46] via-[#047857] to-[#064E3B]",
-        badge: "Efectivo / Caja",
-        textColor: "text-white",
-        chip: "bg-emerald-300/80",
-        brandLogo: "Cash",
-      };
-    }
-
-    // Default Bank
-    return {
-      bg: "from-[#007EA7] via-[#003459] to-[#00171F]",
-      badge: wallet.name,
-      textColor: "text-white",
-      chip: "bg-amber-300/80",
-      brandLogo: "Débito",
-    };
-  };
-
   return (
     <div className="relative w-full">
       {/* Header del Carrusel con Controles de Desplazamiento */}
@@ -165,7 +97,7 @@ export default function VisualCardCarousel({
         className="flex overflow-x-auto snap-x snap-mandatory gap-4 pb-4 pt-1 px-1 custom-scrollbar scroll-smooth"
       >
         {wallets.map((wallet) => {
-          const theme = getCardTheme(wallet);
+          const theme = getBankThemeConfig(wallet.name, wallet.type);
           const isSelected = selectedWalletId === wallet.id;
           const isCredit = wallet.type === "credit";
           const creditLimit = wallet.credit_limit || 0;
@@ -180,7 +112,7 @@ export default function VisualCardCarousel({
                 if (onSelectWallet) onSelectWallet(wallet.id);
                 setInspectingWallet(wallet);
               }}
-              className={`snap-center shrink-0 w-[290px] sm:w-[320px] h-[185px] rounded-3xl p-5 bg-gradient-to-tr ${theme.bg} text-white shadow-xl relative overflow-hidden flex flex-col justify-between cursor-pointer transition-all duration-300 transform active:scale-95 ${
+              className={`snap-center shrink-0 w-[290px] sm:w-[320px] h-[185px] rounded-3xl p-5 bg-gradient-to-tr ${theme.gradient} ${theme.textColor} shadow-xl relative overflow-hidden flex flex-col justify-between cursor-pointer transition-all duration-300 transform active:scale-95 ${
                 isSelected
                   ? "ring-4 ring-brand-cerulean shadow-2xl scale-[1.02]"
                   : "hover:scale-[1.01] hover:shadow-2xl opacity-95 hover:opacity-100"
@@ -193,17 +125,22 @@ export default function VisualCardCarousel({
               {/* Fila Superior: Nombre/Banco + Chip y Contactless */}
               <div className="flex items-start justify-between relative z-10">
                 <div>
-                  <span className="text-[11px] font-black uppercase tracking-wider opacity-80 block">
-                    {theme.badge}
-                  </span>
-                  <h4 className="text-sm font-extrabold tracking-tight truncate max-w-[170px]">
+                  <div className="flex items-center gap-1.5 opacity-90">
+                    <BankLogo bank={theme.type} />
+                    {theme.type === "generic" && (
+                      <span className="text-[11px] font-black uppercase tracking-wider block">
+                        {theme.name}
+                      </span>
+                    )}
+                  </div>
+                  <h4 className="text-sm font-extrabold tracking-tight truncate max-w-[170px] mt-0.5">
                     {wallet.name}
                   </h4>
                 </div>
 
                 <div className="flex items-center gap-2">
                   <Wifi className="w-4 h-4 opacity-75 rotate-90" />
-                  <div className={`w-8 h-6 rounded-md ${theme.chip} border border-white/40 shadow-inner flex items-center justify-center`}>
+                  <div className={`w-8 h-6 rounded-md ${theme.chipColor} border border-white/40 shadow-inner flex items-center justify-center`}>
                     <div className="w-5 h-3 border-t border-b border-black/20" />
                   </div>
                 </div>
@@ -242,7 +179,7 @@ export default function VisualCardCarousel({
                   •••• •••• •••• {wallet.name.match(/\d{4}/)?.[0] || "8492"}
                 </div>
                 <span className="text-xs font-black italic tracking-tighter opacity-90">
-                  {theme.brandLogo}
+                  {theme.network}
                 </span>
               </div>
             </div>
