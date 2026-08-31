@@ -81,9 +81,9 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen bg-brand-smoke dark:bg-zinc-950 text-brand-carbon dark:text-zinc-100 transition-colors duration-300 font-sans selection:bg-brand-cerulean selection:text-white overflow-x-hidden">
       
-      {/* Header / Navbar */}
-      <header className="sticky top-0 z-50 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-md border-b border-gray-200/50 dark:border-zinc-900 transition-colors duration-300">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-18 flex items-center justify-between">
+      {/* Header / Navbar con soporte Safe Area para iPhone y Android */}
+      <header className="sticky top-0 z-50 pt-[env(safe-area-inset-top,0px)] bg-white/90 dark:bg-zinc-950/90 backdrop-blur-xl border-b border-gray-200/60 dark:border-zinc-900 transition-colors duration-300">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 sm:h-18 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-brand-cerulean to-blue-400 flex items-center justify-center shadow-lg shadow-brand-cerulean/25">
               <Zap className="text-white w-5 h-5" />
@@ -138,16 +138,16 @@ export default function LandingPage() {
               <Link 
                 href="/login" 
                 onClick={() => setIsMobileMenuOpen(false)}
-                className="text-center font-bold text-brand-graphite dark:text-zinc-300 py-3 hover:text-brand-cerulean"
+                className="text-center py-2.5 text-sm font-semibold text-brand-carbon dark:text-white"
               >
                 Iniciar Sesión
               </Link>
               <Link 
                 href="/register" 
                 onClick={() => setIsMobileMenuOpen(false)}
-                className="bg-brand-cerulean text-white py-3 rounded-xl text-center font-bold shadow-md hover:bg-blue-600"
+                className="text-center bg-brand-carbon dark:bg-white text-white dark:text-brand-carbon py-3 rounded-xl text-sm font-bold shadow-md"
               >
-                Comenzar Gratis
+                Registrarse Gratis
               </Link>
             </div>
           </div>
@@ -155,14 +155,14 @@ export default function LandingPage() {
       </header>
 
       {/* Hero Section */}
-      <section className="relative pt-16 pb-20 lg:pt-28 lg:pb-32 overflow-hidden">
+      <section className="relative pt-12 pb-20 lg:pt-24 lg:pb-32 overflow-hidden">
         {/* Abstract Glowing Gradients */}
         <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-brand-cerulean/20 dark:bg-brand-cerulean/10 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute top-1/3 left-1/3 w-[300px] h-[300px] bg-purple-500/10 rounded-full blur-3xl pointer-events-none" />
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center space-y-8">
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-brand-cerulean/20 bg-brand-cerulean/5 text-brand-cerulean text-xs font-bold uppercase tracking-wider animate-pulse">
-            <Zap className="w-3.5 h-3.5" /> Fase Beta Abierta â€¢ 100% Gratis
+            <Zap className="w-3.5 h-3.5" /> Fase Beta Abierta • 100% Gratis
           </div>
           
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight text-brand-carbon dark:text-white max-w-4xl mx-auto leading-[1.1]">

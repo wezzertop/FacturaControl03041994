@@ -6,6 +6,7 @@ import { getProviderMappings } from "@/app/actions/invoices";
 import { getCategories } from "@/app/actions/categories";
 import VisualCardCarousel from "@/components/wallets/VisualCardCarousel";
 import MobileFintechWidgets from "@/components/dashboard/MobileFintechWidgets";
+import LukasMobileView from "@/components/dashboard/LukasMobileView";
 import {
   ArrowDownRight,
   ArrowUpRight,
@@ -248,19 +249,37 @@ export default async function FinancialOverview() {
 
   return (
     <div className="space-y-6">
-      {/* Carrusel Táctil de Tarjetas & Carteras */}
-      {validWallets.length > 0 && (
-        <VisualCardCarousel wallets={validWallets as any} />
-      )}
+      {/* Vista Móvil Minimalista y Ergonómica (Inspirada en Lukas) */}
+      <div className="md:hidden space-y-5">
+        {validWallets.length > 0 && (
+          <VisualCardCarousel wallets={validWallets as any} />
+        )}
+        <LukasMobileView
+          wallets={validWallets as any}
+          categories={categories}
+          invoices={validInvoices as any}
+          transactions={validTransactions as any}
+          totalIncome={totalIngreso}
+          totalExpense={totalGasto}
+        />
+      </div>
 
-      {/* Widgets Financieros Móviles & Acciones Rápidas */}
-      <MobileFintechWidgets
-        wallets={validWallets as any}
-        categories={categories}
-        totalIncome={totalIngreso}
-        totalExpense={totalGasto}
-        invoicesCount={validInvoices.length}
-      />
+      {/* Vista Desktop Panorámica */}
+      <div className="hidden md:block space-y-6">
+        {/* Carrusel Táctil de Tarjetas & Carteras */}
+        {validWallets.length > 0 && (
+          <VisualCardCarousel wallets={validWallets as any} />
+        )}
+
+        {/* Widgets Financieros Móviles & Acciones Rápidas */}
+        <MobileFintechWidgets
+          wallets={validWallets as any}
+          categories={categories}
+          totalIncome={totalIngreso}
+          totalExpense={totalGasto}
+          invoicesCount={validInvoices.length}
+        />
+      </div>
 
       <section className="surface-card rounded-lg p-5 md:p-6">
         <div className="grid gap-5 lg:grid-cols-[1.4fr_0.9fr] lg:items-center">
