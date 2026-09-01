@@ -26,7 +26,8 @@ import {
   Zap,
   Calculator,
   Scale,
-  PiggyBank
+  PiggyBank,
+  Users
 } from "lucide-react";
 import { signout } from "@/app/actions/auth";
 import ApplePaySetupModal from "@/components/wallets/ApplePaySetupModal";
@@ -54,6 +55,7 @@ const mobileGroups = [
     items: [
       { name: "Mis Carteras", href: "/wallets", icon: Wallet, desc: "Bancos, efectivo y crédito" },
       { name: "Metas de Ahorro", href: "/savings", icon: PiggyBank, desc: "Apartados y objetivos" },
+      { name: "Gastos Compartidos", href: "/split", icon: Users, desc: "Cuentas en pareja y amigos" },
       { name: "Préstamos", href: "/loans", icon: Landmark, desc: "Cuotas y amortizaciones" },
       { name: "Calendario Financiero", href: "/calendar", icon: Calendar, desc: "Flujo de caja y vencimientos" },
       { name: "Impuestos SAT", href: "/tax", icon: Scale, desc: "Cálculo de IVA e ISR estimado" },

@@ -6,7 +6,7 @@ import {
   DollarSign, Tag, Receipt, Building2, CheckCircle2, X, PlusCircle,
   FileImage, Eye, RefreshCw, Upload,
   ShoppingCart, Fuel, Zap, HeartPulse, Utensils, MoreHorizontal,
-  Tv, GraduationCap, Gift, PiggyBank, CreditCard, Coins, Edit, Check
+  Tv, GraduationCap, Gift, PiggyBank, CreditCard, Coins, Edit, Check, FileSpreadsheet
 } from 'lucide-react';
 import { createWorker } from 'tesseract.js';
 import { 
@@ -20,6 +20,7 @@ import VisualCardCarousel from '@/components/wallets/VisualCardCarousel';
 import SmartTransactionDetectorModal from '@/components/wallets/SmartTransactionDetectorModal';
 import ClipboardTransferListener from '@/components/wallets/ClipboardTransferListener';
 import TransferModal from '@/components/wallets/TransferModal';
+import ExportTransactionsModal from '@/components/wallets/ExportTransactionsModal';
 
 // Mapeo simple de iconos para la creación de categorías en la modal
 const InlineIconMap: Record<string, any> = {
@@ -223,6 +224,7 @@ export default function WalletsManager({
   const [showSmartDetectorModal, setShowSmartDetectorModal] = useState(false);
   const [showTransferModal, setShowTransferModal] = useState(false);
   const [transferFromWalletId, setTransferFromWalletId] = useState('');
+  const [showExportModal, setShowExportModal] = useState(false);
 
   // Estados para edición de transacciones
   const [showEditTxModal, setShowEditTxModal] = useState(false);
@@ -900,6 +902,13 @@ export default function WalletsManager({
             >
               <Wallet className="w-4 h-4" />
               Nueva Cuenta
+            </button>
+            <button 
+              onClick={() => setShowExportModal(true)}
+              className="w-full sm:w-auto border border-slate-200 dark:border-white/[0.08] bg-slate-100 dark:bg-[#141418] text-slate-800 dark:text-white px-3.5 py-2.5 rounded-lg text-sm font-bold hover:bg-slate-200 dark:hover:bg-white/10 active:scale-95 transition-all flex items-center justify-center gap-1.5"
+            >
+              <FileSpreadsheet className="w-4 h-4 text-emerald-400" />
+              Exportar CSV
             </button>
           </div>
         </div>
@@ -2059,6 +2068,14 @@ export default function WalletsManager({
         onSuccess={() => {
           window.location.reload();
         }}
+      />
+
+      {/* Modal de Exportación CSV */}
+      <ExportTransactionsModal
+        isOpen={showExportModal}
+        onClose={() => setShowExportModal(false)}
+        transactions={transactions}
+        wallets={wallets}
       />
 
     </div>

@@ -15,8 +15,9 @@ import {
   ArrowRightLeft,
   Trash2
 } from "lucide-react";
-import { createTransaction, updateTransaction, deleteTransaction, transferBetweenWallets } from "@/app/actions/wallets";
+import { createTransaction, updateTransaction, deleteTransaction, transferBetweenWallets, createSplitTransaction } from "@/app/actions/wallets";
 import { saveNotification } from "@/lib/notifications";
+import { Scissors } from "lucide-react";
 
 interface TactileTransactionModalProps {
   isOpen: boolean;
@@ -59,6 +60,13 @@ export default function TactileTransactionModal({
   );
   const [status, setStatus] = useState<"paid" | "pending" | "planned">("paid");
   const [showNoteField, setShowNoteField] = useState<boolean>(false);
+
+  // Estados de División de Gasto (Split)
+  const [isSplitMode, setIsSplitMode] = useState<boolean>(false);
+  const [splits, setSplits] = useState<Array<{ amount: string; concept: string; category_id: string }>>([
+    { amount: "", concept: "", category_id: "" },
+    { amount: "", concept: "", category_id: "" }
+  ]);
 
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -143,6 +151,38 @@ export default function TactileTransactionModal({
           }, 800);
         } else {
           setError(res.error || "No se pudo realizar la transferencia.");
+        }
+        return;
+      }
+
+      // Si está en modo División de Gasto (Split)
+      if (isSplitMode) {
+        const validSplits = splits.filter((s) => parseFloat(s.amount) > 0);
+        if (validSplits.length < 2) {
+          setError("Agrega al menos 2 partes para dividir el gasto.");
+          return;
+        }
+
+        const res = await createSplitTransaction({
+          wallet_id: selectedWalletId,
+          total_amount: parsedAmount,
+          date: new Date(date).toISOString(),
+          splits: validSplits.map((s) => ({
+            amount: parseFloat(s.amount),
+            concept: s.concept.trim() || concept.trim() || "Gasto Dividido",
+            category_id: s.category_id || null,
+          })),
+        });
+
+        if (res.success) {
+          setSuccess(true);
+          if (onSuccess) onSuccess();
+          setTimeout(() => {
+            setSuccess(false);
+            onClose();
+          }, 800);
+        } else {
+          setError(res.error || "No se pudo registrar la división.");
         }
         return;
       }
@@ -438,43 +478,132 @@ export default function TactileTransactionModal({
               </div>
             </div>
           ) : (
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1">
-                <label className="text-[11px] font-bold uppercase tracking-wider text-zinc-400">
-                  Cartera / Tarjeta
-                </label>
-                <select
-                  value={selectedWalletId}
-                  onChange={(e) => setSelectedWalletId(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-50 dark:bg-[#0A0A0C] border border-slate-200 dark:border-white/[0.08] rounded-lg text-xs font-bold text-slate-900 dark:text-white focus:ring-1 focus:ring-white/40 focus:outline-none cursor-pointer"
-                >
-                  {wallets.map((w) => (
-                    <option key={w.id} value={w.id} className="bg-neutral-900 text-white">
-                      {w.name}
-                    </option>
-                  ))}
-                </select>
+            <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-[11px] font-bold uppercase tracking-wider text-zinc-400">
+                    Cartera / Tarjeta
+                  </label>
+                  <select
+                    value={selectedWalletId}
+                    onChange={(e) => setSelectedWalletId(e.target.value)}
+                    className="w-full px-3 py-2 bg-slate-50 dark:bg-[#0A0A0C] border border-slate-200 dark:border-white/[0.08] rounded-lg text-xs font-bold text-slate-900 dark:text-white focus:ring-1 focus:ring-white/40 focus:outline-none cursor-pointer"
+                  >
+                    {wallets.map((w) => (
+                      <option key={w.id} value={w.id} className="bg-neutral-900 text-white">
+                        {w.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {!isSplitMode && (
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-bold uppercase tracking-wider text-zinc-400">
+                      Categoría
+                    </label>
+                    <select
+                      value={selectedCategoryId}
+                      onChange={(e) => setSelectedCategoryId(e.target.value)}
+                      className="w-full px-3 py-2 bg-slate-50 dark:bg-[#0A0A0C] border border-slate-200 dark:border-white/[0.08] rounded-lg text-xs font-bold text-slate-900 dark:text-white focus:ring-1 focus:ring-white/40 focus:outline-none cursor-pointer"
+                    >
+                      <option value="" className="bg-neutral-900 text-white">
+                        Sin Categoría
+                      </option>
+                      {categories.map((c) => (
+                        <option key={c.id} value={c.id} className="bg-neutral-900 text-white">
+                          {c.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
               </div>
 
-              <div className="space-y-1">
-                <label className="text-[11px] font-bold uppercase tracking-wider text-zinc-400">
-                  Categoría
-                </label>
-                <select
-                  value={selectedCategoryId}
-                  onChange={(e) => setSelectedCategoryId(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-50 dark:bg-[#0A0A0C] border border-slate-200 dark:border-white/[0.08] rounded-lg text-xs font-bold text-slate-900 dark:text-white focus:ring-1 focus:ring-white/40 focus:outline-none cursor-pointer"
-                >
-                  <option value="" className="bg-neutral-900 text-white">
-                    Sin Categoría
-                  </option>
-                  {categories.map((c) => (
-                    <option key={c.id} value={c.id} className="bg-neutral-900 text-white">
-                      {c.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              {/* Botón Split Transaction */}
+              {type === "expense" && !transaction && (
+                <div className="pt-1">
+                  <button
+                    type="button"
+                    onClick={() => setIsSplitMode(!isSplitMode)}
+                    className={`w-full py-2 px-3 rounded-xl border text-xs font-black flex items-center justify-center gap-1.5 transition ${
+                      isSplitMode
+                        ? "bg-white text-black border-white shadow-sm"
+                        : "bg-slate-100 dark:bg-[#141418] text-zinc-300 border-slate-200 dark:border-white/[0.06] hover:text-white"
+                    }`}
+                  >
+                    <Scissors className="w-3.5 h-3.5" />
+                    {isSplitMode ? "Modo División Activo (Split)" : "Dividir en Múltiples Categorías (Split)"}
+                  </button>
+
+                  {/* Campos de División */}
+                  {isSplitMode && (
+                    <div className="mt-3 p-3 rounded-xl bg-slate-50 dark:bg-[#0A0A0C] border border-slate-200 dark:border-white/[0.08] space-y-2.5">
+                      <div className="flex items-center justify-between text-[11px] font-bold">
+                        <span className="text-zinc-400">Desglose de Partes:</span>
+                        <span className={`font-black ${
+                          Math.abs(splits.reduce((s, x) => s + (parseFloat(x.amount) || 0), 0) - parsedAmount) < 0.01
+                            ? "text-emerald-400"
+                            : "text-amber-400"
+                        }`}>
+                          Suma: ${splits.reduce((s, x) => s + (parseFloat(x.amount) || 0), 0).toFixed(2)} / ${parsedAmount.toFixed(2)}
+                        </span>
+                      </div>
+
+                      {splits.map((s, idx) => (
+                        <div key={idx} className="grid grid-cols-12 gap-1.5 items-center">
+                          <input
+                            type="number"
+                            placeholder="Monto"
+                            value={s.amount}
+                            onChange={(e) => {
+                              const copy = [...splits];
+                              copy[idx].amount = e.target.value;
+                              setSplits(copy);
+                            }}
+                            className="col-span-4 px-2 py-1.5 bg-white dark:bg-[#141418] border border-white/[0.06] rounded-lg text-xs font-bold text-white focus:outline-none"
+                          />
+                          <select
+                            value={s.category_id}
+                            onChange={(e) => {
+                              const copy = [...splits];
+                              copy[idx].category_id = e.target.value;
+                              setSplits(copy);
+                            }}
+                            className="col-span-5 px-1.5 py-1.5 bg-white dark:bg-[#141418] border border-white/[0.06] rounded-lg text-xs font-bold text-white focus:outline-none"
+                          >
+                            <option value="">Categoría</option>
+                            {categories.map((c) => (
+                              <option key={c.id} value={c.id}>
+                                {c.name}
+                              </option>
+                            ))}
+                          </select>
+                          <input
+                            type="text"
+                            placeholder="Detalle"
+                            value={s.concept}
+                            onChange={(e) => {
+                              const copy = [...splits];
+                              copy[idx].concept = e.target.value;
+                              setSplits(copy);
+                            }}
+                            className="col-span-3 px-1.5 py-1.5 bg-white dark:bg-[#141418] border border-white/[0.06] rounded-lg text-xs font-bold text-white focus:outline-none"
+                          />
+                        </div>
+                      ))}
+
+                      <button
+                        type="button"
+                        onClick={() => setSplits([...splits, { amount: "", concept: "", category_id: "" }])}
+                        className="text-[11px] font-bold text-emerald-400 hover:underline pt-1 block"
+                      >
+                        + Agregar otra parte
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           )}
 

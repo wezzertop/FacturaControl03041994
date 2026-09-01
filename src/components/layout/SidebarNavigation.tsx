@@ -26,6 +26,7 @@ import {
   Coffee,
   Scale,
   PiggyBank,
+  Users,
 } from "lucide-react";
 import DonationModal from "./DonationModal";
 import { signout } from "@/app/actions/auth";
@@ -46,6 +47,7 @@ const navGroups = [
     items: [
       { name: "Mis Carteras", href: "/wallets", icon: Wallet },
       { name: "Metas de Ahorro", href: "/savings", icon: PiggyBank },
+      { name: "Gastos Compartidos", href: "/split", icon: Users },
       { name: "Préstamos", href: "/loans", icon: Landmark },
       { name: "Calendario", href: "/calendar", icon: Calendar },
       { name: "Impuestos SAT", href: "/tax", icon: Scale },

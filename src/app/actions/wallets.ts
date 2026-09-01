@@ -1403,3 +1403,62 @@ export async function toggleRecurringPaymentActive(paymentId: string, isActive: 
   revalidatePath('/');
   return { success: true };
 }
+
+/**
+ * Registra una transacción dividida (Split Transaction) en múltiples categorías.
+ */
+export async function createSplitTransaction(data: {
+  wallet_id: string;
+  total_amount: number;
+  date?: string;
+  splits: Array<{ amount: number; concept: string; category_id?: string | null }>;
+}) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { success: false, error: 'Usuario no autenticado' };
+  }
+
+  if (!data.wallet_id) {
+    return { success: false, error: 'Selecciona una cartera válida' };
+  }
+
+  if (!data.splits || data.splits.length === 0) {
+    return { success: false, error: 'Debes incluir al menos una división del gasto' };
+  }
+
+  const txDate = data.date || new Date().toISOString();
+
+  // Validar que la suma coincida
+  const splitsSum = data.splits.reduce((sum, s) => sum + Math.abs(Number(s.amount) || 0), 0);
+  const total = Math.abs(Number(data.total_amount) || 0);
+
+  if (Math.abs(splitsSum - total) > 0.05) {
+    return { success: false, error: `La suma de las divisiones ($${splitsSum.toFixed(2)}) no coincide con el total ($${total.toFixed(2)})` };
+  }
+
+  const inserts = data.splits.map((s) => ({
+    user_id: user.id,
+    wallet_id: data.wallet_id,
+    type: 'expense',
+    amount: Math.abs(Number(s.amount) || 0),
+    concept: `[Split] ${s.concept.trim() || 'Gasto dividido'}`,
+    category_id: s.category_id || null,
+    date: txDate
+  }));
+
+  const { error } = await (supabase.from('transactions') as any)
+    .insert(inserts);
+
+  if (error) {
+    console.error('Error al registrar split transaction:', error);
+    return { success: false, error: 'Error al registrar las divisiones de la transacción' };
+  }
+
+  revalidatePath('/wallets');
+  revalidatePath('/calendar');
+  revalidatePath('/analytics');
+  revalidatePath('/');
+  return { success: true };
+}

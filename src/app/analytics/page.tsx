@@ -4,6 +4,8 @@ import { CategoryBarChart, TrendAreaChart } from "@/components/analytics/Analyti
 import { CalendarDays, PieChart, Target, TrendingUp } from "lucide-react";
 import PageShell from "@/components/layout/PageShell";
 import { getCategories } from "@/app/actions/categories";
+import { getWallets, getRecurringPayments } from "@/app/actions/wallets";
+import CashflowForecast from "@/components/analytics/CashflowForecast";
 
 export const dynamic = "force-dynamic";
 
@@ -41,8 +43,10 @@ export default async function AnalyticsPage() {
     return <div className="p-8 text-center text-sm text-slate-500">No autenticado</div>;
   }
 
-  const [categories, invoicesResponse, transactionsResponse] = await Promise.all([
+  const [categories, wallets, recurringPayments, invoicesResponse, transactionsResponse] = await Promise.all([
     getCategories(),
+    getWallets(),
+    getRecurringPayments(),
     supabase
       .from("invoices")
       .select("*")
@@ -161,6 +165,16 @@ export default async function AnalyticsPage() {
             <TrendAreaChart data={trendData} />
           </div>
         </div>
+      </section>
+
+      {/* Motor de Proyección Predictiva de Flujo de Efectivo */}
+      <section>
+        <CashflowForecast
+          wallets={wallets}
+          recurringPayments={recurringPayments}
+          categories={categories}
+          monthlyExpenseAvg={avgMensual}
+        />
       </section>
     </PageShell>
   );
