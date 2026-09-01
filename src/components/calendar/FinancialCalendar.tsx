@@ -122,6 +122,50 @@ export default function FinancialCalendar({
   };
 
   // --- OBTENER EVENTOS DE UN DÍA ESPECÍFICO ---
+  const isRecurringEventOnDate = (
+    item: { is_active?: boolean; frequency?: string; start_date?: string; next_execution_date?: string },
+    targetDate: Date
+  ): boolean => {
+    if (item.is_active === false) return false;
+    const nextExecStr = item.next_execution_date ? item.next_execution_date.split('T')[0] : null;
+    const startStr = item.start_date ? item.start_date.split('T')[0] : nextExecStr;
+    if (!startStr && !nextExecStr) return false;
+
+    const refStr = startStr || nextExecStr!;
+    const [sY, sM, sD] = refStr.split('-').map(Number);
+    const start = new Date(sY, sM - 1, sD);
+    const target = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate());
+
+    if (target < start) return false;
+
+    const diffTime = target.getTime() - start.getTime();
+    const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+    const freq = item.frequency || 'monthly';
+
+    if (freq === 'days_14') {
+      return diffDays % 14 === 0;
+    }
+    if (freq === 'weekly') {
+      return diffDays % 7 === 0;
+    }
+    if (freq === 'days_15') {
+      const tD = target.getDate();
+      const tLastDay = new Date(target.getFullYear(), target.getMonth() + 1, 0).getDate();
+      if (sD === 15 || sD === 1 || sD === 30 || sD === 31 || sD === 2) {
+        return tD === 15 || tD === tLastDay;
+      }
+      const secondDay = Math.min(sD + 15, tLastDay);
+      return tD === sD || tD === secondDay;
+    }
+    if (freq === 'monthly') {
+      return target.getDate() === sD;
+    }
+    if (freq === 'yearly') {
+      return target.getMonth() === start.getMonth() && target.getDate() === sD;
+    }
+    return false;
+  };
+
   const getEventsForDate = (dateObj: Date) => {
     const dayOfMonth = dateObj.getDate();
     const isThisMonth = dateObj.getMonth() === month && dateObj.getFullYear() === year;
@@ -136,29 +180,13 @@ export default function FinancialCalendar({
       return isSameDay(new Date(inv.fecha), dateObj);
     });
 
-    let dayRecurringList = recurringPayments.filter(rec => {
-      if (!rec.is_active || !rec.next_execution_date) return false;
-      const recDate = new Date(rec.next_execution_date);
-      if (isSameDay(recDate, dateObj)) return true;
-      if (rec.frequency === 'monthly' && isThisMonth) {
-        const startD = new Date(rec.start_date);
-        return startD.getDate() === dayOfMonth;
-      }
-      return false;
-    });
+    let dayRecurringList = recurringPayments.filter(rec => isRecurringEventOnDate(rec, dateObj));
 
     const creditWallets = wallets.filter(w => w.type === 'credit');
     let dayCreditCutOffs = creditWallets.filter(w => w.cut_off_day === dayOfMonth && isThisMonth);
     let dayCreditDues = creditWallets.filter(w => w.due_day === dayOfMonth && isThisMonth);
 
-    let dayLoanPayments = loans.filter(l => {
-      if (!l.is_active || !l.start_date) return false;
-      const startDate = new Date(l.start_date);
-      if (l.frequency === 'monthly' && isThisMonth) {
-        return startDate.getDate() === dayOfMonth;
-      }
-      return false;
-    });
+    let dayLoanPayments = loans.filter(l => isRecurringEventOnDate(l, dateObj));
 
     // Filtro de búsqueda por texto
     if (searchQuery.trim()) {
