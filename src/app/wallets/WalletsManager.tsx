@@ -21,6 +21,7 @@ import SmartTransactionDetectorModal from '@/components/wallets/SmartTransaction
 import ClipboardTransferListener from '@/components/wallets/ClipboardTransferListener';
 import TransferModal from '@/components/wallets/TransferModal';
 import ExportTransactionsModal from '@/components/wallets/ExportTransactionsModal';
+import TactileTransactionModal from '@/components/transactions/TactileTransactionModal';
 
 // Mapeo simple de iconos para la creación de categorías en la modal
 const InlineIconMap: Record<string, any> = {
@@ -723,57 +724,7 @@ export default function WalletsManager({
   // Iniciar edición de transacción
   const handleEditTransaction = (tx: any) => {
     setEditingTx(tx);
-    setEditConcept(tx.concept);
-    setEditAmount(tx.amount.toString());
-    setEditCategoryId(tx.category_id || '');
-    setEditDate(tx.date ? tx.date.split('T')[0] : new Date().toISOString().split('T')[0]);
-    setEditType(tx.type);
-    setShowEditTxModal(true);
-  };
-
-  // Guardar edición de transacción
-  const handleUpdateTxSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!editingTx) return;
-
-    const amountNum = Number(editAmount);
-    if (!editConcept.trim() || isNaN(amountNum) || amountNum <= 0) {
-      alert('Ingresa datos válidos.');
-      return;
-    }
-
-    startTransition(async () => {
-      const res = await updateTransaction(editingTx.id, {
-        concept: editConcept.trim(),
-        amount: amountNum,
-        category_id: editCategoryId || null,
-        date: new Date(editDate + 'T12:00:00').toISOString(),
-        type: editType
-      });
-
-      if (res.success && res.transaction) {
-        const updatedTx = res.transaction;
-        
-        // 1. Actualizar listado de transacciones
-        setTransactions(prev => prev.map(t => t.id === editingTx.id ? { ...t, ...updatedTx } : t));
-
-        // 2. Recalcular saldo de la cartera
-        setWallets(prev => prev.map(w => {
-          if (w.id === editingTx.wallet_id) {
-            const oldDiff = editingTx.type === 'income' ? Number(editingTx.amount) : -Number(editingTx.amount);
-            const newDiff = editType === 'income' ? amountNum : -amountNum;
-            const diff = newDiff - oldDiff;
-            return { ...w, balance: Number(w.balance) + diff };
-          }
-          return w;
-        }));
-
-        setShowEditTxModal(false);
-        setEditingTx(null);
-      } else {
-        alert(res.error || 'Error al actualizar el movimiento.');
-      }
-    });
+    setShowTxModal(true);
   };
 
   // Vincular Factura XML a Cartera
@@ -936,8 +887,13 @@ export default function WalletsManager({
             } else {
               setTxWalletId(walletId);
               setTxType(type);
+              setEditingTx(null);
               setShowTxModal(true);
             }
+          }}
+          onEditTx={(tx) => {
+            setEditingTx(tx);
+            setShowTxModal(true);
           }}
           selectedWalletId={activeWalletFilter || undefined}
         />
@@ -1614,266 +1570,27 @@ export default function WalletsManager({
         </div>
       )}
 
-      {/* Modal: Registrar Transacción Manual */}
-      {showTxModal && (
-        <div className="fixed inset-0 bg-brand-carbon/55 dark:bg-black/75 backdrop-blur-sm z-[60] flex items-end sm:items-center justify-center p-0 sm:p-4">
-          <div className="bg-brand-white dark:bg-brand-graphite border-t sm:border border-gray-200 dark:border-zinc-800 w-full sm:max-w-sm rounded-t-2xl sm:rounded-2xl shadow-xl overflow-hidden p-6 pb-12 sm:p-6 relative animate-slide-up sm:animate-none max-h-[90vh] overflow-y-auto custom-scrollbar">
-            {/* Grab Handle for Mobile Bottom Sheet */}
-            <div className="w-12 h-1.5 bg-gray-250 dark:bg-zinc-800 rounded-full mx-auto mb-4 sm:hidden" />
-
-            <button 
-              onClick={() => {
-                setShowTxModal(false);
-                setVoucherFile(null);
-              }}
-              className="absolute top-4 right-4 text-brand-graphite dark:text-zinc-400 hover:text-brand-carbon dark:hover:text-white p-2 rounded-full hover:bg-gray-100 dark:hover:bg-zinc-800"
-            >
-              <X className="w-5 h-5" />
-            </button>
-
-            <h3 className="text-lg font-bold text-brand-carbon dark:text-white mb-4">
-              Registrar Movimiento
-            </h3>
-
-            {voucherFile && (
-              <div className="mb-4 bg-brand-cerulean/10 border border-brand-cerulean/20 text-brand-cerulean rounded-xl p-3 flex items-center gap-3">
-                <FileImage className="w-5 h-5 shrink-0" />
-                <div className="min-w-0 flex-1">
-                  <p className="text-xs font-bold truncate">{voucherFile.name}</p>
-                  <p className="text-[10px] opacity-80">Comprobante detectado por OCR</p>
-                </div>
-                <button 
-                  type="button" 
-                  onClick={() => setVoucherFile(null)} 
-                  className="p-1 rounded-full hover:bg-brand-cerulean/20 text-brand-cerulean shrink-0"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-            )}
-
-            <form onSubmit={handleCreateTransaction} className="space-y-4">
-              <div className="flex bg-gray-100 dark:bg-zinc-900 p-1 rounded-lg">
-                <button
-                  type="button"
-                  onClick={() => setTxType('expense')}
-                  className={`flex-1 py-1.5 text-xs font-semibold rounded-md transition-all ${
-                    txType === 'expense' 
-                      ? 'bg-brand-white dark:bg-brand-graphite text-red-500 shadow-sm' 
-                      : 'text-brand-graphite dark:text-zinc-500'
-                  }`}
-                >
-                  Gasto / Retiro
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setTxType('income')}
-                  className={`flex-1 py-1.5 text-xs font-semibold rounded-md transition-all ${
-                    txType === 'income' 
-                      ? 'bg-brand-white dark:bg-brand-graphite text-emerald-500 shadow-sm' 
-                      : 'text-brand-graphite dark:text-zinc-500'
-                  }`}
-                >
-                  Ingreso / Depósito
-                </button>
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-xs font-semibold text-brand-graphite dark:text-zinc-400">Cartera Origen/Destino</label>
-                <select 
-                  value={txWalletId}
-                  onChange={(e) => setTxWalletId(e.target.value)}
-                  className="w-full bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-lg px-3 py-2.5 md:py-2 text-base md:text-sm text-brand-carbon dark:text-white focus:outline-none focus:border-brand-cerulean transition-colors"
-                >
-                  {wallets.map(w => (
-                    <option key={w.id} value={w.id}>{w.name} ({formatCurrency(Number(w.balance))})</option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-xs font-semibold text-brand-graphite dark:text-zinc-400">Monto ($)</label>
-                <CurrencyInput 
-                  value={txAmount}
-                  onChange={(val) => setTxAmount(val.toString())}
-                  placeholder="0.00"
-                  required
-                />
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-xs font-semibold text-brand-graphite dark:text-zinc-400">Concepto / Descripción</label>
-                <input 
-                  type="text"
-                  required
-                  placeholder="Ej. Tacos cena, Propinas, Copias papelería"
-                  value={txConcept}
-                  onChange={(e) => setTxConcept(e.target.value)}
-                  className="w-full bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-lg px-3 py-2.5 md:py-2 text-base md:text-sm text-brand-carbon dark:text-white placeholder:text-zinc-650 focus:outline-none focus:border-brand-cerulean transition-colors"
-                />
-              </div>
-
-              {txType === 'expense' && (
-                <>
-                  {/* Si es tarjeta de crédito, permitir compras a MSI */}
-                  {wallets.find(w => w.id === txWalletId)?.type === 'credit' && (
-                    <div className="bg-gray-50 dark:bg-zinc-900/40 border border-gray-200 dark:border-zinc-800 rounded-xl p-3.5 space-y-3">
-                      <div className="flex items-center gap-2">
-                        <input 
-                          type="checkbox" 
-                          id="isInstallments"
-                          checked={isInstallments}
-                          onChange={(e) => setIsInstallments(e.target.checked)}
-                          className="w-4 h-4 rounded border-gray-300 dark:border-zinc-800 text-brand-cerulean focus:ring-brand-cerulean bg-gray-50 dark:bg-zinc-900 cursor-pointer"
-                        />
-                        <label htmlFor="isInstallments" className="text-xs font-semibold text-brand-graphite dark:text-zinc-400 cursor-pointer select-none">
-                          ¿Es compra a Meses sin Intereses (MSI)?
-                        </label>
-                      </div>
-
-                      {isInstallments && (
-                        <div className="space-y-1">
-                          <label className="text-[10px] font-semibold text-brand-graphite dark:text-zinc-400 block">Número de Mensualidades</label>
-                          <select 
-                            value={installmentsCount}
-                            onChange={(e) => setInstallmentsCount(e.target.value)}
-                            className="w-full bg-white dark:bg-zinc-950 border border-gray-250 dark:border-zinc-800 rounded-lg px-2.5 py-1.5 text-xs text-brand-carbon dark:text-white focus:outline-none focus:border-brand-cerulean transition-colors"
-                          >
-                            <option value="3">3 meses sin intereses</option>
-                            <option value="6">6 meses sin intereses</option>
-                            <option value="9">9 meses sin intereses</option>
-                            <option value="12">12 meses sin intereses</option>
-                            <option value="18">18 meses sin intereses</option>
-                            <option value="24">24 meses sin intereses</option>
-                            <option value="36">36 meses sin intereses</option>
-                          </select>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                  {showInlineCategoryForm ? (
-                    <div className="bg-gray-50 dark:bg-zinc-900/40 border border-gray-200 dark:border-zinc-800 rounded-xl p-3.5 space-y-3.5 animate-in fade-in duration-200">
-                      <div className="flex justify-between items-center">
-                        <span className="text-[11px] font-bold uppercase tracking-wider text-brand-graphite dark:text-zinc-400">Nueva Categoría</span>
-                        <button 
-                          type="button" 
-                          onClick={() => {
-                            setShowInlineCategoryForm(false);
-                            setInlineError(null);
-                          }}
-                          className="text-[10px] text-brand-graphite dark:text-zinc-500 hover:text-red-500 dark:hover:text-red-400 font-bold"
-                        >
-                          Cancelar
-                        </button>
-                      </div>
-
-                      {inlineError && (
-                        <p className="text-[10px] text-red-500 dark:text-red-400 bg-red-50 dark:bg-red-950/20 border border-red-100 dark:border-red-900/30 rounded-lg p-2 font-medium">
-                          {inlineError}
-                        </p>
-                      )}
-
-                      <div className="space-y-1">
-                        <label className="text-[10px] font-semibold text-brand-graphite dark:text-zinc-400">Nombre de la Categoría</label>
-                        <input 
-                          type="text"
-                          required
-                          maxLength={30}
-                          placeholder="Ej. Mascotas, Suscripciones"
-                          value={inlineCatName}
-                          onChange={(e) => setInlineCatName(e.target.value)}
-                          className="w-full bg-white dark:bg-brand-carbon border border-gray-200 dark:border-zinc-800 rounded-lg px-2.5 py-1.5 text-xs text-brand-carbon dark:text-white placeholder:text-gray-400 focus:outline-none focus:border-brand-cerulean focus:ring-1 focus:ring-brand-cerulean transition-colors"
-                        />
-                      </div>
-
-                      <div className="space-y-1">
-                        <label className="text-[10px] font-semibold text-brand-graphite dark:text-zinc-400 block">Color de Etiqueta</label>
-                        <div className="flex flex-wrap gap-2">
-                          {ColorPalette.map((color) => (
-                            <button
-                              key={color.class}
-                              type="button"
-                              onClick={() => setInlineCatColor(color.class)}
-                              className={`w-5 h-5 rounded-full ${color.class} transition-all hover:scale-110 active:scale-95 ${
-                                inlineCatColor === color.class ? 'ring-2 ring-brand-carbon dark:ring-white scale-110' : 'opacity-80'
-                              }`}
-                              title={color.name}
-                            />
-                          ))}
-                        </div>
-                      </div>
-
-                      <div className="space-y-1">
-                        <label className="text-[10px] font-semibold text-brand-graphite dark:text-zinc-400 block">Icono</label>
-                        <div className="flex flex-wrap gap-1.5">
-                          {Object.keys(InlineIconMap).map((iconName) => {
-                            const Icon = InlineIconMap[iconName];
-                            return (
-                              <button
-                                key={iconName}
-                                type="button"
-                                onClick={() => setInlineCatIcon(iconName)}
-                                className={`p-1.5 rounded-md border transition-all hover:bg-gray-100 dark:hover:bg-zinc-800 ${
-                                  inlineCatIcon === iconName 
-                                    ? 'border-brand-cerulean bg-brand-cerulean/10 text-brand-cerulean font-bold' 
-                                    : 'border-gray-200 dark:border-zinc-800 text-brand-graphite dark:text-zinc-400'
-                                }`}
-                              >
-                                <Icon className="w-3.5 h-3.5" />
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </div>
-
-                      <button 
-                        type="button"
-                        disabled={inlinePending || !inlineCatName.trim()}
-                        onClick={handleCreateInlineCategory}
-                        className="w-full bg-brand-carbon dark:bg-white text-white dark:text-brand-carbon py-2 rounded-lg text-xs font-semibold hover:opacity-90 active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center gap-1.5"
-                      >
-                        {inlinePending ? <RefreshCw className="w-3 h-3 animate-spin" /> : <Plus className="w-3 h-3" />}
-                        Guardar Categoría
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="space-y-1">
-                      <div className="flex justify-between items-center">
-                        <label className="text-xs font-semibold text-brand-graphite dark:text-zinc-400">Categoría (Opcional)</label>
-                        <button 
-                          type="button"
-                          onClick={() => setShowInlineCategoryForm(true)}
-                          className="text-[11px] font-bold text-brand-cerulean hover:underline active:scale-95 transition-all"
-                        >
-                          + Crear Nueva
-                        </button>
-                      </div>
-                      <select 
-                        value={txCategoryId}
-                        onChange={(e) => setTxCategoryId(e.target.value)}
-                        className="w-full bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-lg px-3 py-2.5 md:py-2 text-base md:text-sm text-brand-carbon dark:text-white focus:outline-none focus:border-brand-cerulean transition-colors"
-                      >
-                        <option value="">Selecciona Categoría...</option>
-                        {localCategories.map(c => (
-                          <option key={c.id} value={c.id}>{c.name}</option>
-                        ))}
-                      </select>
-                    </div>
-                  )}
-                </>
-              )}
-
-              <button 
-                type="submit"
-                disabled={isPending}
-                className="w-full bg-brand-carbon dark:bg-white text-white dark:text-brand-carbon py-3 md:py-2.5 rounded-lg text-sm font-semibold hover:opacity-90 active:scale-95 transition-all disabled:opacity-50 min-h-[44px]"
-              >
-                {isPending ? 'Registrando...' : 'Registrar Movimiento'}
-              </button>
-            </form>
-          </div>
-        </div>
-      )}
+      {/* Modal Táctil Universal para Registrar / Editar Transacciones */}
+      <TactileTransactionModal
+        isOpen={showTxModal || (showEditTxModal && !!editingTx)}
+        onClose={() => {
+          setShowTxModal(false);
+          setShowEditTxModal(false);
+          setEditingTx(null);
+          setVoucherFile(null);
+        }}
+        initialType={txType}
+        transaction={editingTx}
+        wallets={wallets}
+        categories={localCategories}
+        initialVoucherFile={voucherFile}
+        onSuccess={() => {
+          window.location.reload();
+        }}
+        onCategoryCreated={(newCat) => {
+          setLocalCategories([...localCategories, newCat]);
+        }}
+      />
 
       {/* Modal: Vincular Factura XML */}
       {showLinkModal && selectedInvoice && (
@@ -1960,104 +1677,7 @@ export default function WalletsManager({
         </div>
       )}
 
-      {/* Modal: Editar Transacción */}
-      {showEditTxModal && editingTx && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-zinc-950 border border-gray-200 dark:border-zinc-800 rounded-2xl w-full max-w-md shadow-2xl p-6 md:p-8 relative">
-            <button 
-              onClick={() => {
-                setShowEditTxModal(false);
-                setEditingTx(null);
-              }}
-              className="absolute top-4 right-4 text-brand-graphite dark:text-zinc-400 hover:text-brand-carbon dark:hover:text-white p-2 rounded-full hover:bg-gray-100 dark:hover:bg-zinc-800"
-            >
-              <X className="w-5 h-5" />
-            </button>
 
-            <h3 className="text-lg font-bold text-brand-carbon dark:text-white mb-2">
-              Editar Movimiento
-            </h3>
-            <p className="text-xs text-brand-graphite dark:text-zinc-500 mb-6">
-              Ajusta los detalles del movimiento. El balance de la cartera asociada se actualizará de forma reactiva al instante.
-            </p>
-
-            <form onSubmit={handleUpdateTxSubmit} className="space-y-4">
-              <div className="space-y-1">
-                <label className="text-xs font-semibold text-brand-graphite dark:text-zinc-400">Concepto</label>
-                <input 
-                  type="text" 
-                  value={editConcept}
-                  onChange={(e) => setEditConcept(e.target.value)}
-                  className="w-full bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-lg px-3 py-2 text-sm text-brand-carbon dark:text-white focus:outline-none focus:border-brand-cerulean"
-                  required
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <label className="text-xs font-semibold text-brand-graphite dark:text-zinc-400">Monto ($)</label>
-                  <input 
-                    type="number" 
-                    value={editAmount}
-                    onChange={(e) => setEditAmount(e.target.value)}
-                    className="w-full bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-lg px-3 py-2 text-sm text-brand-carbon dark:text-white focus:outline-none focus:border-brand-cerulean"
-                    step="0.01"
-                    min="0.01"
-                    required
-                  />
-                </div>
-
-                <div className="space-y-1">
-                  <label className="text-xs font-semibold text-brand-graphite dark:text-zinc-400">Fecha</label>
-                  <input 
-                    type="date" 
-                    value={editDate}
-                    onChange={(e) => setEditDate(e.target.value)}
-                    className="w-full bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-lg px-3 py-2 text-sm text-brand-carbon dark:text-white focus:outline-none focus:border-brand-cerulean"
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <label className="text-xs font-semibold text-brand-graphite dark:text-zinc-400">Tipo</label>
-                  <select 
-                    value={editType}
-                    onChange={(e) => setEditType(e.target.value as 'income' | 'expense')}
-                    className="w-full bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-lg px-3 py-2.5 text-sm text-brand-carbon dark:text-white focus:outline-none focus:border-brand-cerulean"
-                  >
-                    <option value="expense">Gasto / Cargo</option>
-                    <option value="income">Ingreso / Abono</option>
-                  </select>
-                </div>
-
-                <div className="space-y-1">
-                  <label className="text-xs font-semibold text-brand-graphite dark:text-zinc-400">Categoría</label>
-                  <select 
-                    value={editCategoryId}
-                    onChange={(e) => setEditCategoryId(e.target.value)}
-                    className="w-full bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-lg px-3 py-2.5 text-sm text-brand-carbon dark:text-white focus:outline-none focus:border-brand-cerulean"
-                  >
-                    <option value="">Sin Categoría</option>
-                    {categories.map(c => (
-                      <option key={c.id} value={c.id}>{c.name}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <button 
-                type="submit"
-                disabled={isPending}
-                className="w-full bg-brand-carbon dark:bg-white text-white dark:text-brand-carbon py-2.5 rounded-lg text-sm font-semibold hover:opacity-90 active:scale-95 transition-all disabled:opacity-50 mt-4"
-              >
-                {isPending ? 'Guardando...' : 'Guardar Cambios'}
-              </button>
-            </form>
-          </div>
-        </div>
-      )}
 
       {/* Modal de Transferencia entre Carteras */}
       <TransferModal

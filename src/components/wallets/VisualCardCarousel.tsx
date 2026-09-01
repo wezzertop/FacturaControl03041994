@@ -35,6 +35,7 @@ interface VisualCardCarouselProps {
   onSelectWallet?: (walletId: string) => void;
   onAddWalletClick?: () => void;
   onOpenNewTx?: (type: "expense" | "income" | "transfer", walletId: string) => void;
+  onEditTx?: (tx: any) => void;
   selectedWalletId?: string;
 }
 
@@ -44,6 +45,7 @@ export default function VisualCardCarousel({
   onSelectWallet,
   onAddWalletClick,
   onOpenNewTx,
+  onEditTx,
   selectedWalletId,
 }: VisualCardCarouselProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -215,6 +217,7 @@ export default function VisualCardCarousel({
         wallet={inspectingWallet}
         transactions={transactions}
         onOpenNewTx={onOpenNewTx}
+        onEditTx={onEditTx}
       />
     </div>
   );

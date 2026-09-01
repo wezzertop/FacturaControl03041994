@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useTransition, useEffect } from "react";
+import React, { useState, useTransition, useEffect, useRef } from "react";
 import { 
   X, 
   ChevronLeft, 
@@ -13,11 +13,25 @@ import {
   Delete,
   AlertCircle,
   ArrowRightLeft,
-  Trash2
+  Trash2,
+  Scissors,
+  Camera,
+  Image as ImageIcon,
+  Plus,
+  Sparkles,
+  PlusCircle,
+  Clock
 } from "lucide-react";
-import { createTransaction, updateTransaction, deleteTransaction, transferBetweenWallets, createSplitTransaction } from "@/app/actions/wallets";
+import { 
+  createTransaction, 
+  updateTransaction, 
+  deleteTransaction, 
+  transferBetweenWallets, 
+  createSplitTransaction,
+  createRecurringPayment
+} from "@/app/actions/wallets";
+import { createCategory } from "@/app/actions/categories";
 import { saveNotification } from "@/lib/notifications";
-import { Scissors } from "lucide-react";
 
 interface TactileTransactionModalProps {
   isOpen: boolean;
@@ -26,8 +40,16 @@ interface TactileTransactionModalProps {
   transaction?: any | null; // For editing existing transaction
   wallets: any[];
   categories: any[];
+  initialVoucherFile?: File | null;
   onSuccess?: () => void;
+  onCategoryCreated?: (newCategory: any) => void;
 }
+
+const CATEGORY_COLORS = [
+  "bg-emerald-500", "bg-blue-500", "bg-purple-600", "bg-rose-500", 
+  "bg-amber-500", "bg-teal-500", "bg-indigo-500", "bg-cyan-500",
+  "bg-pink-500", "bg-orange-500", "bg-yellow-500", "bg-zinc-600"
+];
 
 export default function TactileTransactionModal({
   isOpen,
@@ -36,7 +58,9 @@ export default function TactileTransactionModal({
   transaction = null,
   wallets = [],
   categories = [],
+  initialVoucherFile = null,
   onSuccess,
+  onCategoryCreated
 }: TactileTransactionModalProps) {
   const [type, setType] = useState<"expense" | "income" | "transfer">(
     transaction?.type || initialType
@@ -45,7 +69,6 @@ export default function TactileTransactionModal({
     transaction ? Math.abs(Number(transaction.amount || 0)).toString() : "0"
   );
   const [concept, setConcept] = useState<string>(transaction?.concept || "");
-  const [note, setNote] = useState<string>("");
   const [selectedWalletId, setSelectedWalletId] = useState<string>(
     transaction?.wallet_id || (wallets[0]?.id || "")
   );
@@ -59,7 +82,28 @@ export default function TactileTransactionModal({
     transaction?.date ? new Date(transaction.date).toISOString().split("T")[0] : new Date().toISOString().split("T")[0]
   );
   const [status, setStatus] = useState<"paid" | "pending" | "planned">("paid");
-  const [showNoteField, setShowNoteField] = useState<boolean>(false);
+
+  // Evidencia / Voucher
+  const [voucherFile, setVoucherFile] = useState<File | null>(initialVoucherFile);
+  const [voucherPreview, setVoucherPreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Recurrencia
+  const [isRecurring, setIsRecurring] = useState<boolean>(false);
+  const [recurringFreq, setRecurringFreq] = useState<"monthly" | "days_15" | "days_14" | "weekly" | "yearly">("monthly");
+
+  // Meses sin Intereses (MSI)
+  const [isInstallments, setIsInstallments] = useState<boolean>(false);
+  const [installmentsCount, setInstallmentsCount] = useState<string>("12");
+
+  // Tags personalizados
+  const [customTagInput, setCustomTagInput] = useState<string>("");
+
+  // Creación rápida de categoría en línea
+  const [showInlineCatModal, setShowInlineCatModal] = useState<boolean>(false);
+  const [newCatName, setNewCatName] = useState<string>("");
+  const [newCatColor, setNewCatColor] = useState<string>("bg-emerald-500");
+  const [localCategories, setLocalCategories] = useState<any[]>(categories);
 
   // Estados de División de Gasto (Split)
   const [isSplitMode, setIsSplitMode] = useState<boolean>(false);
@@ -71,6 +115,18 @@ export default function TactileTransactionModal({
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<boolean>(false);
+
+  useEffect(() => {
+    setLocalCategories(categories);
+  }, [categories]);
+
+  useEffect(() => {
+    if (initialVoucherFile) {
+      setVoucherFile(initialVoucherFile);
+      const url = URL.createObjectURL(initialVoucherFile);
+      setVoucherPreview(url);
+    }
+  }, [initialVoucherFile]);
 
   useEffect(() => {
     if (transaction) {
@@ -86,6 +142,9 @@ export default function TactileTransactionModal({
   }, [transaction, initialType, wallets]);
 
   if (!isOpen) return null;
+
+  const currentWallet = wallets.find((w) => w.id === selectedWalletId);
+  const isCreditCard = currentWallet?.type === "credit";
 
   // Lógica del Teclado Numérico Táctil
   const handleKeypadPress = (val: string) => {
@@ -122,6 +181,50 @@ export default function TactileTransactionModal({
 
   const parsedAmount = parseFloat(displayAmount) || 0;
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setVoucherFile(file);
+      const url = URL.createObjectURL(file);
+      setVoucherPreview(url);
+    }
+  };
+
+  const handleAddCustomTag = (e: React.FormEvent) => {
+    e.preventDefault();
+    const cleanTag = customTagInput.trim().replace(/^#/, "");
+    if (!cleanTag) return;
+    const tagFormatted = `#${cleanTag}`;
+    if (!concept.includes(tagFormatted)) {
+      setConcept((prev) => `${prev} ${tagFormatted}`.trim());
+    }
+    setCustomTagInput("");
+  };
+
+  const handleCreateFastCategory = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newCatName.trim()) return;
+
+    const res = await createCategory(newCatName.trim(), newCatColor, "Tag", 0, type === "income" ? "income" : "expense");
+    if (res.success && res.category) {
+      const created = res.category;
+      setLocalCategories([...localCategories, created]);
+      setSelectedCategoryId(created.id);
+      setShowInlineCatModal(false);
+      setNewCatName("");
+      if (onCategoryCreated) onCategoryCreated(created);
+    }
+  };
+
+  const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = (error) => reject(error);
+    });
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (parsedAmount <= 0) {
@@ -135,7 +238,7 @@ export default function TactileTransactionModal({
 
     setError(null);
     startTransition(async () => {
-      // Si es modo transferencia
+      // 1. Si es modo transferencia
       if (type === "transfer") {
         if (selectedWalletId === toWalletId) {
           setError("La cartera de origen y destino deben ser diferentes.");
@@ -155,7 +258,7 @@ export default function TactileTransactionModal({
         return;
       }
 
-      // Si está en modo División de Gasto (Split)
+      // 2. Si está en modo División de Gasto (Split)
       if (isSplitMode) {
         const validSplits = splits.filter((s) => parseFloat(s.amount) > 0);
         if (validSplits.length < 2) {
@@ -187,7 +290,7 @@ export default function TactileTransactionModal({
         return;
       }
 
-      // Si es edición de transacción existente
+      // 3. Si es edición de transacción existente
       if (transaction) {
         const res = await updateTransaction(transaction.id, {
           type: type === "income" ? "income" : "expense",
@@ -210,8 +313,24 @@ export default function TactileTransactionModal({
         return;
       }
 
-      // Creación de nueva transacción
-      const finalConcept = concept.trim() || (type === "expense" ? "Gasto Registrado" : "Ingreso Registrado");
+      // 4. Creación de nueva transacción
+      let voucherBase64: string | null = null;
+      let voucherName: string | null = null;
+
+      if (voucherFile) {
+        try {
+          voucherBase64 = await fileToBase64(voucherFile);
+          voucherName = voucherFile.name;
+        } catch (err) {
+          console.error("Error al procesar archivo:", err);
+        }
+      }
+
+      let finalConcept = concept.trim() || (type === "expense" ? "Gasto Registrado" : "Ingreso Registrado");
+      if (isInstallments && isCreditCard) {
+        finalConcept = `${finalConcept} (${installmentsCount} MSI)`;
+      }
+
       const res = await createTransaction({
         wallet_id: selectedWalletId,
         type,
@@ -219,9 +338,27 @@ export default function TactileTransactionModal({
         concept: `${finalConcept}${status === "pending" ? " (Pendiente)" : ""}`,
         category_id: selectedCategoryId || null,
         date: new Date(date).toISOString(),
+        voucher_base64: voucherBase64,
+        voucher_name: voucherName,
+        installments_count: isInstallments ? parseInt(installmentsCount, 10) : null,
+        current_installment: isInstallments ? 1 : null
       });
 
       if (res.success) {
+        // Si activó pago recurrente, registrar la regla en background
+        if (isRecurring) {
+          await createRecurringPayment({
+            wallet_id: selectedWalletId,
+            type: type === "income" ? "income" : "expense",
+            amount: parsedAmount,
+            concept: concept.trim() || "Pago Recurrente",
+            category_id: selectedCategoryId || null,
+            frequency: recurringFreq,
+            start_date: date,
+            next_execution_date: date
+          });
+        }
+
         if (typeof window !== "undefined" && navigator.vibrate) {
           navigator.vibrate([10, 40, 10]);
         }
@@ -260,7 +397,7 @@ export default function TactileTransactionModal({
   };
 
   return (
-    <div className="fixed inset-0 z-[100] bg-black/75 backdrop-blur-md flex items-end sm:items-center justify-center p-0 sm:p-4">
+    <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-md flex items-end sm:items-center justify-center p-0 sm:p-4">
       <div className="w-full max-w-lg bg-white dark:bg-[#000000] rounded-t-2xl sm:rounded-2xl border-t sm:border border-slate-200 dark:border-white/[0.08] shadow-2xl overflow-hidden flex flex-col max-h-[92vh] animate-slide-up safe-bottom">
         
         {/* Header del Modal */}
@@ -389,27 +526,53 @@ export default function TactileTransactionModal({
               className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-[#0A0A0C] border border-slate-200 dark:border-white/[0.08] rounded-xl text-xs font-bold text-slate-900 dark:text-white placeholder:text-zinc-500 focus:ring-1 focus:ring-white/40 focus:outline-none"
             />
 
-            {/* Etiquetas Rápidas #Tags */}
-            <div className="flex items-center gap-1.5 flex-wrap pt-1">
-              <span className="text-[10px] text-zinc-500 font-bold">#Tags:</span>
-              {["#Deducible", "#Vacaciones", "#Negocio", "#Hogar", "#Mascotas", "#Extra"].map((tag) => (
-                <button
-                  key={tag}
-                  type="button"
-                  onClick={() => {
-                    if (!concept.includes(tag)) {
-                      setConcept((prev) => `${prev} ${tag}`.trim());
+            {/* Etiquetas Rápidas y Crear Tags al Vuelo */}
+            <div className="pt-1.5 space-y-1.5">
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <span className="text-[10px] text-zinc-500 font-bold">#Tags:</span>
+                {["#Deducible", "#Vacaciones", "#Negocio", "#Hogar", "#Mascotas", "#Extra"].map((tag) => (
+                  <button
+                    key={tag}
+                    type="button"
+                    onClick={() => {
+                      if (!concept.includes(tag)) {
+                        setConcept((prev) => `${prev} ${tag}`.trim());
+                      }
+                    }}
+                    className={`px-2 py-0.5 rounded-md text-[10px] font-bold border transition ${
+                      concept.includes(tag)
+                        ? "bg-white/20 text-white border-white/40 font-extrabold"
+                        : "bg-slate-100 dark:bg-[#141418] text-zinc-400 border-white/[0.04] hover:text-white"
+                    }`}
+                  >
+                    {tag}
+                  </button>
+                ))}
+              </div>
+
+              {/* Agregar Tag Libre */}
+              <div className="flex items-center gap-1.5">
+                <input
+                  type="text"
+                  placeholder="Crear nuevo #Tag (ej. #Proyecto)"
+                  value={customTagInput}
+                  onChange={(e) => setCustomTagInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      handleAddCustomTag(e);
                     }
                   }}
-                  className={`px-2 py-0.5 rounded-md text-[10px] font-bold border transition ${
-                    concept.includes(tag)
-                      ? "bg-white/20 text-white border-white/40 font-extrabold"
-                      : "bg-slate-100 dark:bg-[#141418] text-zinc-400 border-white/[0.04] hover:text-white"
-                  }`}
+                  className="flex-1 px-2.5 py-1 bg-slate-50 dark:bg-[#0A0A0C] border border-slate-200 dark:border-white/[0.06] rounded-lg text-[11px] text-white focus:outline-none"
+                />
+                <button
+                  type="button"
+                  onClick={handleAddCustomTag}
+                  className="px-2 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-white text-[11px] font-bold transition"
                 >
-                  {tag}
+                  + Tag
                 </button>
-              ))}
+              </div>
             </div>
           </div>
 
@@ -440,7 +603,7 @@ export default function TactileTransactionModal({
             </div>
           )}
 
-          {/* Selector de Carteras según Modo */}
+          {/* Selector de Carteras y Categorías */}
           {type === "transfer" ? (
             <div className="grid grid-cols-2 gap-3 p-3 rounded-xl bg-slate-50 dark:bg-[#0A0A0C] border border-slate-200 dark:border-white/[0.08]">
               <div>
@@ -499,9 +662,18 @@ export default function TactileTransactionModal({
 
                 {!isSplitMode && (
                   <div className="space-y-1">
-                    <label className="text-[11px] font-bold uppercase tracking-wider text-zinc-400">
-                      Categoría
-                    </label>
+                    <div className="flex items-center justify-between">
+                      <label className="text-[11px] font-bold uppercase tracking-wider text-zinc-400">
+                        Categoría
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => setShowInlineCatModal(true)}
+                        className="text-[10px] font-bold text-emerald-400 hover:underline flex items-center gap-0.5"
+                      >
+                        <Plus className="w-3 h-3" /> Nueva
+                      </button>
+                    </div>
                     <select
                       value={selectedCategoryId}
                       onChange={(e) => setSelectedCategoryId(e.target.value)}
@@ -510,7 +682,7 @@ export default function TactileTransactionModal({
                       <option value="" className="bg-neutral-900 text-white">
                         Sin Categoría
                       </option>
-                      {categories.map((c) => (
+                      {localCategories.map((c) => (
                         <option key={c.id} value={c.id} className="bg-neutral-900 text-white">
                           {c.name}
                         </option>
@@ -536,7 +708,6 @@ export default function TactileTransactionModal({
                     {isSplitMode ? "Modo División Activo (Split)" : "Dividir en Múltiples Categorías (Split)"}
                   </button>
 
-                  {/* Campos de División */}
                   {isSplitMode && (
                     <div className="mt-3 p-3 rounded-xl bg-slate-50 dark:bg-[#0A0A0C] border border-slate-200 dark:border-white/[0.08] space-y-2.5">
                       <div className="flex items-center justify-between text-[11px] font-bold">
@@ -573,7 +744,7 @@ export default function TactileTransactionModal({
                             className="col-span-5 px-1.5 py-1.5 bg-white dark:bg-[#141418] border border-white/[0.06] rounded-lg text-xs font-bold text-white focus:outline-none"
                           >
                             <option value="">Categoría</option>
-                            {categories.map((c) => (
+                            {localCategories.map((c) => (
                               <option key={c.id} value={c.id}>
                                 {c.name}
                               </option>
@@ -606,6 +777,157 @@ export default function TactileTransactionModal({
               )}
             </div>
           )}
+
+          {/* Opciones Avanzadas: Recurrente, Comprobante y MSI */}
+          <div className="space-y-2 pt-1 border-t border-slate-200/60 dark:border-white/[0.06]">
+            
+            {/* Activar Pago Recurrente */}
+            {!transaction && (
+              <div className="p-3 rounded-xl bg-slate-50 dark:bg-[#0A0A0C] border border-slate-200 dark:border-white/[0.06] space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Repeat className="w-4 h-4 text-emerald-400" />
+                    <div>
+                      <span className="text-xs font-bold text-white block">Hacer recurrente este movimiento</span>
+                      <span className="text-[10px] text-zinc-400">Programa cobros automáticos en suscripciones o nóminas</span>
+                    </div>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={isRecurring}
+                    onChange={(e) => setIsRecurring(e.target.checked)}
+                    className="w-4 h-4 rounded text-emerald-500 focus:ring-emerald-500 cursor-pointer"
+                  />
+                </div>
+
+                {isRecurring && (
+                  <div className="pt-2 border-t border-white/[0.04] grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setRecurringFreq("monthly")}
+                      className={`py-1.5 px-2 rounded-lg text-xs font-bold border transition ${
+                        recurringFreq === "monthly" ? "bg-white text-black border-white" : "bg-[#141418] text-zinc-400 border-white/[0.06]"
+                      }`}
+                    >
+                      Mensual
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setRecurringFreq("days_15")}
+                      className={`py-1.5 px-2 rounded-lg text-xs font-bold border transition ${
+                        recurringFreq === "days_15" ? "bg-white text-black border-white" : "bg-[#141418] text-zinc-400 border-white/[0.06]"
+                      }`}
+                    >
+                      Quincenal (15/30)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setRecurringFreq("weekly")}
+                      className={`py-1.5 px-2 rounded-lg text-xs font-bold border transition ${
+                        recurringFreq === "weekly" ? "bg-white text-black border-white" : "bg-[#141418] text-zinc-400 border-white/[0.06]"
+                      }`}
+                    >
+                      Semanal
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setRecurringFreq("yearly")}
+                      className={`py-1.5 px-2 rounded-lg text-xs font-bold border transition ${
+                        recurringFreq === "yearly" ? "bg-white text-black border-white" : "bg-[#141418] text-zinc-400 border-white/[0.06]"
+                      }`}
+                    >
+                      Anual
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Compras a Meses Sin Intereses (MSI) */}
+            {isCreditCard && type === "expense" && !transaction && (
+              <div className="p-3 rounded-xl bg-slate-50 dark:bg-[#0A0A0C] border border-slate-200 dark:border-white/[0.06] space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <CreditCard className="w-4 h-4 text-purple-400" />
+                    <div>
+                      <span className="text-xs font-bold text-white block">¿Compra a Meses sin Intereses (MSI)?</span>
+                      <span className="text-[10px] text-zinc-400">Difiere el pago en tu tarjeta de crédito</span>
+                    </div>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={isInstallments}
+                    onChange={(e) => setIsInstallments(e.target.checked)}
+                    className="w-4 h-4 rounded text-purple-500 focus:ring-purple-500 cursor-pointer"
+                  />
+                </div>
+
+                {isInstallments && (
+                  <div className="pt-2 border-t border-white/[0.04]">
+                    <select
+                      value={installmentsCount}
+                      onChange={(e) => setInstallmentsCount(e.target.value)}
+                      className="w-full px-3 py-2 bg-[#141418] border border-white/[0.06] rounded-lg text-xs font-bold text-white focus:outline-none"
+                    >
+                      <option value="3">3 meses sin intereses</option>
+                      <option value="6">6 meses sin intereses</option>
+                      <option value="9">9 meses sin intereses</option>
+                      <option value="12">12 meses sin intereses</option>
+                      <option value="18">18 meses sin intereses</option>
+                      <option value="24">24 meses sin intereses</option>
+                      <option value="36">36 meses sin intereses</option>
+                    </select>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Adjuntar Evidencia / Comprobante */}
+            <div className="p-3 rounded-xl bg-slate-50 dark:bg-[#0A0A0C] border border-slate-200 dark:border-white/[0.06] flex items-center justify-between">
+              <div className="flex items-center gap-2 min-w-0">
+                <Camera className="w-4 h-4 text-blue-400 shrink-0" />
+                <div className="min-w-0">
+                  <span className="text-xs font-bold text-white block truncate">
+                    {voucherFile ? voucherFile.name : "Adjuntar Comprobante o Ticket"}
+                  </span>
+                  <span className="text-[10px] text-zinc-400 block">
+                    {voucherFile ? "Foto lista para adjuntar" : "Guarda evidencia fotográfica de la compra"}
+                  </span>
+                </div>
+              </div>
+
+              <input
+                type="file"
+                ref={fileInputRef}
+                accept="image/*"
+                onChange={handleFileChange}
+                className="hidden"
+              />
+
+              {voucherFile ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setVoucherFile(null);
+                    setVoucherPreview(null);
+                  }}
+                  className="p-1.5 rounded-lg text-rose-400 hover:bg-rose-500/10 transition"
+                  title="Quitar comprobante"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white text-xs font-bold transition flex items-center gap-1 shrink-0"
+                >
+                  <Camera className="w-3.5 h-3.5" /> Subir
+                </button>
+              )}
+            </div>
+
+          </div>
 
           {/* Teclado Numérico Táctil */}
           <div className="p-2.5 bg-slate-100 dark:bg-[#0A0A0C] rounded-xl border border-slate-200/80 dark:border-white/[0.08]">
@@ -640,7 +962,62 @@ export default function TactileTransactionModal({
           </button>
         </div>
       </div>
+
+      {/* Modal de Creación Rápida de Categoría */}
+      {showInlineCatModal && (
+        <div className="fixed inset-0 z-[120] bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="surface-card rounded-2xl p-5 max-w-sm w-full border border-white/[0.08] shadow-2xl relative animate-slide-up bg-white dark:bg-[#000000] text-slate-900 dark:text-white space-y-4">
+            <div className="flex items-center justify-between border-b border-white/[0.08] pb-3">
+              <h4 className="text-sm font-black flex items-center gap-1.5">
+                <PlusCircle className="w-4 h-4 text-emerald-400" />
+                Nueva Categoría Rápida
+              </h4>
+              <button
+                onClick={() => setShowInlineCatModal(false)}
+                className="p-1 rounded-lg text-zinc-400 hover:text-white"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateFastCategory} className="space-y-3">
+              <div>
+                <label className="text-xs font-bold text-zinc-400 block mb-1">Nombre de la Categoría</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Ej. Gimnasio, Mascotas, Cafetería"
+                  value={newCatName}
+                  onChange={(e) => setNewCatName(e.target.value)}
+                  className="w-full px-3 py-2 bg-slate-50 dark:bg-[#0A0A0C] border border-slate-200 dark:border-white/[0.08] rounded-xl text-xs font-bold text-white focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-zinc-400 block mb-1">Color de Etiqueta</label>
+                <div className="flex flex-wrap gap-2">
+                  {CATEGORY_COLORS.map((c) => (
+                    <button
+                      key={c}
+                      type="button"
+                      onClick={() => setNewCatColor(c)}
+                      className={`w-6 h-6 rounded-full ${c} transition ${newCatColor === c ? "ring-2 ring-white scale-110" : "opacity-70"}`}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                className="w-full py-2.5 bg-white text-black font-extrabold text-xs rounded-xl hover:bg-neutral-200 transition"
+              >
+                Crear y Asignar 🚀
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
-
