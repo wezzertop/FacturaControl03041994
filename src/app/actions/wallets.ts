@@ -310,7 +310,8 @@ export async function getTransactions(walletId?: string) {
     .from('transactions')
     .select('*, wallets(name), categories(name, color, icon), invoices(*, categories(*))')
     .eq('user_id', user.id)
-    .order('date', { ascending: false });
+    .order('date', { ascending: false })
+    .order('created_at', { ascending: false });
 
   if (walletId) {
     query = query.eq('wallet_id', walletId);

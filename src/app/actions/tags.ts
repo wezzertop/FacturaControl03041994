@@ -103,7 +103,12 @@ export async function getUserTags(): Promise<TagSummary[]> {
       totalIncome: stats.totalIncome,
       color
     };
-  }).sort((a, b) => b.count - a.count);
+  }).sort((a, b) => {
+    if (b.count !== a.count) {
+      return b.count - a.count;
+    }
+    return a.tag.localeCompare(b.tag, "es-MX");
+  });
 }
 
 /**
