@@ -795,9 +795,10 @@ export async function createRecurringPayment(data: {
   amount: number;
   concept: string;
   category_id?: string | null;
-  frequency: 'days_14' | 'days_15' | 'monthly' | 'weekly' | 'yearly';
+  frequency: 'days_14' | 'days_15' | 'every_15_days' | 'monthly' | 'weekly' | 'yearly';
   start_date: string;
   next_execution_date: string;
+  end_date?: string | null;
 }) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -818,6 +819,7 @@ export async function createRecurringPayment(data: {
       frequency: data.frequency,
       start_date: data.start_date,
       next_execution_date: data.next_execution_date,
+      end_date: data.end_date || null,
       is_active: true
     } as any)
     .select()
@@ -829,7 +831,8 @@ export async function createRecurringPayment(data: {
   }
 
   revalidatePath('/wallets');
-  revalidatePath('/settings');
+  revalidatePath('/recurring');
+  revalidatePath('/calendar');
   revalidatePath('/');
   return { success: true, rule };
 }
@@ -845,9 +848,10 @@ export async function updateRecurringPayment(
     amount: number;
     concept: string;
     category_id?: string | null;
-    frequency: 'days_14' | 'days_15' | 'monthly' | 'weekly' | 'yearly';
+    frequency: 'days_14' | 'days_15' | 'every_15_days' | 'monthly' | 'weekly' | 'yearly';
     start_date: string;
     next_execution_date: string;
+    end_date?: string | null;
     is_active: boolean;
   }
 ) {
@@ -869,6 +873,7 @@ export async function updateRecurringPayment(
       frequency: data.frequency,
       start_date: data.start_date,
       next_execution_date: data.next_execution_date,
+      end_date: data.end_date || null,
       is_active: data.is_active
     } as any)
     .eq('id', id)
@@ -882,7 +887,8 @@ export async function updateRecurringPayment(
   }
 
   revalidatePath('/wallets');
-  revalidatePath('/settings');
+  revalidatePath('/recurring');
+  revalidatePath('/calendar');
   revalidatePath('/');
   return { success: true, rule };
 }

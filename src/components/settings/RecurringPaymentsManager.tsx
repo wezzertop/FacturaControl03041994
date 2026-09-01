@@ -74,9 +74,11 @@ export default function RecurringPaymentsManager({ initialCategories, initialWal
   const [amount, setAmount] = useState('');
   const [walletId, setWalletId] = useState('');
   const [categoryId, setCategoryId] = useState('');
-  const [frequency, setFrequency] = useState<'days_14' | 'days_15' | 'monthly' | 'weekly' | 'yearly'>('monthly');
+  const [frequency, setFrequency] = useState<'days_14' | 'days_15' | 'every_15_days' | 'monthly' | 'weekly' | 'yearly'>('monthly');
   const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
   const [nextExecutionDate, setNextExecutionDate] = useState(new Date().toISOString().split('T')[0]);
+  const [hasEndDate, setHasEndDate] = useState<boolean>(false);
+  const [endDate, setEndDate] = useState<string>('');
 
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -134,11 +136,13 @@ export default function RecurringPaymentsManager({ initialCategories, initialWal
     const today = new Date().toISOString().split('T')[0];
     setStartDate(today);
     setNextExecutionDate(today);
+    setHasEndDate(false);
+    setEndDate('');
     setErrorMessage(null);
     setIsModalOpen(true);
   };
 
-  const openEditModal = (p: RecurringPayment) => {
+  const openEditModal = (p: any) => {
     setEditingPayment(p);
     setConcept(p.concept);
     setType(p.type);
@@ -148,6 +152,8 @@ export default function RecurringPaymentsManager({ initialCategories, initialWal
     setFrequency(p.frequency);
     setStartDate(p.start_date);
     setNextExecutionDate(p.next_execution_date);
+    setHasEndDate(!!p.end_date);
+    setEndDate(p.end_date ? p.end_date.split('T')[0] : '');
     setErrorMessage(null);
     setIsModalOpen(true);
   };
@@ -177,7 +183,8 @@ export default function RecurringPaymentsManager({ initialCategories, initialWal
       category_id: categoryId || null,
       frequency,
       start_date: startDate,
-      next_execution_date: nextExecutionDate
+      next_execution_date: nextExecutionDate,
+      end_date: hasEndDate && endDate ? endDate : null
     };
 
     startTransition(async () => {
@@ -528,6 +535,33 @@ export default function RecurringPaymentsManager({ initialCategories, initialWal
                     className="w-full px-3.5 py-2 text-xs border border-gray-200 dark:border-zinc-800 bg-transparent rounded-xl focus:ring-2 focus:ring-brand-cerulean focus:outline-none dark:text-white"
                     required
                   />
+                </div>
+
+                <div className="flex flex-col space-y-1.5 col-span-2 p-3 rounded-xl bg-slate-50 dark:bg-[#121216] border border-white/[0.06]">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={hasEndDate}
+                      onChange={(e) => setHasEndDate(e.target.checked)}
+                      className="w-4 h-4 rounded text-brand-cerulean focus:ring-brand-cerulean"
+                    />
+                    <span className="text-xs font-bold text-slate-900 dark:text-white">
+                      ¿Tiene fecha de finalización o vigencia límite?
+                    </span>
+                  </label>
+
+                  {hasEndDate && (
+                    <div className="pt-2">
+                      <label className="text-[10px] font-bold text-zinc-400">Fecha de Finalización (Fin de vigencia)</label>
+                      <input
+                        type="date"
+                        value={endDate}
+                        onChange={(e) => setEndDate(e.target.value)}
+                        className="w-full px-3 py-2 text-xs font-bold bg-white dark:bg-[#18181C] border border-white/[0.08] rounded-xl dark:text-white mt-1"
+                        required={hasEndDate}
+                      />
+                    </div>
+                  )}
                 </div>
               </div>
 

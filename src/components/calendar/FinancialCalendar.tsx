@@ -123,7 +123,7 @@ export default function FinancialCalendar({
 
   // --- OBTENER EVENTOS DE UN DÍA ESPECÍFICO ---
   const isRecurringEventOnDate = (
-    item: { is_active?: boolean; frequency?: string; start_date?: string; next_execution_date?: string },
+    item: { is_active?: boolean; frequency?: string; start_date?: string; next_execution_date?: string; end_date?: string | null },
     targetDate: Date
   ): boolean => {
     if (item.is_active === false) return false;
@@ -137,6 +137,13 @@ export default function FinancialCalendar({
     const target = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate());
 
     if (target < start) return false;
+
+    // Verificar fecha fin si está configurada
+    if (item.end_date) {
+      const [eY, eM, eD] = item.end_date.split('T')[0].split('-').map(Number);
+      const end = new Date(eY, eM - 1, eD);
+      if (target > end) return false;
+    }
 
     const diffTime = target.getTime() - start.getTime();
     const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
@@ -171,6 +178,7 @@ export default function FinancialCalendar({
 
     let dayTxList = transactions.filter(tx => {
       if (!tx.date) return false;
+      if (tx.concept === 'Saldo inicial' || tx.concept === 'Deuda inicial') return false;
       return isSameDay(new Date(tx.date), dateObj);
     });
 
