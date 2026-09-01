@@ -145,17 +145,16 @@ export default function FinancialCalendar({
     if (freq === 'days_14') {
       return diffDays % 14 === 0;
     }
+    if (freq === 'every_15_days') {
+      return diffDays % 15 === 0;
+    }
     if (freq === 'weekly') {
       return diffDays % 7 === 0;
     }
     if (freq === 'days_15') {
       const tD = target.getDate();
       const tLastDay = new Date(target.getFullYear(), target.getMonth() + 1, 0).getDate();
-      if (sD === 15 || sD === 1 || sD === 30 || sD === 31 || sD === 2) {
-        return tD === 15 || tD === tLastDay;
-      }
-      const secondDay = Math.min(sD + 15, tLastDay);
-      return tD === sD || tD === secondDay;
+      return tD === 15 || tD === tLastDay;
     }
     if (freq === 'monthly') {
       return target.getDate() === sD;

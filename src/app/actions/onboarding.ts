@@ -21,7 +21,7 @@ export interface OnboardingLoan {
   current_balance: number;
   interest_rate: number;
   total_payments: number;
-  frequency: 'days_14' | 'days_15' | 'monthly';
+  frequency: 'days_14' | 'days_15' | 'every_15_days' | 'monthly';
   payment_amount: number;
   start_date: string;
   wallet_name: string;
@@ -32,17 +32,22 @@ export interface OnboardingLoan {
 export interface OnboardingRecurringExpense {
   concept: string;
   amount: number;
-  frequency: 'monthly' | 'days_14' | 'days_15' | 'weekly' | 'yearly';
+  frequency: 'monthly' | 'days_14' | 'days_15' | 'every_15_days' | 'weekly' | 'yearly';
   nextExecutionDate: string; // YYYY-MM-DD
   wallet_name?: string;
+  notifyDaysBefore?: number;
 }
 
 export interface OnboardingData {
   startDate: string; // YYYY-MM-DD
   hasPayroll: boolean;
   payrollAmount: number;
+  hasProportionalFirstPayment?: boolean;
+  firstPaymentAmount?: number;
+  firstPaymentDate?: string;
   nextPayrollDate: string; // YYYY-MM-DD
-  payrollFrequency: 'days_14' | 'days_15' | 'monthly' | 'weekly' | 'yearly';
+  payrollFrequency: 'days_14' | 'days_15' | 'every_15_days' | 'monthly' | 'weekly' | 'yearly';
+  notifyDaysBefore?: number;
   wallets: OnboardingWallet[];
   recurringExpenses?: OnboardingRecurringExpense[];
   hasLoan: boolean;
@@ -102,17 +107,23 @@ export async function setupInitialData(data: OnboardingData) {
     }
 
     if (payrollRecipientWalletId) {
+      // Si tiene primer pago proporcional ajustado
+      const effectiveFirstDate = data.firstPaymentDate || data.nextPayrollDate;
+      const effectiveFirstAmount = (data.hasProportionalFirstPayment && data.firstPaymentAmount && data.firstPaymentAmount > 0)
+        ? data.firstPaymentAmount
+        : data.payrollAmount;
+
       const { error: ruleError } = await (supabase
         .from('recurring_payments') as any)
         .insert({
           user_id: user.id,
           wallet_id: payrollRecipientWalletId,
           type: 'income',
-          amount: data.payrollAmount,
+          amount: effectiveFirstAmount,
           concept: 'Nómina',
           frequency: data.payrollFrequency,
-          start_date: data.nextPayrollDate, // Anclar inicio a la fecha exacta del primer pago
-          next_execution_date: data.nextPayrollDate,
+          start_date: effectiveFirstDate,
+          next_execution_date: effectiveFirstDate,
           is_active: true
         } as any);
 

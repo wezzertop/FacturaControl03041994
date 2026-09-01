@@ -213,8 +213,9 @@ export default function RecurringPaymentsManager({ initialCategories, initialWal
 
   const getFrequencyLabel = (freq: string) => {
     switch (freq) {
-      case 'days_14': return 'Cada 14 días';
-      case 'days_15': return 'Cada 15 días';
+      case 'days_14': return 'Catorcenal (14 días)';
+      case 'days_15': return 'Quincenal (15 y fin de mes)';
+      case 'every_15_days': return 'Cada 15 días exactos';
       case 'monthly': return 'Mensual';
       case 'weekly': return 'Semanal';
       case 'yearly': return 'Anual';
@@ -510,9 +511,10 @@ export default function RecurringPaymentsManager({ initialCategories, initialWal
                     className="w-full px-3 py-2 text-xs border border-gray-200 dark:border-zinc-800 bg-transparent rounded-xl focus:ring-2 focus:ring-brand-cerulean focus:outline-none dark:text-white"
                   >
                     <option value="weekly">Semanal (Cada 7 días)</option>
-                    <option value="days_14">Catorcenal (Cada 14 días)</option>
-                    <option value="days_15">Quincenal (Cada 15 días)</option>
-                    <option value="monthly">Mensual</option>
+                    <option value="days_14">Catorcenal (Cada 14 días exactos)</option>
+                    <option value="days_15">Quincenal Calendario (Día 15 y Fin de Mes)</option>
+                    <option value="every_15_days">Cada 15 días exactos (conteo por días)</option>
+                    <option value="monthly">Mensual (Día fijo de mes)</option>
                     <option value="yearly">Anual</option>
                   </select>
                 </div>

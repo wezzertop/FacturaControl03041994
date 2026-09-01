@@ -26,6 +26,9 @@ import {
   Dumbbell,
   ArrowUpRight,
   ArrowDownLeft,
+  Bell,
+  Sliders,
+  Clock,
   X
 } from 'lucide-react';
 import { setupInitialData, OnboardingRecurringExpense } from '@/app/actions/onboarding';
@@ -50,15 +53,16 @@ interface RecurringPreset {
   icon: any;
   enabled: boolean;
   dayOfMonth: number;
+  notifyDaysBefore: number;
 }
 
 const DEFAULT_PRESETS: RecurringPreset[] = [
-  { id: 'netflix', concept: 'Netflix / Streaming', amount: 219, icon: Tv, enabled: false, dayOfMonth: 5 },
-  { id: 'spotify', concept: 'Spotify / Música', amount: 129, icon: Music, enabled: false, dayOfMonth: 10 },
-  { id: 'internet', concept: 'Internet / Telefonía', amount: 599, icon: Wifi, enabled: false, dayOfMonth: 15 },
-  { id: 'luz', concept: 'Servicio de Luz / CFE', amount: 450, icon: Zap, enabled: false, dayOfMonth: 18 },
-  { id: 'renta', concept: 'Renta / Mantenimiento', amount: 5000, icon: Home, enabled: false, dayOfMonth: 1 },
-  { id: 'gym', concept: 'Gimnasio / Deportes', amount: 650, icon: Dumbbell, enabled: false, dayOfMonth: 20 },
+  { id: 'netflix', concept: 'Netflix / Streaming', amount: 219, icon: Tv, enabled: false, dayOfMonth: 5, notifyDaysBefore: 1 },
+  { id: 'spotify', concept: 'Spotify / Música', amount: 129, icon: Music, enabled: false, dayOfMonth: 10, notifyDaysBefore: 1 },
+  { id: 'internet', concept: 'Internet / Telefonía', amount: 599, icon: Wifi, enabled: false, dayOfMonth: 15, notifyDaysBefore: 2 },
+  { id: 'luz', concept: 'Servicio de Luz / CFE', amount: 450, icon: Zap, enabled: false, dayOfMonth: 18, notifyDaysBefore: 3 },
+  { id: 'renta', concept: 'Renta / Mantenimiento', amount: 5000, icon: Home, enabled: false, dayOfMonth: 1, notifyDaysBefore: 3 },
+  { id: 'gym', concept: 'Gimnasio / Deportes', amount: 650, icon: Dumbbell, enabled: false, dayOfMonth: 20, notifyDaysBefore: 1 },
 ];
 
 const WEEKDAYS_NAMES = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
@@ -73,14 +77,25 @@ export default function OnboardingWizard() {
   // Paso 1: Datos Base
   const [startDate, setStartDate] = useState<string>(new Date().toISOString().split('T')[0]);
 
-  // Paso 2: Nómina & Proyección
+  // Paso 2: Nómina & Proyección Inteligente
   const [hasPayroll, setHasPayroll] = useState<boolean>(true);
   const [payrollAmount, setPayrollAmount] = useState<number>(15000);
+  const [payrollFrequency, setPayrollFrequency] = useState<'days_14' | 'days_15' | 'every_15_days' | 'monthly' | 'weekly'>('days_14');
   const [nextPayrollDate, setNextPayrollDate] = useState<string>(() => {
     const d = new Date();
     return d.toISOString().split('T')[0];
   });
-  const [payrollFrequency, setPayrollFrequency] = useState<'days_14' | 'days_15' | 'monthly' | 'weekly'>('days_14');
+
+  // Ajuste Proporcional del Primer Pago
+  const [hasProportionalFirstPayment, setHasProportionalFirstPayment] = useState<boolean>(false);
+  const [firstPaymentAmount, setFirstPaymentAmount] = useState<number>(7500);
+  const [firstPaymentDate, setFirstPaymentDate] = useState<string>(() => {
+    const d = new Date();
+    return d.toISOString().split('T')[0];
+  });
+
+  // Recordatorios
+  const [notifyDaysBefore, setNotifyDaysBefore] = useState<number>(1);
 
   // Paso 3: Carteras
   const [wallets, setWallets] = useState<WalletSetup[]>([
@@ -118,10 +133,11 @@ export default function OnboardingWizard() {
 
   // Paso 4: Gastos y Suscripciones Recurrentes
   const [presets, setPresets] = useState<RecurringPreset[]>(DEFAULT_PRESETS);
-  const [customExpenses, setCustomExpenses] = useState<Array<{ id: string; concept: string; amount: number; dayOfMonth: number }>>([]);
+  const [customExpenses, setCustomExpenses] = useState<Array<{ id: string; concept: string; amount: number; dayOfMonth: number; notifyDaysBefore: number }>>([]);
   const [customConcept, setCustomConcept] = useState<string>('');
   const [customAmount, setCustomAmount] = useState<number>(0);
   const [customDay, setCustomDay] = useState<number>(15);
+  const [customNotifyDays, setCustomNotifyDays] = useState<number>(1);
 
   // Paso 5: Préstamos
   const [hasLoan, setHasLoan] = useState<boolean>(false);
@@ -136,15 +152,22 @@ export default function OnboardingWizard() {
 
   // Helper para calcular próximos pagos de nómina proyectados
   const projectedPayrolls = useMemo(() => {
-    if (!hasPayroll || !nextPayrollDate) return [];
-    const [y, m, d] = nextPayrollDate.split('-').map(Number);
-    const dates: Date[] = [];
+    if (!hasPayroll) return [];
+    const baseDateStr = hasProportionalFirstPayment && firstPaymentDate ? firstPaymentDate : nextPayrollDate;
+    if (!baseDateStr) return [];
+
+    const [y, m, d] = baseDateStr.split('-').map(Number);
+    const dates: Array<{ date: Date; amount: number }> = [];
     let current = new Date(y, m - 1, d);
 
-    for (let i = 0; i < 3; i++) {
-      dates.push(new Date(current));
+    for (let i = 0; i < 4; i++) {
+      const amt = (i === 0 && hasProportionalFirstPayment) ? firstPaymentAmount : payrollAmount;
+      dates.push({ date: new Date(current), amount: amt });
+
       if (payrollFrequency === 'days_14') {
         current.setDate(current.getDate() + 14);
+      } else if (payrollFrequency === 'every_15_days') {
+        current.setDate(current.getDate() + 15);
       } else if (payrollFrequency === 'weekly') {
         current.setDate(current.getDate() + 7);
       } else if (payrollFrequency === 'days_15') {
@@ -161,12 +184,13 @@ export default function OnboardingWizard() {
       }
     }
     return dates;
-  }, [hasPayroll, nextPayrollDate, payrollFrequency]);
+  }, [hasPayroll, nextPayrollDate, payrollFrequency, hasProportionalFirstPayment, firstPaymentDate, firstPaymentAmount, payrollAmount]);
 
   // Proyección financiera mensual
   const monthlyIncome = useMemo(() => {
     if (!hasPayroll) return 0;
     if (payrollFrequency === 'days_14') return (payrollAmount * 26) / 12;
+    if (payrollFrequency === 'every_15_days') return (payrollAmount * 365 / 15) / 12;
     if (payrollFrequency === 'weekly') return (payrollAmount * 52) / 12;
     if (payrollFrequency === 'days_15') return payrollAmount * 2;
     return payrollAmount;
@@ -196,7 +220,8 @@ export default function OnboardingWizard() {
         id: Date.now().toString(),
         concept: customConcept.trim(),
         amount: customAmount,
-        dayOfMonth: Math.min(Math.max(customDay, 1), 31)
+        dayOfMonth: Math.min(Math.max(customDay, 1), 31),
+        notifyDaysBefore: customNotifyDays
       }
     ]);
     setCustomConcept('');
@@ -255,7 +280,8 @@ export default function OnboardingWizard() {
         concept: p.concept,
         amount: p.amount,
         frequency: 'monthly',
-        nextExecutionDate: `${currentYear}-${currentMonth}-${dayStr}`
+        nextExecutionDate: `${currentYear}-${currentMonth}-${dayStr}`,
+        notifyDaysBefore: p.notifyDaysBefore
       });
     });
 
@@ -265,7 +291,8 @@ export default function OnboardingWizard() {
         concept: c.concept,
         amount: c.amount,
         frequency: 'monthly',
-        nextExecutionDate: `${currentYear}-${currentMonth}-${dayStr}`
+        nextExecutionDate: `${currentYear}-${currentMonth}-${dayStr}`,
+        notifyDaysBefore: c.notifyDaysBefore
       });
     });
 
@@ -274,8 +301,12 @@ export default function OnboardingWizard() {
         startDate,
         hasPayroll,
         payrollAmount: Number(payrollAmount),
+        hasProportionalFirstPayment,
+        firstPaymentAmount: Number(firstPaymentAmount),
+        firstPaymentDate,
         nextPayrollDate,
         payrollFrequency,
+        notifyDaysBefore,
         wallets: activeWalletsList.map(w => ({
           name: w.name,
           type: w.type,
@@ -387,12 +418,12 @@ export default function OnboardingWizard() {
           </div>
         )}
 
-        {/* PASO 2: Nómina & Proyección Inteligente */}
+        {/* PASO 2: Nómina & Esquemas Universales */}
         {step === 2 && (
           <div className="space-y-6">
             <div>
-              <h2 className="text-lg font-black text-slate-900 dark:text-white">Pago de Nómina / Salario</h2>
-              <p className="text-xs text-zinc-400 mt-1">¿Recibes ingresos periódicos por nómina o sueldo recurrente?</p>
+              <h2 className="text-lg font-black text-slate-900 dark:text-white">Ingresos & Esquema de Nómina</h2>
+              <p className="text-xs text-zinc-400 mt-1">Configura con exactitud cómo y cuándo recibes tus pagos o sueldos.</p>
             </div>
 
             <div className="grid grid-cols-2 gap-3">
@@ -406,7 +437,7 @@ export default function OnboardingWizard() {
                 }`}
               >
                 <CheckCircle className={`w-5 h-5 ${hasPayroll ? 'text-brand-cerulean' : 'text-zinc-500'}`} />
-                <span className="text-xs font-bold">Sí, recibo sueldo</span>
+                <span className="text-xs font-bold">Sí, recibo sueldo periódico</span>
               </button>
 
               <button
@@ -427,7 +458,7 @@ export default function OnboardingWizard() {
               <div className="space-y-4 pt-2">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="flex flex-col space-y-1.5">
-                    <label className="text-xs font-bold text-slate-900 dark:text-white">Monto por Cada Pago</label>
+                    <label className="text-xs font-bold text-slate-900 dark:text-white">Monto Regular por Pago</label>
                     <CurrencyInput
                       value={payrollAmount}
                       onChange={setPayrollAmount}
@@ -437,44 +468,108 @@ export default function OnboardingWizard() {
                   </div>
 
                   <div className="flex flex-col space-y-1.5">
-                    <label className="text-xs font-bold text-slate-900 dark:text-white">Frecuencia de Pago</label>
+                    <label className="text-xs font-bold text-slate-900 dark:text-white">Modalidad de Frecuencia</label>
                     <select
                       value={payrollFrequency}
                       onChange={(e: any) => setPayrollFrequency(e.target.value)}
                       className="w-full px-3.5 py-2.5 text-xs font-bold border border-slate-200 dark:border-white/[0.08] bg-slate-50 dark:bg-[#121216] rounded-xl focus:ring-2 focus:ring-brand-cerulean dark:text-white"
                     >
                       <option value="days_14">Catorcenal (cada 14 días exactos)</option>
-                      <option value="days_15">Quincenal (días 15 y fin de mes)</option>
-                      <option value="monthly">Mensual</option>
+                      <option value="days_15">Quincenal Calendario (Día 15 y Fin de Mes)</option>
+                      <option value="every_15_days">Cada 15 días exactos (conteo por días)</option>
+                      <option value="monthly">Mensual (un día fijo al mes)</option>
                       <option value="weekly">Semanal (cada 7 días)</option>
                     </select>
                   </div>
                 </div>
 
-                <div className="flex flex-col space-y-1.5">
-                  <label className="text-xs font-bold text-slate-900 dark:text-white">Fecha del Primer / Próximo Pago</label>
-                  <input
-                    type="date"
-                    value={nextPayrollDate}
-                    onChange={(e) => setNextPayrollDate(e.target.value)}
-                    className="w-full px-3.5 py-2.5 text-xs font-bold border border-slate-200 dark:border-white/[0.08] bg-slate-50 dark:bg-[#121216] rounded-xl focus:ring-2 focus:ring-brand-cerulean dark:text-white"
-                    required
-                  />
-                  <span className="text-[10px] text-zinc-500">Ejemplo: Si tu pago es el 02/09/2026, el calendario calculará automáticamente los siguientes días de cobro.</span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="flex flex-col space-y-1.5">
+                    <label className="text-xs font-bold text-slate-900 dark:text-white">Fecha de Inicio / Primer Pago</label>
+                    <input
+                      type="date"
+                      value={nextPayrollDate}
+                      onChange={(e) => setNextPayrollDate(e.target.value)}
+                      className="w-full px-3.5 py-2.5 text-xs font-bold border border-slate-200 dark:border-white/[0.08] bg-slate-50 dark:bg-[#121216] rounded-xl focus:ring-2 focus:ring-brand-cerulean dark:text-white"
+                      required
+                    />
+                  </div>
+
+                  <div className="flex flex-col space-y-1.5">
+                    <label className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-1">
+                      <Bell className="w-3.5 h-3.5 text-amber-400" /> Recordatorio / Notificación
+                    </label>
+                    <select
+                      value={notifyDaysBefore}
+                      onChange={(e) => setNotifyDaysBefore(Number(e.target.value))}
+                      className="w-full px-3.5 py-2.5 text-xs font-bold border border-slate-200 dark:border-white/[0.08] bg-slate-50 dark:bg-[#121216] rounded-xl focus:ring-2 focus:ring-brand-cerulean dark:text-white"
+                    >
+                      <option value={0}>El mismo día del pago (09:00 AM)</option>
+                      <option value={1}>1 día antes</option>
+                      <option value={2}>2 días antes</option>
+                      <option value={3}>3 días antes</option>
+                      <option value={7}>1 semana antes</option>
+                      <option value={-1}>Sin recordatorio</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Ajuste Proporcional del Primer Pago */}
+                <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-[#121216] border border-white/[0.06] space-y-3">
+                  <label className="flex items-center gap-2.5 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={hasProportionalFirstPayment}
+                      onChange={(e) => setHasProportionalFirstPayment(e.target.checked)}
+                      className="w-4 h-4 rounded text-brand-cerulean focus:ring-brand-cerulean"
+                    />
+                    <div>
+                      <span className="text-xs font-bold text-slate-900 dark:text-white block">
+                        ¿Tu primer cobro es proporcional o ajustado?
+                      </span>
+                      <span className="text-[10px] text-zinc-400 block">
+                        Útil si entraste a trabajar a mitad de quincena (ej. entraste el día 9 y el día 15 recibes solo 6 o 7 días).
+                      </span>
+                    </div>
+                  </label>
+
+                  {hasProportionalFirstPayment && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-white/[0.06]">
+                      <div>
+                        <label className="text-[10px] font-bold text-zinc-400">Monto del Primer Pago Ajustado</label>
+                        <CurrencyInput
+                          value={firstPaymentAmount}
+                          onChange={setFirstPaymentAmount}
+                          className="w-full px-3 py-2 text-xs font-bold bg-white dark:bg-[#18181C] border border-white/[0.08] rounded-xl dark:text-white"
+                          placeholder="$0.00"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="text-[10px] font-bold text-zinc-400">Fecha del Primer Pago Ajustado</label>
+                        <input
+                          type="date"
+                          value={firstPaymentDate}
+                          onChange={(e) => setFirstPaymentDate(e.target.value)}
+                          className="w-full px-3 py-2 text-xs font-bold bg-white dark:bg-[#18181C] border border-white/[0.08] rounded-xl dark:text-white"
+                        />
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Caja de Próximos Pagos Calculados */}
                 {projectedPayrolls.length > 0 && (
                   <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 space-y-2.5">
                     <span className="text-[11px] font-black text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
-                      <Calendar className="w-3.5 h-3.5" /> Próximos Pagos Calendarizados:
+                      <Calendar className="w-3.5 h-3.5" /> Próximos Pagos Proyectados en Calendario:
                     </span>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                      {projectedPayrolls.map((d, i) => (
+                    <div className="grid grid-cols-1 sm:grid-cols-4 gap-2">
+                      {projectedPayrolls.map((item, i) => (
                         <div key={i} className="p-2.5 rounded-xl bg-slate-900/80 border border-white/[0.06] text-center">
-                          <p className="text-[10px] text-zinc-400 font-bold uppercase">{WEEKDAYS_NAMES[d.getDay()]}</p>
-                          <p className="text-xs font-black text-white mt-0.5">{d.getDate()} de {MONTH_NAMES[d.getMonth()]}</p>
-                          <p className="text-[11px] font-black text-emerald-400 mt-1">${payrollAmount.toLocaleString('es-MX')}</p>
+                          <p className="text-[10px] text-zinc-400 font-bold uppercase">{WEEKDAYS_NAMES[item.date.getDay()]}</p>
+                          <p className="text-xs font-black text-white mt-0.5">{item.date.getDate()} de {MONTH_NAMES[item.date.getMonth()]}</p>
+                          <p className="text-[11px] font-black text-emerald-400 mt-1">${item.amount.toLocaleString('es-MX')}</p>
                         </div>
                       ))}
                     </div>
@@ -566,12 +661,12 @@ export default function OnboardingWizard() {
           </div>
         )}
 
-        {/* PASO 4: Gastos Fijos & Suscripciones Recurrentes */}
+        {/* PASO 4: Gastos Fijos & Suscripciones Recurrentes con Notificaciones */}
         {step === 4 && (
           <div className="space-y-6">
             <div>
-              <h2 className="text-lg font-black text-slate-900 dark:text-white">Gastos & Pagos Recurrentes</h2>
-              <p className="text-xs text-zinc-400 mt-1">Activa tus suscripciones y servicios fijos para programarlos automáticamente en tu calendario.</p>
+              <h2 className="text-lg font-black text-slate-900 dark:text-white">Gastos & Suscripciones Recurrentes</h2>
+              <p className="text-xs text-zinc-400 mt-1">Activa tus suscripciones y personaliza las alertas para que nunca se te pase un pago.</p>
             </div>
 
             {/* Presets Rápidos */}
@@ -632,7 +727,7 @@ export default function OnboardingWizard() {
                 Agregar Otro Pago Recurrente Personalizado
               </label>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-4 gap-2">
                 <input
                   type="text"
                   placeholder="Ej. Colegiatura o Seguro"
@@ -646,23 +741,21 @@ export default function OnboardingWizard() {
                   onChange={setCustomAmount}
                   className="px-3 py-2 text-xs font-bold bg-white dark:bg-[#18181C] border border-white/[0.08] rounded-xl dark:text-white"
                 />
-                <div className="flex gap-2">
-                  <input
-                    type="number"
-                    min={1}
-                    max={31}
-                    placeholder="Día (1-31)"
-                    value={customDay}
-                    onChange={(e) => setCustomDay(Number(e.target.value))}
-                    className="w-20 px-3 py-2 text-xs font-bold bg-white dark:bg-[#18181C] border border-white/[0.08] rounded-xl dark:text-white"
-                  />
-                  <button
-                    type="submit"
-                    className="flex-1 px-3 py-2 bg-brand-cerulean hover:bg-brand-cerulean/90 text-white rounded-xl text-xs font-black transition"
-                  >
-                    Guardar
-                  </button>
-                </div>
+                <input
+                  type="number"
+                  min={1}
+                  max={31}
+                  placeholder="Día (1-31)"
+                  value={customDay}
+                  onChange={(e) => setCustomDay(Number(e.target.value))}
+                  className="px-3 py-2 text-xs font-bold bg-white dark:bg-[#18181C] border border-white/[0.08] rounded-xl dark:text-white"
+                />
+                <button
+                  type="submit"
+                  className="px-3 py-2 bg-brand-cerulean hover:bg-brand-cerulean/90 text-white rounded-xl text-xs font-black transition"
+                >
+                  Guardar
+                </button>
               </div>
 
               {customExpenses.length > 0 && (
@@ -777,21 +870,21 @@ export default function OnboardingWizard() {
                 <p className="text-[10px] font-bold text-emerald-400 uppercase flex items-center justify-center gap-1">
                   <ArrowUpRight className="w-3.5 h-3.5" /> Ingreso Mensual
                 </p>
-                <p className="text-base font-black text-white mt-1">${monthlyIncome.toLocaleString('es-MX')}</p>
+                <p className="text-base font-black text-white mt-1">${monthlyIncome.toLocaleString('es-MX', { maximumFractionDigits: 0 })}</p>
               </div>
 
               <div className="p-3.5 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-center">
                 <p className="text-[10px] font-bold text-rose-400 uppercase flex items-center justify-center gap-1">
                   <ArrowDownLeft className="w-3.5 h-3.5" /> Gastos Fijos
                 </p>
-                <p className="text-base font-black text-white mt-1">${monthlyRecurringExpenses.toLocaleString('es-MX')}</p>
+                <p className="text-base font-black text-white mt-1">${monthlyRecurringExpenses.toLocaleString('es-MX', { maximumFractionDigits: 0 })}</p>
               </div>
 
               <div className="p-3.5 rounded-2xl bg-brand-cerulean/10 border border-brand-cerulean/20 text-center">
                 <p className="text-[10px] font-bold text-brand-cerulean uppercase flex items-center justify-center gap-1">
                   <Sparkles className="w-3.5 h-3.5" /> Flujo Libre Est.
                 </p>
-                <p className="text-base font-black text-white mt-1">${freeCashFlow.toLocaleString('es-MX')}</p>
+                <p className="text-base font-black text-white mt-1">${freeCashFlow.toLocaleString('es-MX', { maximumFractionDigits: 0 })}</p>
               </div>
             </div>
 
@@ -805,9 +898,25 @@ export default function OnboardingWizard() {
               <div className="flex justify-between items-center text-xs pb-2 border-b border-white/[0.06]">
                 <span className="text-zinc-400">Nómina / Sueldo:</span>
                 <span className="font-bold text-white">
-                  {hasPayroll ? `$${payrollAmount.toLocaleString('es-MX')} (${payrollFrequency === 'days_14' ? 'Catorcenal' : payrollFrequency === 'days_15' ? 'Quincenal' : 'Mensual'})` : 'No configurado'}
+                  {hasPayroll ? (
+                    `$${payrollAmount.toLocaleString('es-MX')} (${
+                      payrollFrequency === 'days_14' ? 'Catorcenal (cada 14 días)' : 
+                      payrollFrequency === 'days_15' ? 'Quincenal (Día 15 y Fin de Mes)' : 
+                      payrollFrequency === 'every_15_days' ? 'Cada 15 días exactos' :
+                      payrollFrequency === 'weekly' ? 'Semanal' : 'Mensual'
+                    })`
+                  ) : 'No configurado'}
                 </span>
               </div>
+
+              {hasProportionalFirstPayment && (
+                <div className="flex justify-between items-center text-xs pb-2 border-b border-white/[0.06]">
+                  <span className="text-zinc-400">Primer Pago Proporcional:</span>
+                  <span className="font-bold text-emerald-400">
+                    ${firstPaymentAmount.toLocaleString('es-MX')} ({firstPaymentDate})
+                  </span>
+                </div>
+              )}
 
               <div className="flex justify-between items-center text-xs pb-2 border-b border-white/[0.06]">
                 <span className="text-zinc-400">Carteras a Activar:</span>
