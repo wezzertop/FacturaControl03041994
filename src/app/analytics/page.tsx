@@ -6,6 +6,7 @@ import PageShell from "@/components/layout/PageShell";
 import { getCategories } from "@/app/actions/categories";
 import { getWallets, getRecurringPayments } from "@/app/actions/wallets";
 import CashflowForecast from "@/components/analytics/CashflowForecast";
+import BudgetOverviewWidget from "@/components/budget/BudgetOverviewWidget";
 
 export const dynamic = "force-dynamic";
 
@@ -165,6 +166,11 @@ export default async function AnalyticsPage() {
             <TrendAreaChart data={trendData} />
           </div>
         </div>
+      </section>
+
+      {/* Presupuestos por Categoría */}
+      <section>
+        <BudgetOverviewWidget />
       </section>
 
       {/* Motor de Proyección Predictiva de Flujo de Efectivo */}

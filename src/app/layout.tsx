@@ -5,6 +5,7 @@ import SidebarNavigation from "@/components/layout/SidebarNavigation";
 import BottomNavigation from "@/components/layout/BottomNavigation";
 import InstallPrompt from "@/components/pwa/InstallPrompt";
 import ServiceWorkerRegister from "@/components/pwa/ServiceWorkerRegister";
+import OfflineSyncManager from "@/components/offline/OfflineSyncManager";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { createClient } from "@/utils/supabase/server";
 
@@ -82,6 +83,7 @@ export default async function RootLayout({
             {user && <BottomNavigation />}
             <InstallPrompt />
             <ServiceWorkerRegister />
+            <OfflineSyncManager />
           </div>
         </ThemeProvider>
       </body>

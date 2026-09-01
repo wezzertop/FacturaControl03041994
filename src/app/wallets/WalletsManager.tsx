@@ -22,6 +22,7 @@ import ClipboardTransferListener from '@/components/wallets/ClipboardTransferLis
 import TransferModal from '@/components/wallets/TransferModal';
 import ExportTransactionsModal from '@/components/wallets/ExportTransactionsModal';
 import TactileTransactionModal from '@/components/transactions/TactileTransactionModal';
+import UpcomingAlertsBanner from '@/components/notifications/UpcomingAlertsBanner';
 
 // Mapeo simple de iconos para la creación de categorías en la modal
 const InlineIconMap: Record<string, any> = {
@@ -175,6 +176,7 @@ interface WalletsManagerProps {
   initialUnlinkedInvoices: any[];
   categories: any[];
   providerMappings?: any[];
+  recurringPayments?: any[];
 }
 
 export default function WalletsManager({ 
@@ -182,7 +184,8 @@ export default function WalletsManager({
   initialTransactions, 
   initialUnlinkedInvoices,
   categories,
-  providerMappings = []
+  providerMappings = [],
+  recurringPayments = []
 }: WalletsManagerProps) {
   const [wallets, setWallets] = useState(initialWallets);
   const [transactions, setTransactions] = useState(initialTransactions);
@@ -800,14 +803,45 @@ export default function WalletsManager({
     });
   };
 
-  // Filtrado de transacciones
-  const filteredTransactions = activeWalletFilter
-    ? transactions.filter(t => t.wallet_id === activeWalletFilter)
-    : transactions;
+  // Filtros de Búsqueda y Tags en Vivo
+  const [searchTxQuery, setSearchTxQuery] = useState('');
+  const [selectedTagFilter, setSelectedTagFilter] = useState<string | null>(null);
+  const [selectedTxTypeFilter, setSelectedTxTypeFilter] = useState<'all' | 'expense' | 'income'>('all');
+  const [selectedCategoryFilter, setSelectedCategoryFilter] = useState<string | null>(null);
+
+  // Filtrado de transacciones reactivo
+  const filteredTransactions = transactions.filter((t) => {
+    if (activeWalletFilter && t.wallet_id !== activeWalletFilter) return false;
+    if (selectedTxTypeFilter !== 'all' && t.type !== selectedTxTypeFilter) return false;
+    if (selectedCategoryFilter && t.category_id !== selectedCategoryFilter) return false;
+    if (selectedTagFilter && !t.concept?.toLowerCase().includes(selectedTagFilter.toLowerCase())) return false;
+
+    if (searchTxQuery.trim()) {
+      const q = searchTxQuery.toLowerCase().trim();
+      const matchConcept = t.concept?.toLowerCase().includes(q);
+      const matchCategory = t.categories?.name?.toLowerCase().includes(q);
+      const matchWallet = t.wallets?.name?.toLowerCase().includes(q);
+      const matchAmount = t.amount?.toString().includes(q);
+      if (!matchConcept && !matchCategory && !matchWallet && !matchAmount) return false;
+    }
+
+    return true;
+  });
 
   return (
     <div className="space-y-8">
       
+      {/* Banner de Alertas Inteligentes de Fechas de Corte y Pagos */}
+      <UpcomingAlertsBanner
+        wallets={wallets}
+        recurringPayments={recurringPayments}
+        onPayCreditCard={(wId) => {
+          setTxWalletId(wId);
+          setTxType('expense');
+          setShowTxModal(true);
+        }}
+      />
+
       {/* 1. Resumen Consolidado */}
       <div className="relative overflow-hidden rounded-2xl border border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/80 p-6 md:p-8 shadow-md">
         <div className="absolute top-0 right-0 w-64 h-64 bg-brand-cerulean/15 dark:bg-brand-cerulean/10 rounded-full blur-3xl pointer-events-none" />
@@ -1221,11 +1255,89 @@ export default function WalletsManager({
         
         {/* Columna Izquierda: Historial de Transacciones */}
         <div className="lg:col-span-7 space-y-4">
-          <div className="flex justify-between items-center">
-            <h3 className="text-lg font-bold text-brand-carbon dark:text-white">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+            <h3 className="text-lg font-bold text-brand-carbon dark:text-white flex items-center gap-2">
               Historial de Movimientos
-              {activeWalletFilter && ` (${wallets.find(w => w.id === activeWalletFilter)?.name})`}
+              <span className="text-xs font-semibold text-zinc-500 bg-white/10 px-2 py-0.5 rounded-full">
+                {filteredTransactions.length}
+              </span>
             </h3>
+
+            {/* Selector de Tipo */}
+            <div className="flex items-center gap-1 bg-slate-100 dark:bg-[#141418] p-0.5 rounded-lg border border-white/[0.06] text-[11px] font-bold">
+              <button
+                type="button"
+                onClick={() => setSelectedTxTypeFilter('all')}
+                className={`px-2 py-1 rounded-md transition ${selectedTxTypeFilter === 'all' ? 'bg-white text-black font-black' : 'text-zinc-400'}`}
+              >
+                Todos
+              </button>
+              <button
+                type="button"
+                onClick={() => setSelectedTxTypeFilter('expense')}
+                className={`px-2 py-1 rounded-md transition ${selectedTxTypeFilter === 'expense' ? 'bg-rose-600 text-white font-black' : 'text-zinc-400'}`}
+              >
+                Gastos
+              </button>
+              <button
+                type="button"
+                onClick={() => setSelectedTxTypeFilter('income')}
+                className={`px-2 py-1 rounded-md transition ${selectedTxTypeFilter === 'income' ? 'bg-emerald-600 text-white font-black' : 'text-zinc-400'}`}
+              >
+                Ingresos
+              </button>
+            </div>
+          </div>
+
+          {/* Barra de Búsqueda y Tags en Vivo */}
+          <div className="space-y-2">
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="Buscar por concepto, comercio o monto..."
+                value={searchTxQuery}
+                onChange={(e) => setSearchTxQuery(e.target.value)}
+                className="w-full pl-9 pr-8 py-2 bg-slate-50 dark:bg-[#141418] border border-slate-200 dark:border-white/[0.08] rounded-xl text-xs text-white placeholder:text-zinc-500 focus:outline-none"
+              />
+              <span className="absolute left-3 top-2.5 text-zinc-400 text-xs">🔍</span>
+              {searchTxQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchTxQuery('')}
+                  className="absolute right-2.5 top-2 text-zinc-400 hover:text-white text-xs p-0.5"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+
+            {/* Chips de Tags */}
+            <div className="flex items-center gap-1.5 overflow-x-auto custom-scrollbar pb-1 text-[10px] font-bold">
+              <span className="text-zinc-500 shrink-0">Filtrar #Tag:</span>
+              {['#Deducible', '#Vacaciones', '#Negocio', '#Hogar', '#Mascotas', '[Reembolso]'].map((tag) => (
+                <button
+                  key={tag}
+                  type="button"
+                  onClick={() => setSelectedTagFilter(selectedTagFilter === tag ? null : tag)}
+                  className={`px-2 py-0.5 rounded-md border transition shrink-0 ${
+                    selectedTagFilter === tag
+                      ? 'bg-white text-black border-white font-black'
+                      : 'bg-[#141418] text-zinc-400 border-white/[0.04] hover:text-white'
+                  }`}
+                >
+                  {tag}
+                </button>
+              ))}
+              {selectedTagFilter && (
+                <button
+                  type="button"
+                  onClick={() => setSelectedTagFilter(null)}
+                  className="text-rose-400 hover:underline shrink-0 text-[10px]"
+                >
+                  Limpiar tag
+                </button>
+              )}
+            </div>
           </div>
 
           <div className="bg-brand-white dark:bg-brand-graphite border border-gray-200 dark:border-zinc-800 rounded-2xl shadow-sm overflow-hidden divide-y divide-gray-100 dark:divide-zinc-800/80">

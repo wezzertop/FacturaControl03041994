@@ -15,6 +15,7 @@ import {
   ListFilter, Eye, Check
 } from 'lucide-react';
 import { createCategory, deleteCategory, updateCategory } from '@/app/actions/categories';
+import BudgetOverviewWidget from '@/components/budget/BudgetOverviewWidget';
 
 // Mapeo exhaustivo de iconos por familias
 const ICON_CATEGORIES = [
@@ -328,6 +329,9 @@ export default function CategoryManager({ initialCategories }: CategoryManagerPr
           </div>
         </div>
       </div>
+
+      {/* Widget de Presupuestos Activos */}
+      <BudgetOverviewWidget />
 
       {/* Alertas de Notificación */}
       {successMessage && (

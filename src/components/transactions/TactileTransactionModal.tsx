@@ -30,6 +30,7 @@ import {
 } from "@/app/actions/wallets";
 import { createCategory } from "@/app/actions/categories";
 import { saveNotification } from "@/lib/notifications";
+import { saveOfflineTransaction } from "@/components/offline/OfflineSyncManager";
 
 interface TactileTransactionModalProps {
   isOpen: boolean;
@@ -365,6 +366,26 @@ export default function TactileTransactionModal({
       }
       if (isInstallments && isCreditCard) {
         finalConcept = `${finalConcept} (${installmentsCount} MSI)`;
+      }
+
+      // Si el dispositivo está sin conexión, guardar en cola offline PWA
+      if (typeof navigator !== "undefined" && !navigator.onLine) {
+        saveOfflineTransaction({
+          wallet_id: selectedWalletId,
+          type,
+          amount: parsedAmount,
+          concept: `${finalConcept}${status === "pending" ? " (Pendiente)" : ""}`,
+          category_id: selectedCategoryId || null,
+          date: new Date(date).toISOString()
+        });
+
+        setSuccess(true);
+        if (onSuccess) onSuccess();
+        setTimeout(() => {
+          setSuccess(false);
+          onClose();
+        }, 600);
+        return;
       }
 
       const res = await createTransaction({

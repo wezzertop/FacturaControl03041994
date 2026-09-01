@@ -1,6 +1,6 @@
 import React from "react";
 import { createClient } from "@/utils/supabase/server";
-import { getWallets, getTransactions, getUnlinkedInvoices } from "@/app/actions/wallets";
+import { getWallets, getTransactions, getUnlinkedInvoices, getRecurringPayments } from "@/app/actions/wallets";
 import { getCategories } from "@/app/actions/categories";
 import { getProviderMappings } from "@/app/actions/invoices";
 import PageShell from "@/components/layout/PageShell";
@@ -11,12 +11,13 @@ export const dynamic = "force-dynamic";
 
 export default async function WalletsPage() {
   await createClient();
-  const [wallets, transactions, unlinkedInvoices, categories, providerMappings] = await Promise.all([
+  const [wallets, transactions, unlinkedInvoices, categories, providerMappings, recurringPayments] = await Promise.all([
     getWallets(),
     getTransactions(),
     getUnlinkedInvoices(),
     getCategories(),
-    getProviderMappings()
+    getProviderMappings(),
+    getRecurringPayments()
   ]);
 
   const hasWallets = wallets && wallets.length > 0;
@@ -34,6 +35,7 @@ export default async function WalletsPage() {
           initialUnlinkedInvoices={unlinkedInvoices}
           categories={categories || []}
           providerMappings={providerMappings || []}
+          recurringPayments={recurringPayments || []}
         />
       ) : (
         <OnboardingWizard />
