@@ -29,7 +29,9 @@ import {
   Bell,
   Sliders,
   Clock,
-  X
+  X,
+  TrendingUp,
+  TrendingDown
 } from 'lucide-react';
 import { setupInitialData, OnboardingRecurringExpense } from '@/app/actions/onboarding';
 import CurrencyInput from '@/components/ui/CurrencyInput';
@@ -51,19 +53,18 @@ interface RecurringPreset {
   id: string;
   concept: string;
   amount: number;
-  icon: any;
   enabled: boolean;
   dayOfMonth: number;
   notifyDaysBefore: number;
 }
 
 const DEFAULT_PRESETS: RecurringPreset[] = [
-  { id: 'netflix', concept: 'Netflix / Streaming', amount: 219, icon: Tv, enabled: false, dayOfMonth: 5, notifyDaysBefore: 1 },
-  { id: 'spotify', concept: 'Spotify / Música', amount: 129, icon: Music, enabled: false, dayOfMonth: 10, notifyDaysBefore: 1 },
-  { id: 'internet', concept: 'Internet / Telefonía', amount: 599, icon: Wifi, enabled: false, dayOfMonth: 15, notifyDaysBefore: 2 },
-  { id: 'luz', concept: 'Servicio de Luz / CFE', amount: 450, icon: Zap, enabled: false, dayOfMonth: 18, notifyDaysBefore: 3 },
-  { id: 'renta', concept: 'Renta / Mantenimiento', amount: 5000, icon: Home, enabled: false, dayOfMonth: 1, notifyDaysBefore: 3 },
-  { id: 'gym', concept: 'Gimnasio / Deportes', amount: 650, icon: Dumbbell, enabled: false, dayOfMonth: 20, notifyDaysBefore: 1 },
+  { id: 'netflix', concept: 'Netflix / Streaming', amount: 219, enabled: false, dayOfMonth: 5, notifyDaysBefore: 1 },
+  { id: 'spotify', concept: 'Spotify / Música', amount: 129, enabled: false, dayOfMonth: 10, notifyDaysBefore: 1 },
+  { id: 'internet', concept: 'Internet / Telefonía', amount: 599, enabled: false, dayOfMonth: 15, notifyDaysBefore: 2 },
+  { id: 'luz', concept: 'Servicio de Luz / CFE', amount: 450, enabled: false, dayOfMonth: 18, notifyDaysBefore: 3 },
+  { id: 'renta', concept: 'Renta / Mantenimiento', amount: 5000, enabled: false, dayOfMonth: 1, notifyDaysBefore: 3 },
+  { id: 'gym', concept: 'Gimnasio / Deportes', amount: 650, enabled: false, dayOfMonth: 20, notifyDaysBefore: 1 },
 ];
 
 const WEEKDAYS_NAMES = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
@@ -80,7 +81,7 @@ export default function OnboardingWizard() {
 
   // Paso 2: Nómina & Proyección Inteligente
   const [hasPayroll, setHasPayroll] = useState<boolean>(true);
-  const [payrollAmount, setPayrollAmount] = useState<number>(15000);
+  const [payrollAmount, setPayrollAmount] = useState<number>(7000);
   const [payrollFrequency, setPayrollFrequency] = useState<'days_14' | 'days_15' | 'every_15_days' | 'monthly' | 'weekly'>('days_14');
   const [nextPayrollDate, setNextPayrollDate] = useState<string>(() => {
     const d = new Date();
@@ -89,7 +90,7 @@ export default function OnboardingWizard() {
 
   // Ajuste Proporcional del Primer Pago
   const [hasProportionalFirstPayment, setHasProportionalFirstPayment] = useState<boolean>(false);
-  const [firstPaymentAmount, setFirstPaymentAmount] = useState<number>(7500);
+  const [firstPaymentAmount, setFirstPaymentAmount] = useState<number>(3500);
   const [firstPaymentDate, setFirstPaymentDate] = useState<string>(() => {
     const d = new Date();
     return d.toISOString().split('T')[0];
@@ -132,12 +133,24 @@ export default function OnboardingWizard() {
     }
   ]);
 
-  // Paso 4: Gastos y Suscripciones Recurrentes
+  // Paso 4: Gastos e Ingresos Recurrentes
   const [presets, setPresets] = useState<RecurringPreset[]>(DEFAULT_PRESETS);
-  const [customExpenses, setCustomExpenses] = useState<Array<{ id: string; concept: string; amount: number; dayOfMonth: number; notifyDaysBefore: number }>>([]);
+  const [customItems, setCustomItems] = useState<Array<{
+    id: string;
+    concept: string;
+    type: 'expense' | 'income';
+    amount: number;
+    dayOfMonth: number;
+    frequency: 'monthly' | 'days_14' | 'days_15' | 'every_15_days' | 'weekly';
+    notifyDaysBefore: number;
+  }>>([]);
+  
+  // Custom recurring form
   const [customConcept, setCustomConcept] = useState<string>('');
+  const [customType, setCustomType] = useState<'expense' | 'income'>('expense');
   const [customAmount, setCustomAmount] = useState<number>(0);
   const [customDay, setCustomDay] = useState<number>(15);
+  const [customFrequency, setCustomFrequency] = useState<'monthly' | 'days_14' | 'days_15' | 'every_15_days' | 'weekly'>('monthly');
   const [customNotifyDays, setCustomNotifyDays] = useState<number>(1);
 
   // Paso 5: Préstamos
@@ -159,7 +172,7 @@ export default function OnboardingWizard() {
 
     const [y, m, d] = baseDateStr.split('-').map(Number);
     const dates: Array<{ date: Date; amount: number }> = [];
-    let current = new Date(y, m - 1, d);
+    let current = new Date(y, m - 1, d, 12, 0, 0);
 
     for (let i = 0; i < 4; i++) {
       const amt = (i === 0 && hasProportionalFirstPayment) ? firstPaymentAmount : payrollAmount;
@@ -189,20 +202,24 @@ export default function OnboardingWizard() {
 
   // Proyección financiera mensual
   const monthlyIncome = useMemo(() => {
-    if (!hasPayroll) return 0;
-    if (payrollFrequency === 'days_14') return (payrollAmount * 26) / 12;
-    if (payrollFrequency === 'every_15_days') return (payrollAmount * 365 / 15) / 12;
-    if (payrollFrequency === 'weekly') return (payrollAmount * 52) / 12;
-    if (payrollFrequency === 'days_15') return payrollAmount * 2;
-    return payrollAmount;
-  }, [hasPayroll, payrollAmount, payrollFrequency]);
+    let income = 0;
+    if (hasPayroll) {
+      if (payrollFrequency === 'days_14') income += (payrollAmount * 26) / 12;
+      else if (payrollFrequency === 'every_15_days') income += (payrollAmount * 365 / 15) / 12;
+      else if (payrollFrequency === 'weekly') income += (payrollAmount * 52) / 12;
+      else if (payrollFrequency === 'days_15') income += payrollAmount * 2;
+      else income += payrollAmount;
+    }
+    const customIncomes = customItems.filter(c => c.type === 'income').reduce((sum, c) => sum + c.amount, 0);
+    return income + customIncomes;
+  }, [hasPayroll, payrollAmount, payrollFrequency, customItems]);
 
   const monthlyRecurringExpenses = useMemo(() => {
     const fromPresets = presets.filter(p => p.enabled).reduce((sum, p) => sum + p.amount, 0);
-    const fromCustom = customExpenses.reduce((sum, c) => sum + c.amount, 0);
+    const fromCustom = customItems.filter(c => c.type === 'expense').reduce((sum, c) => sum + c.amount, 0);
     const fromLoan = hasLoan ? loanPaymentAmount : 0;
     return fromPresets + fromCustom + fromLoan;
-  }, [presets, customExpenses, hasLoan, loanPaymentAmount]);
+  }, [presets, customItems, hasLoan, loanPaymentAmount]);
 
   const freeCashFlow = monthlyIncome - monthlyRecurringExpenses;
 
@@ -212,16 +229,18 @@ export default function OnboardingWizard() {
 
   const activeWalletsList = wallets.filter(w => w.enabled);
 
-  const handleAddCustomExpense = (e: React.FormEvent) => {
+  const handleAddCustomItem = (e: React.FormEvent) => {
     e.preventDefault();
     if (!customConcept.trim() || customAmount <= 0) return;
-    setCustomExpenses(prev => [
+    setCustomItems(prev => [
       ...prev,
       {
         id: Date.now().toString(),
         concept: customConcept.trim(),
+        type: customType,
         amount: customAmount,
         dayOfMonth: Math.min(Math.max(customDay, 1), 31),
+        frequency: customFrequency,
         notifyDaysBefore: customNotifyDays
       }
     ]);
@@ -229,8 +248,8 @@ export default function OnboardingWizard() {
     setCustomAmount(0);
   };
 
-  const handleRemoveCustomExpense = (id: string) => {
-    setCustomExpenses(prev => prev.filter(c => c.id !== id));
+  const handleRemoveCustomItem = (id: string) => {
+    setCustomItems(prev => prev.filter(c => c.id !== id));
   };
 
   const togglePreset = (id: string) => {
@@ -239,6 +258,11 @@ export default function OnboardingWizard() {
 
   const handlePresetAmountChange = (id: string, amount: number) => {
     setPresets(prev => prev.map(p => p.id === id ? { ...p, amount } : p));
+  };
+
+  const handlePresetDayChange = (id: string, day: number) => {
+    const validDay = Math.min(Math.max(Number(day) || 1, 1), 31);
+    setPresets(prev => prev.map(p => p.id === id ? { ...p, dayOfMonth: validDay } : p));
   };
 
   const handleNext = () => {
@@ -269,7 +293,7 @@ export default function OnboardingWizard() {
     setIsSubmitting(true);
     setError(null);
 
-    // Consolidar gastos recurrentes
+    // Consolidar gastos e ingresos recurrentes
     const consolidatedRecurring: OnboardingRecurringExpense[] = [];
     const now = new Date();
     const currentYear = now.getFullYear();
@@ -279,6 +303,7 @@ export default function OnboardingWizard() {
       const dayStr = p.dayOfMonth.toString().padStart(2, '0');
       consolidatedRecurring.push({
         concept: p.concept,
+        type: 'expense',
         amount: p.amount,
         frequency: 'monthly',
         nextExecutionDate: `${currentYear}-${currentMonth}-${dayStr}`,
@@ -286,12 +311,13 @@ export default function OnboardingWizard() {
       });
     });
 
-    customExpenses.forEach(c => {
+    customItems.forEach(c => {
       const dayStr = c.dayOfMonth.toString().padStart(2, '0');
       consolidatedRecurring.push({
         concept: c.concept,
+        type: c.type,
         amount: c.amount,
-        frequency: 'monthly',
+        frequency: c.frequency || 'monthly',
         nextExecutionDate: `${currentYear}-${currentMonth}-${dayStr}`,
         notifyDaysBefore: c.notifyDaysBefore
       });
@@ -303,8 +329,8 @@ export default function OnboardingWizard() {
         hasPayroll,
         payrollAmount: Number(payrollAmount),
         hasProportionalFirstPayment,
-        firstPaymentAmount: Number(firstPaymentAmount),
-        firstPaymentDate,
+        firstPaymentAmount: hasProportionalFirstPayment ? Number(firstPaymentAmount) : undefined,
+        firstPaymentDate: hasProportionalFirstPayment ? firstPaymentDate : undefined,
         nextPayrollDate,
         payrollFrequency,
         notifyDaysBefore,
@@ -486,7 +512,7 @@ export default function OnboardingWizard() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="flex flex-col space-y-1.5">
-                    <label className="text-xs font-bold text-slate-900 dark:text-white">Fecha de Inicio / Primer Pago</label>
+                    <label className="text-xs font-bold text-slate-900 dark:text-white">Fecha del Primer Pago de Nómina</label>
                     <input
                       type="date"
                       value={nextPayrollDate}
@@ -662,27 +688,26 @@ export default function OnboardingWizard() {
           </div>
         )}
 
-        {/* PASO 4: Gastos Fijos & Suscripciones Recurrentes con Notificaciones */}
+        {/* PASO 4: Gastos e Ingresos Recurrentes Configurables */}
         {step === 4 && (
           <div className="space-y-6">
             <div>
-              <h2 className="text-lg font-black text-slate-900 dark:text-white">Gastos & Suscripciones Recurrentes</h2>
-              <p className="text-xs text-zinc-400 mt-1">Activa tus suscripciones y personaliza las alertas para que nunca se te pase un pago.</p>
+              <h2 className="text-lg font-black text-slate-900 dark:text-white">Gastos, Suscripciones e Ingresos Recurrentes</h2>
+              <p className="text-xs text-zinc-400 mt-1">Activa y ajusta los montos y días exactos de cobro o abono periódico.</p>
             </div>
 
-            {/* Presets Rápidos */}
+            {/* Presets Rápidos con Monto y Día Editables */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {presets.map(preset => {
-                const IconComponent = preset.icon;
-                return (
-                  <div 
-                    key={preset.id}
-                    className={`p-3.5 rounded-2xl border transition flex items-center justify-between gap-2 ${
-                      preset.enabled
-                        ? 'border-brand-cerulean bg-brand-cerulean/10'
-                        : 'border-slate-200 dark:border-white/[0.06] bg-slate-50 dark:bg-[#121216]'
-                    }`}
-                  >
+              {presets.map(preset => (
+                <div 
+                  key={preset.id}
+                  className={`p-3.5 rounded-2xl border transition flex flex-col justify-between gap-3 ${
+                    preset.enabled
+                      ? 'border-brand-cerulean bg-brand-cerulean/10 shadow-sm'
+                      : 'border-slate-200 dark:border-white/[0.06] bg-slate-50 dark:bg-[#121216]'
+                  }`}
+                >
+                  <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2.5 min-w-0">
                       <BrandServiceIcon brand={preset.id} size="sm" />
                       <div className="truncate">
@@ -691,55 +716,78 @@ export default function OnboardingWizard() {
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-2 shrink-0">
-                      {preset.enabled ? (
-                        <div className="w-20">
-                          <CurrencyInput
-                            value={preset.amount}
-                            onChange={(val) => handlePresetAmountChange(preset.id, val)}
-                            className="w-full px-2 py-1 text-xs font-bold bg-white dark:bg-[#18181C] border border-white/[0.1] rounded-lg text-right dark:text-white"
-                          />
-                        </div>
-                      ) : null}
-
-                      <button
-                        type="button"
-                        onClick={() => togglePreset(preset.id)}
-                        className={`px-2.5 py-1 rounded-xl text-xs font-bold border transition ${
-                          preset.enabled
-                            ? 'bg-brand-cerulean text-white border-brand-cerulean'
-                            : 'bg-transparent text-zinc-400 border-white/[0.1] hover:text-white'
-                        }`}
-                      >
-                        {preset.enabled ? 'Activo' : '+ Agregar'}
-                      </button>
-                    </div>
+                    <button
+                      type="button"
+                      onClick={() => togglePreset(preset.id)}
+                      className={`px-2.5 py-1 rounded-xl text-xs font-bold border transition shrink-0 ${
+                        preset.enabled
+                          ? 'bg-brand-cerulean text-white border-brand-cerulean'
+                          : 'bg-transparent text-zinc-400 border-white/[0.1] hover:text-white'
+                      }`}
+                    >
+                      {preset.enabled ? 'Activo' : '+ Agregar'}
+                    </button>
                   </div>
-                );
-              })}
+
+                  {preset.enabled && (
+                    <div className="grid grid-cols-2 gap-2 pt-2 border-t border-white/[0.06] animate-in fade-in">
+                      <div>
+                        <label className="text-[9px] font-bold text-zinc-400 uppercase">Monto ($)</label>
+                        <CurrencyInput
+                          value={preset.amount}
+                          onChange={(val) => handlePresetAmountChange(preset.id, val)}
+                          className="w-full px-2 py-1 text-xs font-bold bg-white dark:bg-[#18181C] border border-white/[0.1] rounded-lg dark:text-white"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[9px] font-bold text-zinc-400 uppercase">Día de Cobro (1-31)</label>
+                        <input
+                          type="number"
+                          min={1}
+                          max={31}
+                          value={preset.dayOfMonth}
+                          onChange={(e) => handlePresetDayChange(preset.id, Number(e.target.value))}
+                          className="w-full px-2 py-1 text-xs font-bold bg-white dark:bg-[#18181C] border border-white/[0.1] rounded-lg dark:text-white"
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
             </div>
 
-            {/* Agregar Gasto Personalizado */}
-            <form onSubmit={handleAddCustomExpense} className="p-4 rounded-2xl bg-slate-50 dark:bg-[#121216] border border-white/[0.06] space-y-3">
+            {/* Agregar Gasto o Ingreso Personalizado */}
+            <form onSubmit={handleAddCustomItem} className="p-4 rounded-2xl bg-slate-50 dark:bg-[#121216] border border-white/[0.06] space-y-3">
               <label className="text-xs font-black text-slate-900 dark:text-white flex items-center gap-1.5">
                 <Plus className="w-4 h-4 text-brand-cerulean" />
-                Agregar Otro Pago Recurrente Personalizado
+                Agregar Movimiento Recurrente Personalizado (Gasto o Ingreso)
               </label>
 
-              <div className="grid grid-cols-1 sm:grid-cols-4 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-5 gap-2">
+                <select
+                  value={customType}
+                  onChange={(e: any) => setCustomType(e.target.value)}
+                  className="px-2 py-2 text-xs font-bold bg-white dark:bg-[#18181C] border border-white/[0.08] rounded-xl dark:text-white"
+                >
+                  <option value="expense">Gasto / Cargo</option>
+                  <option value="income">Ingreso / Abono</option>
+                </select>
+
                 <input
                   type="text"
-                  placeholder="Ej. Colegiatura o Seguro"
+                  placeholder="Ej. Renta que cobro o Colegiatura"
                   value={customConcept}
                   onChange={(e) => setCustomConcept(e.target.value)}
-                  className="px-3 py-2 text-xs font-bold bg-white dark:bg-[#18181C] border border-white/[0.08] rounded-xl dark:text-white"
+                  className="px-3 py-2 text-xs font-bold bg-white dark:bg-[#18181C] border border-white/[0.08] rounded-xl dark:text-white sm:col-span-2"
                 />
+
                 <CurrencyInput
                   placeholder="Monto ($)"
                   value={customAmount}
                   onChange={setCustomAmount}
                   className="px-3 py-2 text-xs font-bold bg-white dark:bg-[#18181C] border border-white/[0.08] rounded-xl dark:text-white"
                 />
+
                 <input
                   type="number"
                   min={1}
@@ -749,22 +797,38 @@ export default function OnboardingWizard() {
                   onChange={(e) => setCustomDay(Number(e.target.value))}
                   className="px-3 py-2 text-xs font-bold bg-white dark:bg-[#18181C] border border-white/[0.08] rounded-xl dark:text-white"
                 />
+              </div>
+
+              <div className="flex justify-end">
                 <button
                   type="submit"
-                  className="px-3 py-2 bg-brand-cerulean hover:bg-brand-cerulean/90 text-white rounded-xl text-xs font-black transition"
+                  className="px-4 py-2 bg-brand-cerulean hover:bg-brand-cerulean/90 text-white rounded-xl text-xs font-black transition flex items-center gap-1 shadow-sm"
                 >
-                  Guardar
+                  <Plus className="w-3.5 h-3.5" /> Guardar Programación
                 </button>
               </div>
 
-              {customExpenses.length > 0 && (
+              {customItems.length > 0 && (
                 <div className="space-y-2 pt-2 border-t border-white/[0.06]">
-                  {customExpenses.map(c => (
-                    <div key={c.id} className="flex justify-between items-center text-xs p-2 rounded-xl bg-white dark:bg-[#18181C]">
-                      <span className="font-bold text-white">{c.concept} (Día {c.dayOfMonth})</span>
+                  {customItems.map(c => (
+                    <div key={c.id} className="flex justify-between items-center text-xs p-2.5 rounded-xl bg-white dark:bg-[#18181C] border border-white/[0.04]">
+                      <div className="flex items-center gap-2">
+                        {c.type === 'income' ? (
+                          <div className="w-6 h-6 rounded-lg bg-emerald-500/15 text-emerald-400 flex items-center justify-center">
+                            <TrendingUp className="w-3.5 h-3.5" />
+                          </div>
+                        ) : (
+                          <div className="w-6 h-6 rounded-lg bg-rose-500/15 text-rose-400 flex items-center justify-center">
+                            <TrendingDown className="w-3.5 h-3.5" />
+                          </div>
+                        )}
+                        <span className="font-bold text-white">{c.concept} (Día {c.dayOfMonth} de cada mes)</span>
+                      </div>
                       <div className="flex items-center gap-3">
-                        <span className="font-black text-rose-400">${c.amount.toLocaleString('es-MX')}</span>
-                        <button type="button" onClick={() => handleRemoveCustomExpense(c.id)} className="text-zinc-500 hover:text-rose-400">
+                        <span className={`font-black ${c.type === 'income' ? 'text-emerald-400' : 'text-rose-400'}`}>
+                          {c.type === 'income' ? '+' : '-'}${c.amount.toLocaleString('es-MX')}
+                        </span>
+                        <button type="button" onClick={() => handleRemoveCustomItem(c.id)} className="text-zinc-500 hover:text-rose-400">
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
                       </div>
@@ -903,7 +967,7 @@ export default function OnboardingWizard() {
                       payrollFrequency === 'days_15' ? 'Quincenal (Día 15 y Fin de Mes)' : 
                       payrollFrequency === 'every_15_days' ? 'Cada 15 días exactos' :
                       payrollFrequency === 'weekly' ? 'Semanal' : 'Mensual'
-                    })`
+                    }) - 1er pago: ${nextPayrollDate}`
                   ) : 'No configurado'}
                 </span>
               </div>
@@ -923,9 +987,9 @@ export default function OnboardingWizard() {
               </div>
 
               <div className="flex justify-between items-center text-xs">
-                <span className="text-zinc-400">Suscripciones & Gastos Fijos:</span>
-                <span className="font-bold text-rose-400">
-                  {presets.filter(p => p.enabled).length + customExpenses.length} programados (${monthlyRecurringExpenses.toLocaleString('es-MX')}/mes)
+                <span className="text-zinc-400">Suscripciones & Recurrencias:</span>
+                <span className="font-bold text-slate-300">
+                  {presets.filter(p => p.enabled).length + customItems.length} movimientos programados
                 </span>
               </div>
             </div>

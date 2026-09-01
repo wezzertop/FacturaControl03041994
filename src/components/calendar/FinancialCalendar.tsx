@@ -133,15 +133,15 @@ export default function FinancialCalendar({
 
     const refStr = startStr || nextExecStr!;
     const [sY, sM, sD] = refStr.split('-').map(Number);
-    const start = new Date(sY, sM - 1, sD);
-    const target = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate());
+    const start = new Date(sY, sM - 1, sD, 12, 0, 0);
+    const target = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate(), 12, 0, 0);
 
     if (target < start) return false;
 
     // Verificar fecha fin si está configurada
     if (item.end_date) {
       const [eY, eM, eD] = item.end_date.split('T')[0].split('-').map(Number);
-      const end = new Date(eY, eM - 1, eD);
+      const end = new Date(eY, eM - 1, eD, 12, 0, 0);
       if (target > end) return false;
     }
 

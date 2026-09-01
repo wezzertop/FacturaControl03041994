@@ -31,6 +31,7 @@ export interface OnboardingLoan {
 
 export interface OnboardingRecurringExpense {
   concept: string;
+  type?: 'expense' | 'income';
   amount: number;
   frequency: 'monthly' | 'days_14' | 'days_15' | 'every_15_days' | 'weekly' | 'yearly';
   nextExecutionDate: string; // YYYY-MM-DD
@@ -107,8 +108,11 @@ export async function setupInitialData(data: OnboardingData) {
     }
 
     if (payrollRecipientWalletId) {
-      // Si tiene primer pago proporcional ajustado
-      const effectiveFirstDate = data.firstPaymentDate || data.nextPayrollDate;
+      // Si tiene primer pago proporcional ajustado usar firstPaymentDate; de lo contrario siempre nextPayrollDate
+      const effectiveFirstDate = (data.hasProportionalFirstPayment && data.firstPaymentDate) 
+        ? data.firstPaymentDate 
+        : data.nextPayrollDate;
+
       const effectiveFirstAmount = (data.hasProportionalFirstPayment && data.firstPaymentAmount && data.firstPaymentAmount > 0)
         ? data.firstPaymentAmount
         : data.payrollAmount;
@@ -133,7 +137,7 @@ export async function setupInitialData(data: OnboardingData) {
     }
   }
 
-  // 4. Si tiene gastos recurrentes configurados (Suscripciones, Renta, Servicios), crearlos
+  // 4. Si tiene movimientos recurrentes configurados (Suscripciones, Renta, Servicios o Ingresos Fijos), crearlos
   if (data.recurringExpenses && data.recurringExpenses.length > 0) {
     const defaultWalletId = payrollRecipientWalletId || Array.from(createdWalletMap.values())[0];
 
@@ -143,7 +147,7 @@ export async function setupInitialData(data: OnboardingData) {
         await (supabase.from('recurring_payments') as any).insert({
           user_id: user.id,
           wallet_id: targetWalletId,
-          type: 'expense',
+          type: exp.type || 'expense',
           amount: exp.amount,
           concept: exp.concept,
           frequency: exp.frequency || 'monthly',
