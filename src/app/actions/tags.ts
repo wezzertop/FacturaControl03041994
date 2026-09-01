@@ -36,7 +36,8 @@ const DEFAULT_TAGS = [
 ];
 
 /**
- * Obtiene el resumen de todos los tags usados en las transacciones del usuario
+ * Obtiene el resumen de todos los tags usados en las transacciones del usuario,
+ * combinando los predeterminados, los personalizados guardados en la nube y los de transacciones.
  */
 export async function getUserTags(): Promise<TagSummary[]> {
   const supabase = await createClient();
@@ -48,17 +49,27 @@ export async function getUserTags(): Promise<TagSummary[]> {
     .select("concept, amount, type")
     .eq("user_id", user.id);
 
-  const tagMap = new Map<string, { count: number; totalSpent: number; totalIncome: number }>();
+  const tagMap = new Map<string, { count: number; totalSpent: number; totalIncome: number; color?: string }>();
 
-  // Inicializar tags predeterminados
+  // 1. Inicializar tags predeterminados
   DEFAULT_TAGS.forEach((tag) => {
-    tagMap.set(tag, { count: 0, totalSpent: 0, totalIncome: 0 });
+    tagMap.set(tag, { count: 0, totalSpent: 0, totalIncome: 0, color: TAG_COLOR_PALETTE[tag] || "bg-emerald-500" });
   });
 
-  // Extraer tags de transacciones
+  // 2. Cargar tags personalizados guardados en la nube (user_metadata)
+  const customCloudTags: Array<{ tag: string; color: string }> = user.user_metadata?.custom_tags || [];
+  customCloudTags.forEach((ct) => {
+    if (!tagMap.has(ct.tag)) {
+      tagMap.set(ct.tag, { count: 0, totalSpent: 0, totalIncome: 0, color: ct.color });
+    } else {
+      const existing = tagMap.get(ct.tag)!;
+      existing.color = ct.color;
+    }
+  });
+
+  // 3. Extraer tags de todas las transacciones históricas
   (transactions || []).forEach((t: any) => {
     const concept = t.concept || "";
-    // Buscar todos los tokens que empiezan con # o [Reembolso]
     const matches = concept.match(/(#[a-zA-Z0-9_]+|\[Reembolso\])/g) || [];
     
     matches.forEach((tag: string) => {
@@ -84,7 +95,7 @@ export async function getUserTags(): Promise<TagSummary[]> {
 
   let colorIdx = 0;
   return Array.from(tagMap.entries()).map(([tag, stats]) => {
-    const color = TAG_COLOR_PALETTE[tag] || colors[colorIdx++ % colors.length];
+    const color = stats.color || TAG_COLOR_PALETTE[tag] || colors[colorIdx++ % colors.length];
     return {
       tag,
       count: stats.count,
@@ -96,7 +107,44 @@ export async function getUserTags(): Promise<TagSummary[]> {
 }
 
 /**
- * Renombra un tag en todas las transacciones del usuario
+ * Guarda un nuevo tag personalizado en la nube para sincronizarlo en todos los dispositivos
+ */
+export async function createCustomTag(
+  tag: string,
+  color: string = "bg-emerald-500"
+): Promise<{ success: boolean; error?: string }> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) return { success: false, error: "Usuario no autenticado" };
+
+  let cleanTag = tag.trim();
+  if (!cleanTag.startsWith("#") && cleanTag !== "[Reembolso]") {
+    cleanTag = `#${cleanTag}`;
+  }
+
+  const existingTags: Array<{ tag: string; color: string }> = user.user_metadata?.custom_tags || [];
+  
+  if (!existingTags.some((t) => t.tag.toLowerCase() === cleanTag.toLowerCase())) {
+    const updated = [...existingTags, { tag: cleanTag, color }];
+    const { error } = await supabase.auth.updateUser({
+      data: { custom_tags: updated }
+    });
+
+    if (error) {
+      console.error("Error al persistir tag en metadata:", error);
+      return { success: false, error: "No se pudo sincronizar el tag en la nube." };
+    }
+  }
+
+  revalidatePath("/categories");
+  revalidatePath("/wallets");
+  revalidatePath("/");
+  return { success: true };
+}
+
+/**
+ * Renombra un tag en todas las transacciones del usuario y en sus tags personalizados en la nube
  */
 export async function renameUserTag(oldTag: string, newTag: string): Promise<{ success: boolean; error?: string }> {
   const supabase = await createClient();
@@ -110,7 +158,12 @@ export async function renameUserTag(oldTag: string, newTag: string): Promise<{ s
     cleanNew = `#${cleanNew}`;
   }
 
-  // Obtener transacciones que contienen oldTag
+  // 1. Actualizar en metadata en la nube
+  const existingTags: Array<{ tag: string; color: string }> = user.user_metadata?.custom_tags || [];
+  const updatedTags = existingTags.map((t) => (t.tag === cleanOld ? { ...t, tag: cleanNew } : t));
+  await supabase.auth.updateUser({ data: { custom_tags: updatedTags } });
+
+  // 2. Obtener transacciones que contienen oldTag
   const { data: transactions, error } = await (supabase.from("transactions") as any)
     .select("id, concept")
     .eq("user_id", user.id)
@@ -128,12 +181,14 @@ export async function renameUserTag(oldTag: string, newTag: string): Promise<{ s
 
   revalidatePath("/categories");
   revalidatePath("/wallets");
+  revalidatePath("/calendar");
+  revalidatePath("/analytics");
   revalidatePath("/");
   return { success: true };
 }
 
 /**
- * Elimina un tag de todas las transacciones del usuario
+ * Elimina un tag de todas las transacciones del usuario y de sus tags personalizados en la nube
  */
 export async function removeUserTag(tagToRemove: string): Promise<{ success: boolean; error?: string }> {
   const supabase = await createClient();
@@ -143,6 +198,12 @@ export async function removeUserTag(tagToRemove: string): Promise<{ success: boo
 
   const cleanTag = tagToRemove.trim();
 
+  // 1. Remover de metadata en la nube
+  const existingTags: Array<{ tag: string; color: string }> = user.user_metadata?.custom_tags || [];
+  const updatedTags = existingTags.filter((t) => t.tag !== cleanTag);
+  await supabase.auth.updateUser({ data: { custom_tags: updatedTags } });
+
+  // 2. Remover de transacciones
   const { data: transactions, error } = await (supabase.from("transactions") as any)
     .select("id, concept")
     .eq("user_id", user.id)
@@ -164,6 +225,8 @@ export async function removeUserTag(tagToRemove: string): Promise<{ success: boo
 
   revalidatePath("/categories");
   revalidatePath("/wallets");
+  revalidatePath("/calendar");
+  revalidatePath("/analytics");
   revalidatePath("/");
   return { success: true };
 }

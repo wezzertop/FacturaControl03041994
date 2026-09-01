@@ -15,7 +15,7 @@ import {
   AlertCircle,
   CheckCircle2
 } from "lucide-react";
-import { getUserTags, renameUserTag, removeUserTag, TagSummary } from "@/app/actions/tags";
+import { getUserTags, createCustomTag, renameUserTag, removeUserTag, TagSummary } from "@/app/actions/tags";
 
 const TAG_COLOR_PALETTE = [
   "bg-emerald-500", "bg-blue-500", "bg-purple-600", "bg-amber-500",
@@ -64,12 +64,19 @@ export default function TagsManager() {
       return;
     }
 
-    setTags([
-      { tag: formatted, count: 0, totalSpent: 0, totalIncome: 0, color: newTagColor },
-      ...tags
-    ]);
-    setNewTagInput("");
-    setMessage({ type: "success", text: `Tag "${formatted}" listo para usar en transacciones.` });
+    startTransition(async () => {
+      const res = await createCustomTag(formatted, newTagColor);
+      if (res.success) {
+        setTags([
+          { tag: formatted, count: 0, totalSpent: 0, totalIncome: 0, color: newTagColor },
+          ...tags
+        ]);
+        setNewTagInput("");
+        setMessage({ type: "success", text: `Tag "${formatted}" guardado y sincronizado en todos tus dispositivos.` });
+      } else {
+        setMessage({ type: "error", text: res.error || "No se pudo guardar el tag." });
+      }
+    });
   };
 
   const handleStartEdit = (tag: string) => {

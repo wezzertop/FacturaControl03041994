@@ -49,6 +49,7 @@ const MONTH_NAMES = [
 
 // Reordenamiento: Domingo en lateral Izquierdo (col 1) y Sábado en lateral Derecho (col 7)
 const WEEKDAYS_ES = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
+const WEEKDAYS_SHORT_ES = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
 
 const formatCurrency = (amount: number) => {
   return new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" }).format(amount || 0);
@@ -598,10 +599,11 @@ export default function FinancialCalendar({
             </div>
 
             {/* Días de la Semana: DOMINGO a SÁBADO */}
-            <div className="grid grid-cols-7 border-b border-slate-200/80 dark:border-white/10 bg-slate-50 dark:bg-zinc-900/80 text-center text-xs font-bold uppercase text-slate-500 dark:text-zinc-400">
+            <div className="grid grid-cols-7 border-b border-slate-200/80 dark:border-white/10 bg-slate-50 dark:bg-zinc-900/80 text-center text-[10px] sm:text-xs font-bold uppercase text-slate-500 dark:text-zinc-400">
               {WEEKDAYS_ES.map((day, idx) => (
-                <div key={day} className={`py-3 ${idx === 0 || idx === 6 ? 'text-brand-cerulean font-extrabold' : ''}`}>
-                  {day}
+                <div key={day} className={`py-2.5 sm:py-3 px-0.5 truncate ${idx === 0 || idx === 6 ? 'text-brand-cerulean font-extrabold' : ''}`}>
+                  <span className="hidden sm:inline">{day}</span>
+                  <span className="sm:hidden">{WEEKDAYS_SHORT_ES[idx]}</span>
                 </div>
               ))}
             </div>
