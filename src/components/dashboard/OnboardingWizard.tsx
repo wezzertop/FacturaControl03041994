@@ -39,7 +39,6 @@ export default function OnboardingWizard() {
   const [error, setError] = useState<string | null>(null);
 
   // Paso 1: Datos Base
-  const [rfc, setRfc] = useState('');
   const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
 
   // Paso 2: Nómina
@@ -115,15 +114,6 @@ export default function OnboardingWizard() {
 
   const handleNext = () => {
     setError(null);
-    if (step === 1) {
-      if (rfc.trim()) {
-        const cleanRfc = rfc.trim().toUpperCase();
-        if (cleanRfc.length < 12 || cleanRfc.length > 13) {
-          setError('El RFC debe tener entre 12 y 13 caracteres.');
-          return;
-        }
-      }
-    }
     if (step === 2 && hasPayroll) {
       if (!payrollAmount || payrollAmount <= 0) {
         setError('Por favor ingresa un monto de nómina válido.');
@@ -182,7 +172,6 @@ export default function OnboardingWizard() {
 
     try {
       const payload = {
-        rfc: rfc.trim() || undefined,
         startDate,
         hasPayroll,
         payrollAmount: hasPayroll ? Number(payrollAmount) : 0,
@@ -265,7 +254,7 @@ export default function OnboardingWizard() {
             <div className="space-y-6">
               <div>
                 <h2 className="text-xl font-bold text-gray-900 dark:text-white">¡Empecemos desde cero!</h2>
-                <p className="text-xs text-gray-500 mt-1">Establece tu fecha de inicio y proporciona tu RFC para organizar correctamente tus facturas.</p>
+                <p className="text-xs text-gray-500 mt-1">Establece tu fecha de inicio para organizar tus carteras, nóminas y movimientos diarios.</p>
               </div>
 
               <div className="space-y-4 pt-2">
@@ -281,19 +270,7 @@ export default function OnboardingWizard() {
                       required
                     />
                   </div>
-                  <span className="text-[10px] text-gray-400">Todos los movimientos y balances se registrarán a partir de esta fecha.</span>
-                </div>
-
-                <div className="flex flex-col space-y-1.5">
-                  <label className="text-xs font-bold text-gray-700 dark:text-gray-350">RFC de Facturación (Opcional)</label>
-                  <input 
-                    type="text"
-                    value={rfc}
-                    onChange={(e) => setRfc(e.target.value)}
-                    placeholder="Escribe tu RFC"
-                    className="w-full px-4 py-2 text-xs border border-gray-200 dark:border-zinc-800 bg-transparent rounded-xl focus:ring-2 focus:ring-brand-cerulean focus:outline-none uppercase dark:text-white"
-                  />
-                  <span className="text-[10px] text-gray-400">Se utiliza para discernir si las facturas XML cargadas son ingresos o egresos.</span>
+                  <span className="text-[10px] text-gray-400">Todos los movimientos y balances se registrarán y proyectarán a partir de esta fecha.</span>
                 </div>
               </div>
             </div>
@@ -733,13 +710,6 @@ export default function OnboardingWizard() {
                   <span className="text-gray-500 font-medium">Fecha de Control:</span>
                   <span className="font-bold text-gray-800 dark:text-white">{startDate}</span>
                 </div>
-
-                {rfc && (
-                  <div className="flex justify-between items-center text-xs border-b border-gray-150 dark:border-zinc-800 pb-2">
-                    <span className="text-gray-500 font-medium">RFC:</span>
-                    <span className="font-bold text-gray-800 dark:text-white uppercase">{rfc}</span>
-                  </div>
-                )}
 
                 <div className="flex justify-between items-center text-xs border-b border-gray-150 dark:border-zinc-800 pb-2">
                   <span className="text-gray-500 font-medium">Sueldo / Nómina:</span>

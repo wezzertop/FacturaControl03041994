@@ -220,7 +220,7 @@ export default function InvoiceDetailsDrawer({
                   <Check className="w-4 h-4" />
                 </button>
               </div>
-              <span className="text-[9px] text-gray-400">Personaliza el nombre de este proveedor para todas las facturas de su RFC.</span>
+              <span className="text-[9px] text-gray-400">Personaliza el nombre de este comercio para todas sus facturas futuras.</span>
             </form>
 
             {/* Descripción del Gasto */}

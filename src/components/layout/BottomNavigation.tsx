@@ -68,7 +68,7 @@ const mobileGroups = [
       { name: "Pagos Recurrentes", href: "/recurring", icon: Repeat, desc: "Suscripciones y nómina" },
       { name: "Análisis Financiero", href: "/analytics", icon: PieChart, desc: "Reportes y gráficos" },
       { name: "Simulación Fiscal", href: "/simulation", icon: Calculator, desc: "Cálculo de impuestos" },
-      { name: "Configuración", href: "/settings", icon: Settings, desc: "RFC y preferencias" },
+      { name: "Configuración", href: "/settings", icon: Settings, desc: "Ajustes y preferencias" },
     ],
   },
 ];

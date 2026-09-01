@@ -19,12 +19,10 @@ import {
   Sparkles,
   ArrowUpRight,
   ArrowDownLeft,
-  DollarSign,
-  KeyRound
+  DollarSign
 } from "lucide-react";
 import { calculateTaxSummary, TaxCalculationResult, TaxRegime } from "@/app/actions/tax";
 import CurrencyInput from "@/components/ui/CurrencyInput";
-import SatCredentialsModal from "./SatCredentialsModal";
 
 const MONTH_NAMES = [
   "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
@@ -35,7 +33,6 @@ export default function TaxManager() {
   const [selectedMonth, setSelectedMonth] = useState<number>(8);
   const [selectedYear, setSelectedYear] = useState<number>(2026);
   const [selectedRegime, setSelectedRegime] = useState<TaxRegime>("sueldos_salarios");
-  const [isSatModalOpen, setIsSatModalOpen] = useState(false);
 
   useEffect(() => {
     // Sincronizar fecha cliente después de hidratación para evitar error #418 de React
@@ -85,12 +82,6 @@ export default function TaxManager() {
         });
       }
     });
-  };
-
-  const handleSyncSuccess = (syncedMonth: number, syncedYear: number) => {
-    setSelectedMonth(syncedMonth);
-    setSelectedYear(syncedYear);
-    fetchTaxData(syncedMonth, syncedYear);
   };
 
   useEffect(() => {
@@ -170,23 +161,7 @@ export default function TaxManager() {
             </select>
           </div>
         </div>
-
-        <div className="flex items-center gap-2 self-end lg:self-auto">
-          <button
-            onClick={() => setIsSatModalOpen(true)}
-            className="flex items-center gap-2 px-3.5 py-2 bg-white/10 hover:bg-white/15 border border-white/20 text-white font-bold text-xs rounded-xl transition"
-          >
-            <KeyRound className="w-4 h-4 text-amber-400" />
-            Sincronizar FIEL / SAT
-          </button>
-        </div>
       </div>
-
-      <SatCredentialsModal
-        isOpen={isSatModalOpen}
-        onClose={() => setIsSatModalOpen(false)}
-        onSyncSuccess={handleSyncSuccess}
-      />
 
       {/* KPI Cards de resumen general del mes */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

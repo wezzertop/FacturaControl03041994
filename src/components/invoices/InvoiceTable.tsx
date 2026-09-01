@@ -99,11 +99,10 @@ export default function InvoiceTable({
                   <h4 className="truncate text-sm font-semibold text-slate-950 dark:text-white">
                     {getInvoiceDisplayName(invoice)}
                   </h4>
-                  <p className="mt-1 truncate font-mono text-[10px] text-slate-500 dark:text-slate-450">
-                    {invoice.rfc_emisor || "Sin RFC"}
+                  <p className="mt-1 truncate text-[10px] text-slate-500 dark:text-slate-400">
                     {invoice.nombre_emisor && getInvoiceDisplayName(invoice) !== invoice.nombre_emisor 
-                      ? ` • ${invoice.nombre_emisor}` 
-                      : ""}
+                      ? invoice.nombre_emisor 
+                      : (invoice.invoice_type === 'nomina' ? 'CFDI Nómina' : 'CFDI Egreso')}
                   </p>
                   {invoice.description && (
                     <p className="mt-1 text-[10px] text-brand-cerulean font-medium line-clamp-1 italic">
@@ -117,18 +116,18 @@ export default function InvoiceTable({
                 </div>
               </div>
 
-              <div className="mt-4 flex items-center justify-between border-t border-slate-200/80 pt-3 dark:border-white/10">
+              <div className="mt-3 flex items-center justify-between border-t border-slate-100 pt-3 dark:border-white/5">
                 {invoice.categories ? (
-                  <span className={`inline-flex max-w-[60%] items-center rounded-md px-2.5 py-1 text-xs font-semibold text-white ${invoice.categories.color || "bg-slate-400"}`}>
-                    <span className="truncate">{invoice.categories.name || "Sin categoría"}</span>
+                  <span className={`inline-flex items-center rounded-md px-2 py-0.5 text-[10px] font-semibold text-white ${invoice.categories.color || "bg-slate-400"}`}>
+                    {invoice.categories.name}
                   </span>
                 ) : (
-                  <span className="inline-flex items-center rounded-md bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600 dark:bg-white/10 dark:text-slate-300">
+                  <span className="inline-flex items-center rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-600 dark:bg-white/10 dark:text-slate-300">
                     Sin clasificar
                   </span>
                 )}
-                <span className="inline-flex items-center rounded-md bg-emerald-500/10 px-2.5 py-1 text-xs font-semibold uppercase text-emerald-700 dark:text-emerald-400">
-                  {invoice.status || "procesada"}
+                <span className="text-[10px] font-medium uppercase tracking-wider text-slate-400">
+                  {invoice.status || "Vigente"}
                 </span>
               </div>
             </button>
@@ -148,8 +147,7 @@ export default function InvoiceTable({
           <table className="w-full text-left text-sm">
             <thead className="bg-slate-50 text-xs uppercase text-slate-500 dark:bg-white/5 dark:text-slate-400">
               <tr>
-                <th className="px-5 py-3 font-semibold">Proveedor</th>
-                {!compact ? <th className="px-5 py-3 font-semibold">RFC</th> : null}
+                <th className="px-5 py-3 font-semibold">Proveedor / Comercio</th>
                 <th className="px-5 py-3 font-semibold">Fecha</th>
                 {!compact ? <th className="px-5 py-3 font-semibold">Categoría</th> : null}
                 <th className="px-5 py-3 text-right font-semibold">Monto</th>
@@ -174,7 +172,6 @@ export default function InvoiceTable({
                       </span>
                     )}
                   </td>
-                  {!compact ? <td className="px-5 py-4 font-mono text-xs text-slate-500 dark:text-slate-400">{invoice.rfc_emisor || "Sin RFC"}</td> : null}
                   <td className="px-5 py-4 text-slate-500 dark:text-slate-400">{formatDate(invoice.fecha)}</td>
                   {!compact ? (
                     <td className="px-5 py-4">
