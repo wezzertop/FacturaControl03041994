@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { createCategory, deleteCategory, updateCategory } from '@/app/actions/categories';
 import BudgetOverviewWidget from '@/components/budget/BudgetOverviewWidget';
+import TagsManager from '@/components/settings/TagsManager';
 
 // Mapeo exhaustivo de iconos por familias
 const ICON_CATEGORIES = [
@@ -148,6 +149,7 @@ interface CategoryManagerProps {
 }
 
 export default function CategoryManager({ initialCategories }: CategoryManagerProps) {
+  const [mainTab, setMainTab] = useState<'categories' | 'tags'>('categories');
   const [categories, setCategories] = useState<Category[]>(initialCategories);
   const [name, setName] = useState('');
   const [selectedColor, setSelectedColor] = useState('bg-emerald-500');
@@ -292,7 +294,39 @@ export default function CategoryManager({ initialCategories }: CategoryManagerPr
   return (
     <div className="space-y-6">
 
-      {/* Tarjetas KPI de Resumen */}
+      {/* Selector de Pestañas: Categorías vs Tags Transversales */}
+      <div className="flex items-center gap-2 p-1 bg-slate-100 dark:bg-[#141418] rounded-xl border border-slate-200/80 dark:border-white/[0.06] w-full sm:w-fit">
+        <button
+          type="button"
+          onClick={() => setMainTab('categories')}
+          className={`flex-1 sm:flex-initial px-4 py-2 rounded-lg text-xs font-black transition flex items-center justify-center gap-1.5 ${
+            mainTab === 'categories' 
+              ? 'bg-white text-black shadow-sm' 
+              : 'text-zinc-400 hover:text-white'
+          }`}
+        >
+          <Layers className="w-3.5 h-3.5" />
+          Categorías ({categories.length})
+        </button>
+        <button
+          type="button"
+          onClick={() => setMainTab('tags')}
+          className={`flex-1 sm:flex-initial px-4 py-2 rounded-lg text-xs font-black transition flex items-center justify-center gap-1.5 ${
+            mainTab === 'tags' 
+              ? 'bg-white text-black shadow-sm' 
+              : 'text-zinc-400 hover:text-white'
+          }`}
+        >
+          <Tag className="w-3.5 h-3.5" />
+          Administrar #Tags
+        </button>
+      </div>
+
+      {mainTab === 'tags' ? (
+        <TagsManager />
+      ) : (
+        <>
+          {/* Tarjetas KPI de Resumen */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="surface-card rounded-2xl p-5 border border-slate-200/80 dark:border-white/[0.08] flex items-center justify-between shadow-sm bg-white dark:bg-[#0A0A0C]">
           <div>
@@ -690,6 +724,8 @@ export default function CategoryManager({ initialCategories }: CategoryManagerPr
         </div>
 
       </div>
+        </>
+      )}
 
     </div>
   );

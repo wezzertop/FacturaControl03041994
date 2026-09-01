@@ -23,6 +23,7 @@ import TransferModal from '@/components/wallets/TransferModal';
 import ExportTransactionsModal from '@/components/wallets/ExportTransactionsModal';
 import TactileTransactionModal from '@/components/transactions/TactileTransactionModal';
 import UpcomingAlertsBanner from '@/components/notifications/UpcomingAlertsBanner';
+import FloatingSpeedDial from '@/components/layout/FloatingSpeedDial';
 
 // Mapeo simple de iconos para la creación de categorías en la modal
 const InlineIconMap: Record<string, any> = {
@@ -1808,6 +1809,13 @@ export default function WalletsManager({
         onClose={() => setShowExportModal(false)}
         transactions={transactions}
         wallets={wallets}
+      />
+
+      {/* Botón Flotante Estratégico de Acciones Rápidas */}
+      <FloatingSpeedDial
+        wallets={wallets}
+        categories={categories}
+        onRefresh={() => window.location.reload()}
       />
 
     </div>
