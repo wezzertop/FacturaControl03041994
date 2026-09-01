@@ -268,6 +268,10 @@ export default function TactileTransactionModal({
       return;
     }
 
+    const formattedIsoDate = date 
+      ? (date.includes("T") ? new Date(date).toISOString() : new Date(`${date}T12:00:00`).toISOString()) 
+      : new Date().toISOString();
+
     setError(null);
     startTransition(async () => {
       if (type === "transfer") {
@@ -275,7 +279,7 @@ export default function TactileTransactionModal({
           setError("La cartera de origen y destino deben ser distintas.");
           return;
         }
-        const res = await transferBetweenWallets(selectedWalletId, toWalletId, parsedAmount, concept, date);
+        const res = await transferBetweenWallets(selectedWalletId, toWalletId, parsedAmount, concept, formattedIsoDate);
         if (res.success) {
           setSuccess(true);
           if (onSuccess) onSuccess();
@@ -299,7 +303,7 @@ export default function TactileTransactionModal({
         const res = await createSplitTransaction({
           wallet_id: selectedWalletId,
           total_amount: parsedAmount,
-          date: new Date(date).toISOString(),
+          date: formattedIsoDate,
           splits: validSplits.map((s) => ({
             amount: parseFloat(s.amount),
             concept: s.concept.trim() || concept.trim() || "Gasto Dividido",
@@ -331,7 +335,7 @@ export default function TactileTransactionModal({
           amount: parsedAmount,
           concept: finalConcept,
           category_id: selectedCategoryId || null,
-          date: new Date(date).toISOString(),
+          date: formattedIsoDate,
         });
 
         if (res.success) {
@@ -376,7 +380,7 @@ export default function TactileTransactionModal({
           amount: parsedAmount,
           concept: `${finalConcept}${status === "pending" ? " (Pendiente)" : ""}`,
           category_id: selectedCategoryId || null,
-          date: new Date(date).toISOString()
+          date: formattedIsoDate
         });
 
         setSuccess(true);
@@ -394,7 +398,7 @@ export default function TactileTransactionModal({
         amount: parsedAmount,
         concept: `${finalConcept}${status === "pending" ? " (Pendiente)" : ""}`,
         category_id: selectedCategoryId || null,
-        date: new Date(date).toISOString(),
+        date: formattedIsoDate,
         voucher_base64: voucherBase64,
         voucher_name: voucherName,
         installments_count: isInstallments ? parseInt(installmentsCount, 10) : null,
