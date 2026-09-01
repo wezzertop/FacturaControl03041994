@@ -9,6 +9,7 @@ import MobileFintechWidgets from "@/components/dashboard/MobileFintechWidgets";
 import LukasMobileView from "@/components/dashboard/LukasMobileView";
 import ClipboardTransferListener from "@/components/wallets/ClipboardTransferListener";
 import FloatingSpeedDial from "@/components/layout/FloatingSpeedDial";
+import BudgetOverviewWidget from "@/components/budget/BudgetOverviewWidget";
 import {
   ArrowDownRight,
   ArrowUpRight,
@@ -295,49 +296,35 @@ export default async function FinancialOverview() {
         />
       </div>
 
-      <section className="surface-card rounded-lg p-5 md:p-6">
-        <div className="grid gap-5 lg:grid-cols-[1.4fr_0.9fr] lg:items-center">
-          <div>
-            <p className="text-xs font-semibold uppercase text-brand-cerulean">Resumen en vivo</p>
-            <h2 className="mt-2 text-2xl font-semibold text-slate-950 dark:text-white md:text-3xl">
-              Panorama financiero
-            </h2>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600 dark:text-slate-400">
-              Ingresos, gastos, carteras y facturas consolidados para tomar decisiones rápidas sin revisar cada XML por separado.
-            </p>
-          </div>
-          <div className="rounded-lg border border-slate-200 bg-white p-4 dark:border-white/10 dark:bg-white/5">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <p className="text-sm text-slate-500 dark:text-slate-400">Balance operativo</p>
-                <p className="mt-1 text-2xl font-semibold text-slate-950 dark:text-white">{currency.format(balance)}</p>
-              </div>
-              <div className="grid h-12 w-12 place-items-center rounded-lg bg-brand-cerulean/10 text-brand-cerulean">
-                <DollarSign className="h-6 w-6" />
-              </div>
-            </div>
-          </div>
+      {/* Ribbon de KPIs Globales */}
+      <section className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="surface-card rounded-2xl p-4 border border-slate-200/80 dark:border-white/[0.08] bg-white dark:bg-[#0A0A0C] shadow-sm">
+          <span className="text-[10px] font-bold uppercase text-zinc-400">Balance Operativo</span>
+          <p className="text-xl font-black text-slate-900 dark:text-white mt-0.5">{currency.format(balance)}</p>
+          <span className="text-[10px] text-zinc-500 font-bold">Disponible en carteras</span>
+        </div>
+
+        <div className="surface-card rounded-2xl p-4 border border-slate-200/80 dark:border-white/[0.08] bg-white dark:bg-[#0A0A0C] shadow-sm">
+          <span className="text-[10px] font-bold uppercase text-emerald-400">Ingresos del Mes</span>
+          <p className="text-xl font-black text-emerald-400 mt-0.5">{currency.format(totalIngreso)}</p>
+          <span className="text-[10px] text-zinc-500 font-bold">Nómina, ventas & abonos</span>
+        </div>
+
+        <div className="surface-card rounded-2xl p-4 border border-slate-200/80 dark:border-white/[0.08] bg-white dark:bg-[#0A0A0C] shadow-sm">
+          <span className="text-[10px] font-bold uppercase text-rose-400">Gastos del Mes</span>
+          <p className="text-xl font-black text-rose-400 mt-0.5">{currency.format(totalGasto)}</p>
+          <span className="text-[10px] text-zinc-500 font-bold">Consumos & pagos</span>
+        </div>
+
+        <div className="surface-card rounded-2xl p-4 border border-slate-200/80 dark:border-white/[0.08] bg-white dark:bg-[#0A0A0C] shadow-sm">
+          <span className="text-[10px] font-bold uppercase text-purple-400">Facturas / CFDI</span>
+          <p className="text-xl font-black text-slate-900 dark:text-white mt-0.5">{validInvoices.length}</p>
+          <span className="text-[10px] text-zinc-500 font-bold">Comprobantes XML</span>
         </div>
       </section>
 
-      <section className="grid grid-cols-1 gap-4 md:grid-cols-3">
-        {kpiCards.map((kpi) => {
-          const Icon = kpi.icon;
-          return (
-            <div key={kpi.title} className="surface-card rounded-lg p-5 transition hover:-translate-y-0.5">
-              <div className="flex items-start justify-between gap-4">
-                <div className={`grid h-11 w-11 place-items-center rounded-lg ${kpi.tone}`}>
-                  <Icon className="h-5 w-5" />
-                </div>
-                <Receipt className="h-4 w-4 text-slate-400" />
-              </div>
-              <p className="mt-5 text-sm font-medium text-slate-500 dark:text-slate-400">{kpi.title}</p>
-              <p className="mt-1 text-2xl font-semibold text-slate-950 dark:text-white">{kpi.value}</p>
-              <p className="mt-2 text-xs text-slate-500 dark:text-slate-500">{kpi.helper}</p>
-            </div>
-          );
-        })}
-      </section>
+      {/* Presupuestos Dinámicos por Categoría */}
+      <BudgetOverviewWidget />
 
       <section className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <div className="surface-card rounded-lg p-5 md:p-6">
