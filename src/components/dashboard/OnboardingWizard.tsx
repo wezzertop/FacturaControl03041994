@@ -34,6 +34,7 @@ import {
 import { setupInitialData, OnboardingRecurringExpense } from '@/app/actions/onboarding';
 import CurrencyInput from '@/components/ui/CurrencyInput';
 import RoboticMascot, { MascotMood } from '@/components/dashboard/RoboticMascot';
+import BrandServiceIcon from '@/components/ui/BrandServiceIcon';
 
 interface WalletSetup {
   name: string;
@@ -683,9 +684,7 @@ export default function OnboardingWizard() {
                     }`}
                   >
                     <div className="flex items-center gap-2.5 min-w-0">
-                      <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${preset.enabled ? 'bg-brand-cerulean text-white' : 'bg-white/10 text-zinc-400'}`}>
-                        <IconComponent className="w-4 h-4" />
-                      </div>
+                      <BrandServiceIcon brand={preset.id} size="sm" />
                       <div className="truncate">
                         <p className="text-xs font-bold text-slate-900 dark:text-white truncate">{preset.concept}</p>
                         <p className="text-[10px] text-zinc-400 font-medium">Día {preset.dayOfMonth} de cada mes</p>

@@ -12,34 +12,34 @@ interface RoboticMascotProps {
 
 const MOOD_CONFIG: Record<MascotMood, { title: string; text: string; badge: string }> = {
   welcoming: {
-    title: "¡Hola! Soy Lukas 🤖",
+    title: "¡Hola! Soy Lukas",
     text: "Tu copiloto financiero inteligente. Vamos a poner en orden tus finanzas en menos de 1 minuto. Cero trámites y 100% privado.",
-    badge: "Tu Asistente Financiero"
+    badge: "Asistente Financiero"
   },
   income: {
-    title: "Tus Ingresos & Nómina 💵",
+    title: "Tus Ingresos y Nómina",
     text: "Registrar tus ingresos recurrentes me permite calcular cuánto dinero tendrás libre cada quincena antes de gastar.",
     badge: "Flujo de Efectivo"
   },
   wallets: {
-    title: "Tus Carteras & Tarjetas 💳",
+    title: "Tus Carteras y Tarjetas",
     text: "Configura tus cuentas principales (Efectivo, Débito o Crédito). Así sabrás tu saldo neto consolidado en tiempo real.",
     badge: "Cuentas Claras"
   },
   loans: {
-    title: "Préstamos & Financiamiento 🛡️",
+    title: "Préstamos y Financiamiento",
     text: "¿Tienes algún crédito activo? Te ayudaré a simular la liquidación más rápida para que ahorres miles de pesos en intereses.",
-    badge: "Cero Deudas"
+    badge: "Control de Deudas"
   },
   categories: {
-    title: "Categorías Inteligentes 🏷️",
-    text: "Clasificaré automáticamente tus compras en súper, comida, gasolina y servicios para que nunca haya gastos fantasma.",
-    badge: "Organización Pro"
+    title: "Categorías Inteligentes",
+    text: "Clasificaré automáticamente tus compras en súper, comida, gasolina y servicios para que nunca haya gastos no identificados.",
+    badge: "Organización Total"
   },
   success: {
-    title: "¡Todo Listo para Despegar! 🚀",
-    text: "Revisa tu resumen. En cuanto confirmes, tendrás una plataforma financiera de nivel bancario diseñada para ti.",
-    badge: "100% Configurado"
+    title: "Todo Listo para Iniciar",
+    text: "Revisa tu resumen. En cuanto confirmes, tendrás una plataforma financiera de nivel profesional diseñada para ti.",
+    badge: "Configuración Completa"
   }
 };
 

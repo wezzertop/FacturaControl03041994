@@ -136,8 +136,8 @@ export async function settleSharedExpense(expenseId: string, walletId?: string) 
           type: isTheyOweMe ? 'income' : 'expense',
           amount: Number(expense.other_share || 0),
           concept: isTheyOweMe 
-            ? `👥 Reembolso de ${expense.person_name} (${expense.concept})`
-            : `👥 Pago de deuda a ${expense.person_name} (${expense.concept})`,
+            ? `[Reembolso] ${expense.person_name} (${expense.concept})`
+            : `[Pago Deuda] ${expense.person_name} (${expense.concept})`,
           date: new Date().toISOString()
         });
     }

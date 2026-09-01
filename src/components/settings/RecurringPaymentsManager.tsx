@@ -27,6 +27,7 @@ import {
   toggleRecurringPaymentActive
 } from '@/app/actions/wallets';
 import { Sparkles, Zap } from 'lucide-react';
+import BrandServiceIcon from '@/components/ui/BrandServiceIcon';
 
 interface Category {
   id: string;
@@ -313,13 +314,13 @@ export default function RecurringPaymentsManager({ initialCategories, initialWal
                 }`}
               >
                 <div className="flex items-start gap-3">
-                  <div className={`p-2.5 rounded-xl shrink-0 ${
-                    p.type === 'income' 
-                      ? 'bg-emerald-500/15 text-emerald-400' 
-                      : 'bg-white/10 text-white'
-                  }`}>
-                    {p.type === 'income' ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />}
-                  </div>
+                  {p.type === 'income' ? (
+                    <div className="w-9 h-9 rounded-xl bg-emerald-500/15 text-emerald-400 flex items-center justify-center shrink-0">
+                      <TrendingUp className="w-5 h-5" />
+                    </div>
+                  ) : (
+                    <BrandServiceIcon brand={p.concept} size="md" />
+                  )}
 
                   <div>
                     <div className="flex items-center gap-2 flex-wrap">

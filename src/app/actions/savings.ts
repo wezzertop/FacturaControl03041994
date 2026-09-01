@@ -151,7 +151,7 @@ export async function depositToSavingsGoal(goalId: string, walletId: string, amo
         wallet_id: walletId,
         type: 'expense',
         amount: parsedAmount,
-        concept: `🏦 Aporte a Meta: ${goal.title}`,
+        concept: `[Aporte Meta] ${goal.title}`,
         date: new Date().toISOString()
       });
 
@@ -159,30 +159,37 @@ export async function depositToSavingsGoal(goalId: string, walletId: string, amo
       return { success: false, error: 'Error al descontar saldo de la cartera' };
     }
 
-    // 4. Actualizar saldo acumulado de la meta
+    // 4. Actualizar monto actual de la meta
     const newCurrent = Number(goal.current_amount || 0) + parsedAmount;
-    const isCompleted = newCurrent >= Number(goal.target_amount);
+    const isCompleted = newCurrent >= Number(goal.target_amount || 0);
 
-    await (supabase
+    const { data: updatedGoal, error: updateError } = await (supabase
       .from('savings_goals') as any)
       .update({
         current_amount: newCurrent,
         is_completed: isCompleted
-      })
+      } as any)
       .eq('id', goalId)
-      .eq('user_id', user.id);
+      .eq('user_id', user.id)
+      .select()
+      .single();
 
-    revalidatePath('/savings');
+    if (updateError) {
+      return { success: false, error: 'Error al actualizar meta de ahorro' };
+    }
+
     revalidatePath('/wallets');
+    revalidatePath('/savings');
     revalidatePath('/');
-    return { success: true, newAmount: newCurrent, isCompleted };
+    return { success: true, goal: updatedGoal, newAmount: newCurrent, isCompleted };
   } catch (err: any) {
-    return { success: false, error: err.message || 'Error al procesar el aporte' };
+    console.error('Error al aportar a meta:', err);
+    return { success: false, error: err.message || 'Error inesperado' };
   }
 }
 
 /**
- * Retira dinero de una meta de ahorro y lo regresa a una cartera.
+ * Retira dinero de una meta de ahorro y lo devuelve a una cartera.
  */
 export async function withdrawFromSavingsGoal(goalId: string, walletId: string, amount: number) {
   const supabase = await createClient();
@@ -192,9 +199,9 @@ export async function withdrawFromSavingsGoal(goalId: string, walletId: string, 
     return { success: false, error: 'Usuario no autenticado' };
   }
 
-  const parsedAmount = Math.abs(Number(amount) || 0);
-  if (parsedAmount <= 0) {
-    return { success: false, error: 'El monto a retirar debe ser mayor a $0.00' };
+  const parsedAmount = Math.abs(Number(amount));
+  if (isNaN(parsedAmount) || parsedAmount <= 0) {
+    return { success: false, error: 'Monto inválido para retirar' };
   }
 
   try {
@@ -211,7 +218,7 @@ export async function withdrawFromSavingsGoal(goalId: string, walletId: string, 
     }
 
     if (Number(goal.current_amount || 0) < parsedAmount) {
-      return { success: false, error: 'El monto a retirar excede el saldo acumulado en esta meta' };
+      return { success: false, error: 'No hay suficiente saldo acumulado en esta meta para retirar' };
     }
 
     // 2. Crear transacción de ingreso en la cartera de destino
@@ -222,7 +229,7 @@ export async function withdrawFromSavingsGoal(goalId: string, walletId: string, 
         wallet_id: walletId,
         type: 'income',
         amount: parsedAmount,
-        concept: `🏦 Retiro de Apartado / Meta: ${goal.title}`,
+        concept: `[Retiro Meta] ${goal.title}`,
         date: new Date().toISOString()
       });
 
