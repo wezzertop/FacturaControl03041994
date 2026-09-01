@@ -53,6 +53,8 @@ export const metadata: Metadata = {
   },
 };
 
+import OnboardingWizard from "@/components/dashboard/OnboardingWizard";
+
 export default async function RootLayout({
   children,
 }: Readonly<{
@@ -62,6 +64,18 @@ export default async function RootLayout({
   const {
     data: { user },
   } = await supabase.auth.getUser();
+
+  let needsOnboarding = false;
+  if (user) {
+    const { count, error } = await supabase
+      .from("wallets")
+      .select("*", { count: "exact", head: true })
+      .eq("user_id", user.id);
+
+    if (!error && count === 0) {
+      needsOnboarding = true;
+    }
+  }
 
   return (
     <html
@@ -76,17 +90,25 @@ export default async function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <div className="flex h-screen overflow-hidden">
-            {user && <SidebarNavigation />}
-            <main className="flex-1 overflow-y-auto custom-scrollbar">
-              {children}
-            </main>
-            {user && <BottomNavigation />}
-            <InstallPrompt />
-            <ServiceWorkerRegister />
-            <OfflineSyncManager />
-            <RealtimeSyncListener />
-          </div>
+          {needsOnboarding ? (
+            <div className="flex h-screen w-full overflow-y-auto custom-scrollbar bg-slate-950 p-3 sm:p-6 items-center justify-center">
+              <div className="w-full max-w-2xl py-6 my-auto">
+                <OnboardingWizard />
+              </div>
+            </div>
+          ) : (
+            <div className="flex h-screen overflow-hidden">
+              {user && <SidebarNavigation />}
+              <main className="flex-1 overflow-y-auto custom-scrollbar">
+                {children}
+              </main>
+              {user && <BottomNavigation />}
+              <InstallPrompt />
+              <ServiceWorkerRegister />
+              <OfflineSyncManager />
+              <RealtimeSyncListener />
+            </div>
+          )}
         </ThemeProvider>
       </body>
     </html>

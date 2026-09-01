@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { setupInitialData } from '@/app/actions/onboarding';
 import CurrencyInput from '@/components/ui/CurrencyInput';
+import RoboticMascot, { MascotMood } from '@/components/dashboard/RoboticMascot';
 
 interface WalletSetup {
   name: string;
@@ -235,10 +236,23 @@ export default function OnboardingWizard() {
             </div>
           </div>
 
-          <div className="w-full bg-gray-100 dark:bg-zinc-800 h-1.5 rounded-full mb-8 overflow-hidden">
+          <div className="w-full bg-gray-100 dark:bg-zinc-800 h-1.5 rounded-full mb-6 overflow-hidden">
             <div 
               className="bg-brand-cerulean h-full transition-all duration-300"
-              style={{ width: `${(step / 5) * 100}%` }}
+              style={{ width: `${(step / 6) * 100}%` }}
+            />
+          </div>
+
+          {/* Mascota Robótica Lukas de Confianza */}
+          <div className="mb-6">
+            <RoboticMascot 
+              mood={
+                step === 1 ? "welcoming" :
+                step === 2 ? "income" :
+                step === 3 ? "wallets" :
+                step === 4 ? "loans" :
+                step === 5 ? "categories" : "success"
+              } 
             />
           </div>
 
