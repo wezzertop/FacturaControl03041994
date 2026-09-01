@@ -348,7 +348,57 @@ export default function TactileTransactionModal({
               }
               className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-[#0A0A0C] border border-slate-200 dark:border-white/[0.08] rounded-xl text-xs font-bold text-slate-900 dark:text-white placeholder:text-zinc-500 focus:ring-1 focus:ring-white/40 focus:outline-none"
             />
+
+            {/* Etiquetas Rápidas #Tags */}
+            <div className="flex items-center gap-1.5 flex-wrap pt-1">
+              <span className="text-[10px] text-zinc-500 font-bold">#Tags:</span>
+              {["#Deducible", "#Vacaciones", "#Negocio", "#Hogar", "#Mascotas", "#Extra"].map((tag) => (
+                <button
+                  key={tag}
+                  type="button"
+                  onClick={() => {
+                    if (!concept.includes(tag)) {
+                      setConcept((prev) => `${prev} ${tag}`.trim());
+                    }
+                  }}
+                  className={`px-2 py-0.5 rounded-md text-[10px] font-bold border transition ${
+                    concept.includes(tag)
+                      ? "bg-white/20 text-white border-white/40 font-extrabold"
+                      : "bg-slate-100 dark:bg-[#141418] text-zinc-400 border-white/[0.04] hover:text-white"
+                  }`}
+                >
+                  {tag}
+                </button>
+              ))}
+            </div>
           </div>
+
+          {/* Toggle Reembolso / Devolución */}
+          {type === "expense" && (
+            <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 dark:bg-[#0A0A0C] border border-slate-200 dark:border-white/[0.06]">
+              <div>
+                <span className="text-xs font-bold text-slate-900 dark:text-white block">¿Es una Devolución / Reembolso?</span>
+                <span className="text-[10px] text-zinc-500">Resta el gasto de tu categoría sin alterar ingresos fiscales</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  if (concept.includes("[Reembolso]")) {
+                    setConcept(concept.replace("[Reembolso] ", "").replace("[Reembolso]", "").trim());
+                  } else {
+                    setConcept(`[Reembolso] ${concept}`.trim());
+                  }
+                }}
+                className={`px-3 py-1 rounded-lg text-xs font-bold border transition ${
+                  concept.includes("[Reembolso]")
+                    ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/40 font-extrabold"
+                    : "bg-slate-100 dark:bg-[#141418] text-zinc-400 border-white/[0.06]"
+                }`}
+              >
+                {concept.includes("[Reembolso]") ? "✓ Reembolso" : "Marcar"}
+              </button>
+            </div>
+          )}
 
           {/* Selector de Carteras según Modo */}
           {type === "transfer" ? (
