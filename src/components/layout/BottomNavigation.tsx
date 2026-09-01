@@ -28,6 +28,7 @@ import {
   Scale
 } from "lucide-react";
 import { signout } from "@/app/actions/auth";
+import ApplePaySetupModal from "@/components/wallets/ApplePaySetupModal";
 
 const cn = (...classes: (string | undefined | null | false)[]) => classes.filter(Boolean).join(" ");
 
@@ -71,6 +72,7 @@ const mobileGroups = [
 export default function BottomNavigation() {
   const pathname = usePathname();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isApplePayOpen, setIsApplePayOpen] = useState(false);
   const { theme, setTheme } = useTheme();
 
   const isAuthPage = pathname.startsWith("/login") || pathname.startsWith("/register");
@@ -158,32 +160,45 @@ export default function BottomNavigation() {
             <p className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 dark:text-zinc-500 mb-2">
               Acciones Rápidas
             </p>
-            <div className="grid grid-cols-3 gap-2.5">
+            <div className="grid grid-cols-4 gap-2">
+              <button
+                onClick={() => {
+                  setIsMenuOpen(false);
+                  setIsApplePayOpen(true);
+                }}
+                className="flex flex-col items-center justify-center p-2.5 rounded-xl bg-slate-100 dark:bg-[#0A0A0C] text-slate-900 dark:text-white border border-white/20 active:scale-95 transition text-center"
+              >
+                <div className="h-5 w-5 mb-1 bg-white text-black font-black text-[9px] rounded flex items-center justify-center">
+                  Pay
+                </div>
+                <span className="text-[10px] font-bold leading-tight">Apple Pay</span>
+              </button>
+
               <Link
                 href="/upload"
                 onClick={() => setIsMenuOpen(false)}
-                className="flex flex-col items-center justify-center p-3 rounded-xl bg-slate-100 dark:bg-[#0A0A0C] text-slate-900 dark:text-white border border-slate-200/80 dark:border-white/[0.08] active:scale-95 transition text-center"
+                className="flex flex-col items-center justify-center p-2.5 rounded-xl bg-slate-100 dark:bg-[#0A0A0C] text-slate-900 dark:text-white border border-slate-200/80 dark:border-white/[0.08] active:scale-95 transition text-center"
               >
-                <UploadCloud className="h-5 w-5 mb-1.5 text-slate-300" />
-                <span className="text-[11px] font-bold leading-tight">Subir XML</span>
+                <UploadCloud className="h-5 w-5 mb-1 text-slate-300" />
+                <span className="text-[10px] font-bold leading-tight">Subir XML</span>
               </Link>
 
               <Link
                 href="/wallets?triggerOcr=true"
                 onClick={handleOcrClick}
-                className="flex flex-col items-center justify-center p-3 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 active:scale-95 transition text-center"
+                className="flex flex-col items-center justify-center p-2.5 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 active:scale-95 transition text-center"
               >
-                <Camera className="h-5 w-5 mb-1.5" />
-                <span className="text-[11px] font-bold leading-tight">Escanear</span>
+                <Camera className="h-5 w-5 mb-1" />
+                <span className="text-[10px] font-bold leading-tight">Escanear</span>
               </Link>
 
               <Link
                 href="/wallets?triggerTx=true"
                 onClick={handleTxClick}
-                className="flex flex-col items-center justify-center p-3 rounded-xl bg-slate-100 dark:bg-[#0A0A0C] text-slate-900 dark:text-white border border-slate-200/80 dark:border-white/[0.08] active:scale-95 transition text-center"
+                className="flex flex-col items-center justify-center p-2.5 rounded-xl bg-slate-100 dark:bg-[#0A0A0C] text-slate-900 dark:text-white border border-slate-200/80 dark:border-white/[0.08] active:scale-95 transition text-center"
               >
-                <PlusCircle className="h-5 w-5 mb-1.5 text-slate-300" />
-                <span className="text-[11px] font-bold leading-tight">Movimiento</span>
+                <PlusCircle className="h-5 w-5 mb-1 text-slate-300" />
+                <span className="text-[10px] font-bold leading-tight">Movimiento</span>
               </Link>
             </div>
           </div>
@@ -283,14 +298,19 @@ export default function BottomNavigation() {
           }}
           className="flex flex-col items-center justify-center gap-0.5 transition active:scale-90"
         >
-          <div className={cn("grid h-6 w-6 place-items-center rounded-md transition", isMenuOpen ? "bg-brand-cerulean text-white" : "text-slate-500 dark:text-slate-400")}>
+          <div className={cn("grid h-6 w-6 place-items-center rounded-md transition", isMenuOpen ? "bg-white text-black" : "text-zinc-500 dark:text-zinc-400")}>
             <Menu className="h-5 w-5" strokeWidth={2.5} />
           </div>
-          <span className={cn("text-[10px] font-bold", isMenuOpen ? "text-brand-cerulean" : "text-slate-600 dark:text-slate-300")}>
+          <span className={cn("text-[10px] font-bold", isMenuOpen ? "text-white" : "text-zinc-500 dark:text-zinc-400")}>
             Menú
           </span>
         </button>
       </div>
+
+      <ApplePaySetupModal
+        isOpen={isApplePayOpen}
+        onClose={() => setIsApplePayOpen(false)}
+      />
     </>
   );
 }

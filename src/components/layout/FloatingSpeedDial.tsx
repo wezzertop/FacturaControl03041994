@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import TactileTransactionModal from "@/components/transactions/TactileTransactionModal";
 import SmartTransactionDetectorModal from "@/components/wallets/SmartTransactionDetectorModal";
+import ApplePaySetupModal from "@/components/wallets/ApplePaySetupModal";
 
 interface FloatingSpeedDialProps {
   wallets?: any[];
@@ -32,6 +33,7 @@ export default function FloatingSpeedDial({
   const [tactileModalOpen, setTactileModalOpen] = useState(false);
   const [tactileType, setTactileType] = useState<"expense" | "income">("expense");
   const [detectorModalOpen, setDetectorModalOpen] = useState(false);
+  const [applePayModalOpen, setApplePayModalOpen] = useState(false);
 
   const toggleOpen = () => {
     if (typeof window !== "undefined" && navigator.vibrate) {
@@ -51,6 +53,11 @@ export default function FloatingSpeedDial({
     setDetectorModalOpen(true);
   };
 
+  const openApplePay = () => {
+    setIsOpen(false);
+    setApplePayModalOpen(true);
+  };
+
   return (
     <>
       {/* Backdrop oscuro cuando está abierto */}
@@ -61,16 +68,30 @@ export default function FloatingSpeedDial({
         />
       )}
 
-      {/* Menú Flotante de Acciones Rápidas (Speed Dial) */}
-      <div className="fixed bottom-20 right-4 z-50 md:hidden flex flex-col items-end gap-2">
+      {/* Menú Flotante de Acciones Rápidas (Speed Dial) posicionado encima del Dock inferior en iOS y Android */}
+      <div className="fixed bottom-[calc(4.75rem+env(safe-area-inset-bottom,0px))] right-4 z-50 md:hidden flex flex-col items-end gap-2">
         {isOpen && (
           <div className="flex flex-col items-end gap-1.5 mb-1.5 animate-slide-up">
+            {/* Opción 0: Apple Pay / Google Wallet Instantáneo */}
+            <button
+              onClick={openApplePay}
+              className="flex items-center gap-2.5 px-3.5 py-2 rounded-xl bg-[#0A0A0C] text-white shadow-2xl border border-white/20 active:scale-95 transition group"
+            >
+              <span className="text-xs font-bold text-white flex items-center gap-1">
+                 Apple Pay / Wallet
+                <span className="text-[9px] font-black bg-emerald-500/20 text-emerald-400 px-1 rounded">Auto</span>
+              </span>
+              <div className="w-7 h-7 rounded-lg bg-white text-black font-black text-[10px] flex items-center justify-center shadow-md">
+                Pay
+              </div>
+            </button>
+
             {/* Opción 1: Detectar SMS / Notificación Bancaria */}
             <button
               onClick={openDetector}
               className="flex items-center gap-2.5 px-3.5 py-2 rounded-xl bg-[#0A0A0C] text-white shadow-xl border border-white/[0.08] active:scale-95 transition group"
             >
-              <span className="text-xs font-bold text-slate-200">
+              <span className="text-xs font-bold text-zinc-200">
                 Detectar SMS / Banco ⚡
               </span>
               <div className="w-7 h-7 rounded-lg bg-white/10 text-white flex items-center justify-center shadow-md">
@@ -84,7 +105,7 @@ export default function FloatingSpeedDial({
               onClick={() => setIsOpen(false)}
               className="flex items-center gap-2.5 px-3.5 py-2 rounded-xl bg-[#0A0A0C] text-white shadow-xl border border-white/[0.08] active:scale-95 transition group"
             >
-              <span className="text-xs font-bold text-slate-200">
+              <span className="text-xs font-bold text-zinc-200">
                 Escanear Ticket OCR 📸
               </span>
               <div className="w-7 h-7 rounded-lg bg-purple-500/20 text-purple-400 flex items-center justify-center shadow-md">
@@ -123,10 +144,10 @@ export default function FloatingSpeedDial({
         {/* Botón Principal Flotante (FAB) */}
         <button
           onClick={toggleOpen}
-          className={`w-12 h-12 rounded-xl shadow-2xl flex items-center justify-center transition-all duration-300 transform active:scale-90 ${
+          className={`w-13 h-13 p-3.5 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.8)] flex items-center justify-center transition-all duration-300 transform active:scale-90 border ${
             isOpen
-              ? "bg-white text-black rotate-45"
-              : "bg-white text-black hover:scale-105 border border-white/20"
+              ? "bg-white text-black rotate-45 border-white"
+              : "bg-white text-black hover:scale-105 border-white/40"
           }`}
           aria-label={isOpen ? "Cerrar accesos rápidos" : "Abrir accesos rápidos"}
         >
@@ -138,10 +159,13 @@ export default function FloatingSpeedDial({
       <TactileTransactionModal
         isOpen={tactileModalOpen}
         onClose={() => setTactileModalOpen(false)}
-        initialType={tactileType}
         wallets={wallets}
         categories={categories}
-        onSuccess={onRefresh}
+        initialType={tactileType}
+        onSuccess={() => {
+          setTactileModalOpen(false);
+          if (onRefresh) onRefresh();
+        }}
       />
 
       <SmartTransactionDetectorModal
@@ -149,7 +173,18 @@ export default function FloatingSpeedDial({
         onClose={() => setDetectorModalOpen(false)}
         wallets={wallets}
         categories={categories}
-        onTransactionCreated={onRefresh}
+        onTransactionCreated={() => {
+          setDetectorModalOpen(false);
+          if (onRefresh) onRefresh();
+        }}
+      />
+
+      <ApplePaySetupModal
+        isOpen={applePayModalOpen}
+        onClose={() => setApplePayModalOpen(false)}
+        onSuccess={() => {
+          if (onRefresh) onRefresh();
+        }}
       />
     </>
   );

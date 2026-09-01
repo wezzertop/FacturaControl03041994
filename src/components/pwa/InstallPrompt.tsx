@@ -76,7 +76,7 @@ export default function InstallPrompt() {
   if (isStandalone || !isOpen) return null;
 
   return (
-    <div className="fixed bottom-20 left-4 right-4 z-40 md:hidden animate-slide-up">
+    <div className="fixed bottom-[calc(4.75rem+env(safe-area-inset-bottom,0px))] left-4 right-4 z-40 md:hidden animate-slide-up">
       <div className="surface-card rounded-2xl p-4 border border-white/[0.08] shadow-2xl bg-[#000000] text-white backdrop-blur-xl relative">
         <button
           onClick={handleDismiss}

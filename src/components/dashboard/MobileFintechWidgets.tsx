@@ -19,6 +19,8 @@ import {
 } from "lucide-react";
 import SmartTransactionDetectorModal from "@/components/wallets/SmartTransactionDetectorModal";
 
+import ApplePaySetupModal from "@/components/wallets/ApplePaySetupModal";
+
 interface MobileFintechWidgetsProps {
   wallets: any[];
   categories: any[];
@@ -37,6 +39,7 @@ export default function MobileFintechWidgets({
   onRefresh,
 }: MobileFintechWidgetsProps) {
   const [isDetectorOpen, setIsDetectorOpen] = useState(false);
+  const [isApplePayOpen, setIsApplePayOpen] = useState(false);
 
   const formatCurrency = (val: number) => {
     return val.toLocaleString("es-MX", { style: "currency", currency: "MXN" });
@@ -59,7 +62,20 @@ export default function MobileFintechWidgets({
         </div>
 
         <div className="grid grid-cols-4 gap-2">
-          {/* Acción 1: Detectar SMS / Notificación */}
+          {/* Acción 1: Apple Pay / Wallet Automático */}
+          <button
+            onClick={() => setIsApplePayOpen(true)}
+            className="flex flex-col items-center justify-center p-2.5 rounded-xl bg-slate-50 dark:bg-[#141418] hover:bg-slate-100 dark:hover:bg-white/10 active:scale-95 transition text-center gap-1.5 group border border-white/20"
+          >
+            <div className="w-8 h-8 rounded-lg bg-white text-black font-black text-[11px] flex items-center justify-center shadow-sm">
+              Pay
+            </div>
+            <span className="text-[10px] font-bold text-slate-800 dark:text-zinc-300 leading-tight">
+              Apple Pay
+            </span>
+          </button>
+
+          {/* Acción 2: Detectar SMS / Notificación */}
           <button
             onClick={() => setIsDetectorOpen(true)}
             className="flex flex-col items-center justify-center p-2.5 rounded-xl bg-slate-50 dark:bg-[#141418] hover:bg-slate-100 dark:hover:bg-white/10 active:scale-95 transition text-center gap-1.5 group border border-slate-200/60 dark:border-white/[0.06]"
@@ -72,7 +88,7 @@ export default function MobileFintechWidgets({
             </span>
           </button>
 
-          {/* Acción 2: Cargar XML SAT */}
+          {/* Acción 3: Cargar XML SAT */}
           <Link
             href="/upload"
             className="flex flex-col items-center justify-center p-2.5 rounded-xl bg-slate-50 dark:bg-[#141418] hover:bg-slate-100 dark:hover:bg-white/10 active:scale-95 transition text-center gap-1.5 group border border-slate-200/60 dark:border-white/[0.06]"
@@ -82,19 +98,6 @@ export default function MobileFintechWidgets({
             </div>
             <span className="text-[10px] font-bold text-slate-800 dark:text-zinc-300 leading-tight">
               Subir CFDI
-            </span>
-          </Link>
-
-          {/* Acción 3: Escanear Ticket */}
-          <Link
-            href="/wallets"
-            className="flex flex-col items-center justify-center p-2.5 rounded-xl bg-slate-50 dark:bg-[#141418] hover:bg-slate-100 dark:hover:bg-white/10 active:scale-95 transition text-center gap-1.5 group border border-slate-200/60 dark:border-white/[0.06]"
-          >
-            <div className="w-8 h-8 rounded-lg bg-purple-500/20 text-purple-400 flex items-center justify-center shadow-sm">
-              <Camera className="w-4 h-4" />
-            </div>
-            <span className="text-[10px] font-bold text-slate-800 dark:text-zinc-300 leading-tight">
-              Escanear
             </span>
           </Link>
 
@@ -177,6 +180,13 @@ export default function MobileFintechWidgets({
         wallets={wallets}
         categories={categories}
         onTransactionCreated={onRefresh}
+      />
+
+      {/* Modal de Configuración y Simulación de Apple Pay */}
+      <ApplePaySetupModal
+        isOpen={isApplePayOpen}
+        onClose={() => setIsApplePayOpen(false)}
+        onSuccess={onRefresh}
       />
     </div>
   );
