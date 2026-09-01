@@ -60,13 +60,13 @@ export default function CardDetailsModal({
   const theme = getBankThemeConfig(wallet.name, wallet.type);
 
   return (
-    <div className="fixed inset-0 z-[100] bg-slate-950/75 backdrop-blur-md flex items-end sm:items-center justify-center p-0 sm:p-4">
-      <div className="w-full max-w-lg bg-white dark:bg-[#080C14] rounded-t-2xl sm:rounded-2xl border-t sm:border border-slate-200 dark:border-white/10 shadow-2xl overflow-hidden flex flex-col max-h-[92vh] animate-slide-up safe-bottom">
+    <div className="fixed inset-0 z-[100] bg-black/75 backdrop-blur-md flex items-end sm:items-center justify-center p-0 sm:p-4">
+      <div className="w-full max-w-lg bg-white dark:bg-[#000000] rounded-t-2xl sm:rounded-2xl border-t sm:border border-slate-200 dark:border-white/[0.08] shadow-2xl overflow-hidden flex flex-col max-h-[92vh] animate-slide-up safe-bottom">
         
         {/* Header */}
-        <div className="p-3.5 border-b border-slate-200/80 dark:border-white/10 flex items-center justify-between">
+        <div className="p-3.5 border-b border-slate-200/80 dark:border-white/[0.08] flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <CreditCard className="w-4 h-4 text-brand-cerulean" />
+            <CreditCard className="w-4 h-4 text-emerald-400" />
             <h3 className="text-sm font-black text-slate-900 dark:text-white">
               Detalles de la Tarjeta
             </h3>
@@ -83,7 +83,7 @@ export default function CardDetailsModal({
           {/* Tarjeta Visual Renderizada */}
           <div className={`w-full h-[180px] rounded-2xl p-4 sm:p-5 bg-gradient-to-tr ${theme.gradient} ${theme.textColor} shadow-xl relative overflow-hidden flex flex-col justify-between border border-white/10`}>
             <div className="absolute top-0 right-0 -mr-8 -mt-8 w-36 h-36 rounded-full bg-white/10 blur-2xl pointer-events-none" />
-            <div className="absolute bottom-0 left-0 -ml-8 -mb-8 w-36 h-36 rounded-full bg-brand-cerulean/20 blur-2xl pointer-events-none" />
+            <div className="absolute bottom-0 left-0 -ml-8 -mb-8 w-36 h-36 rounded-full bg-white/5 blur-2xl pointer-events-none" />
 
             <div className="flex items-start justify-between relative z-10">
               <div>
@@ -122,17 +122,17 @@ export default function CardDetailsModal({
 
           {/* Estadísticas de la Tarjeta */}
           {isCredit ? (
-            <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-[#0F1626] border border-slate-200/60 dark:border-white/10 space-y-2.5">
+            <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-[#0A0A0C] border border-slate-200/60 dark:border-white/[0.08] space-y-2.5">
               <div className="flex justify-between items-center text-xs font-bold">
-                <span className="text-slate-600 dark:text-slate-300">Límite de Crédito:</span>
+                <span className="text-slate-600 dark:text-zinc-400">Límite de Crédito:</span>
                 <span className="text-slate-900 dark:text-white font-extrabold">{formatCurrency(creditLimit)}</span>
               </div>
               <div className="flex justify-between items-center text-xs font-bold">
-                <span className="text-slate-600 dark:text-slate-300">Deuda / Saldo Utilizado:</span>
+                <span className="text-slate-600 dark:text-zinc-400">Deuda / Saldo Utilizado:</span>
                 <span className="text-rose-600 dark:text-rose-400 font-extrabold">{formatCurrency(debt)} ({usedPct.toFixed(0)}%)</span>
               </div>
 
-              <div className="w-full bg-slate-200 dark:bg-[#151E32] h-2 rounded-full overflow-hidden">
+              <div className="w-full bg-slate-200 dark:bg-[#141418] h-2 rounded-full overflow-hidden">
                 <div
                   className={`h-full rounded-full transition-all ${
                     usedPct > 80 ? "bg-rose-500" : usedPct > 50 ? "bg-amber-400" : "bg-emerald-500"
@@ -141,9 +141,9 @@ export default function CardDetailsModal({
                 />
               </div>
 
-              <div className="pt-2 border-t border-slate-200/60 dark:border-white/5 flex justify-between items-center text-xs font-semibold">
-                <div className="flex items-center gap-1.5 text-slate-700 dark:text-slate-300">
-                  <Clock className="w-4 h-4 text-brand-cerulean" />
+              <div className="pt-2 border-t border-slate-200/60 dark:border-white/[0.06] flex justify-between items-center text-xs font-semibold">
+                <div className="flex items-center gap-1.5 text-slate-700 dark:text-zinc-300">
+                  <Clock className="w-4 h-4 text-zinc-400" />
                   <span>Corte: día {cutOff} • Pago: día {due}</span>
                 </div>
                 <span className={`px-2 py-0.5 rounded-md text-[10px] font-black ${
@@ -154,13 +154,13 @@ export default function CardDetailsModal({
               </div>
             </div>
           ) : (
-            <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-[#0F1626] border border-slate-200/60 dark:border-white/10 flex justify-between items-center">
+            <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-[#0A0A0C] border border-slate-200/60 dark:border-white/[0.08] flex justify-between items-center">
               <div>
-                <span className="text-[10px] uppercase font-bold text-slate-500 dark:text-slate-400">Tipo de Cartera</span>
+                <span className="text-[10px] uppercase font-bold text-slate-500 dark:text-zinc-500">Tipo de Cartera</span>
                 <p className="text-xs font-black text-slate-900 dark:text-white capitalize">{wallet.type}</p>
               </div>
               <div className="text-right">
-                <span className="text-[10px] uppercase font-bold text-slate-500 dark:text-slate-400">Estado</span>
+                <span className="text-[10px] uppercase font-bold text-slate-500 dark:text-zinc-500">Estado</span>
                 <p className="text-xs font-black text-emerald-600 dark:text-emerald-400">Activa & Conciliada</p>
               </div>
             </div>
@@ -197,13 +197,13 @@ export default function CardDetailsModal({
               <h4 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider">
                 Movimientos Recientes
               </h4>
-              <span className="text-[10px] text-slate-500 dark:text-slate-400 font-bold">
+              <span className="text-[10px] text-slate-500 dark:text-zinc-500 font-bold">
                 {walletTransactions.length} registros
               </span>
             </div>
 
             {walletTransactions.length === 0 ? (
-              <div className="p-5 text-center text-slate-500 dark:text-slate-400 border border-dashed border-slate-200 dark:border-white/10 rounded-xl text-xs">
+              <div className="p-5 text-center text-slate-500 dark:text-zinc-500 border border-dashed border-slate-200 dark:border-white/[0.08] rounded-xl text-xs">
                 No hay movimientos registrados aún con esta tarjeta.
               </div>
             ) : (
@@ -211,13 +211,13 @@ export default function CardDetailsModal({
                 {walletTransactions.map((tx) => (
                   <div
                     key={tx.id}
-                    className="p-3 rounded-xl bg-slate-50 dark:bg-[#0F1626] border border-slate-200/60 dark:border-white/5 flex items-center justify-between"
+                    className="p-3 rounded-xl bg-slate-50 dark:bg-[#0A0A0C] border border-slate-200/60 dark:border-white/[0.06] flex items-center justify-between"
                   >
                     <div className="min-w-0 flex-1">
                       <p className="text-xs font-bold text-slate-900 dark:text-white truncate">
                         {tx.concept}
                       </p>
-                      <p className="text-[10px] text-slate-500 dark:text-slate-400">
+                      <p className="text-[10px] text-slate-500 dark:text-zinc-500">
                         {new Date(tx.date).toLocaleDateString("es-MX", { day: "numeric", month: "short", year: "numeric" })}
                       </p>
                     </div>

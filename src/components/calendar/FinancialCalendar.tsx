@@ -843,7 +843,7 @@ export default function FinancialCalendar({
                     setSavingsPercentage(Number(e.target.value));
                     setCustomMonthlySavings('');
                   }}
-                  className="w-full h-2 bg-slate-200 dark:bg-[#151E32] rounded-lg appearance-none cursor-pointer accent-brand-cerulean"
+                  className="w-full h-2 bg-slate-200 dark:bg-[#141418] rounded-lg appearance-none cursor-pointer accent-white"
                 />
               </div>
             </div>
@@ -862,13 +862,13 @@ export default function FinancialCalendar({
                   value={customMonthlySavings}
                   onChange={(e) => setCustomMonthlySavings(e.target.value)}
                   placeholder={`Ej: ${formatCurrency(monthlyNetCashflow > 0 ? monthlyNetCashflow : 2000)}`}
-                  className="w-full pl-9 pr-3 py-2 bg-slate-50 dark:bg-[#0F1626] border border-slate-200 dark:border-white/10 rounded-xl text-xs font-bold text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  className="w-full pl-9 pr-3 py-2 bg-slate-50 dark:bg-[#0A0A0C] border border-slate-200 dark:border-white/[0.08] rounded-xl text-xs font-bold text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-emerald-500"
                 />
               </div>
             </div>
 
             {/* Control 3: Tasa de Rendimiento de Inversión */}
-            <div className="surface-card rounded-2xl p-5 border border-slate-200/80 dark:border-white/10 space-y-3">
+            <div className="surface-card rounded-2xl p-5 border border-slate-200/80 dark:border-white/[0.08] space-y-3">
               <div className="flex items-center gap-2">
                 <div className="w-7 h-7 rounded-lg bg-amber-500/15 text-amber-600 flex items-center justify-center font-bold text-xs">3</div>
                 <h3 className="text-xs font-bold text-slate-900 dark:text-white">Rendimiento (CETES/Fintech)</h3>
@@ -877,19 +877,19 @@ export default function FinancialCalendar({
               <div className="grid grid-cols-3 gap-2">
                 <button
                   onClick={() => setAnnualInvestmentReturn(0)}
-                  className={`py-1.5 px-2 rounded-lg text-xs font-bold border transition ${annualInvestmentReturn === 0 ? 'bg-brand-cerulean text-white border-brand-cerulean' : 'bg-slate-50 dark:bg-[#0F1626] text-slate-600 dark:text-slate-300 border-slate-200 dark:border-white/10'}`}
+                  className={`py-1.5 px-2 rounded-lg text-xs font-bold border transition ${annualInvestmentReturn === 0 ? 'bg-white text-black border-white' : 'bg-slate-50 dark:bg-[#0A0A0C] text-slate-600 dark:text-zinc-300 border-slate-200 dark:border-white/[0.08]'}`}
                 >
                   0%
                 </button>
                 <button
                   onClick={() => setAnnualInvestmentReturn(10)}
-                  className={`py-1.5 px-2 rounded-lg text-xs font-bold border transition ${annualInvestmentReturn === 10 ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-slate-50 dark:bg-[#0F1626] text-slate-600 dark:text-slate-300 border-slate-200 dark:border-white/10'}`}
+                  className={`py-1.5 px-2 rounded-lg text-xs font-bold border transition ${annualInvestmentReturn === 10 ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-slate-50 dark:bg-[#0A0A0C] text-slate-600 dark:text-zinc-300 border-slate-200 dark:border-white/[0.08]'}`}
                 >
                   10% CETES
                 </button>
                 <button
                   onClick={() => setAnnualInvestmentReturn(13)}
-                  className={`py-1.5 px-2 rounded-lg text-xs font-bold border transition ${annualInvestmentReturn === 13 ? 'bg-purple-600 text-white border-purple-600' : 'bg-slate-50 dark:bg-[#0F1626] text-slate-600 dark:text-slate-300 border-slate-200 dark:border-white/10'}`}
+                  className={`py-1.5 px-2 rounded-lg text-xs font-bold border transition ${annualInvestmentReturn === 13 ? 'bg-purple-600 text-white border-purple-600' : 'bg-slate-50 dark:bg-[#0A0A0C] text-slate-600 dark:text-zinc-300 border-slate-200 dark:border-white/[0.08]'}`}
                 >
                   13% Nu/Stori
                 </button>
@@ -948,8 +948,8 @@ export default function FinancialCalendar({
 
       {/* --- SECCIÓN 3: LISTADO DE COMPROMISOS Y VENCIMIENTOS CRÍTICOS --- */}
       {activeTab === 'critical' && (
-        <div className="surface-card rounded-2xl border border-slate-200/80 dark:border-white/10 p-5 space-y-4 animate-in fade-in zoom-in-95">
-          <div className="flex items-center justify-between border-b border-slate-200/80 dark:border-white/10 pb-3">
+        <div className="surface-card rounded-2xl border border-slate-200/80 dark:border-white/[0.08] p-5 space-y-4 animate-in fade-in zoom-in-95">
+          <div className="flex items-center justify-between border-b border-slate-200/80 dark:border-white/[0.08] pb-3">
             <div>
               <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
                 <ShieldAlert className="w-4 h-4 text-amber-500" />
@@ -976,16 +976,16 @@ export default function FinancialCalendar({
                     className={`p-3 rounded-xl border flex items-center justify-between transition ${
                       item.isUrgent
                         ? 'bg-rose-500/10 border-rose-500/30'
-                        : 'bg-slate-50 dark:bg-[#0F1626] border-slate-200/80 dark:border-white/10'
+                        : 'bg-slate-50 dark:bg-[#0A0A0C] border-slate-200/80 dark:border-white/[0.08]'
                     }`}
                   >
                     <div className="flex items-center gap-2.5">
-                      <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${item.type === 'Préstamo' ? 'bg-indigo-500/15 text-indigo-600' : 'bg-amber-500/15 text-amber-600'}`}>
+                      <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${item.type === 'Préstamo' ? 'bg-indigo-500/15 text-indigo-400' : 'bg-amber-500/15 text-amber-400'}`}>
                         {item.type === 'Préstamo' ? <Landmark className="w-4 h-4" /> : <CreditCard className="w-4 h-4" />}
                       </div>
                       <div>
                         <p className="text-xs font-bold text-slate-900 dark:text-white">{item.title}</p>
-                        <p className="text-[10px] text-slate-500 dark:text-slate-400">
+                        <p className="text-[10px] text-slate-500 dark:text-zinc-400">
                           {item.date.toLocaleDateString('es-MX', { weekday: 'short', day: 'numeric', month: 'short' })}
                         </p>
                       </div>
@@ -1006,18 +1006,18 @@ export default function FinancialCalendar({
 
       {/* Modal / Panel Deslizable de Detalle del Día Seleccionado */}
       {selectedDay && selectedDayEvents && (
-        <div className="fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4">
-          <div className="surface-card w-full max-w-lg rounded-t-2xl sm:rounded-2xl border border-slate-200 dark:border-white/10 shadow-2xl overflow-hidden flex flex-col max-h-[85vh] animate-slide-up bg-white dark:bg-[#080C14]">
+        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4">
+          <div className="surface-card w-full max-w-lg rounded-t-2xl sm:rounded-2xl border border-slate-200 dark:border-white/[0.08] shadow-2xl overflow-hidden flex flex-col max-h-[85vh] animate-slide-up bg-white dark:bg-[#000000]">
             {/* Tirador táctil solo en celular */}
             <div className="flex justify-center pt-2 sm:hidden">
               <div className="w-10 h-1 rounded-full bg-slate-300 dark:bg-white/20" />
             </div>
-            <div className="p-4 border-b border-slate-200/80 dark:border-white/10 bg-slate-50 dark:bg-[#0F1626] flex items-center justify-between">
+            <div className="p-4 border-b border-slate-200/80 dark:border-white/[0.08] bg-slate-50 dark:bg-[#0A0A0C] flex items-center justify-between">
               <div>
                 <h3 className="text-sm font-bold text-slate-900 dark:text-white capitalize">
                   {selectedDay.toLocaleDateString("es-MX", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
                 </h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400">Detalle completo de movimientos y vencimientos</p>
+                <p className="text-xs text-slate-500 dark:text-zinc-400">Detalle completo de movimientos y vencimientos</p>
               </div>
               <button
                 onClick={() => setSelectedDay(null)}

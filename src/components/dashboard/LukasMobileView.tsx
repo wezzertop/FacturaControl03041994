@@ -190,7 +190,7 @@ export default function LukasMobileView({
       {/* 1. Header Minimalista inspirado en Lukas (Mes + Privacidad + Avatar) */}
       <div className="surface-card rounded-2xl p-4 flex items-center justify-between gap-3">
         {/* Selector de Mes Cápsula */}
-        <div className="flex items-center gap-1 bg-slate-100 dark:bg-[#151E32] px-3 py-1.5 rounded-xl border border-slate-200/80 dark:border-white/10">
+        <div className="flex items-center gap-1 bg-slate-100 dark:bg-[#121216] px-3 py-1.5 rounded-xl border border-slate-200/80 dark:border-white/[0.08]">
           <button
             onClick={prevMonth}
             className="p-1 rounded-lg text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white transition"
@@ -214,13 +214,13 @@ export default function LukasMobileView({
         <div className="flex items-center gap-2">
           <button
             onClick={() => setHideBalances(!hideBalances)}
-            className="p-2 rounded-xl bg-slate-100 dark:bg-[#151E32] text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white border border-slate-200/80 dark:border-white/10 transition"
+            className="p-2 rounded-xl bg-slate-100 dark:bg-[#121216] text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white border border-slate-200/80 dark:border-white/[0.08] transition"
             title={hideBalances ? "Mostrar saldos" : "Ocultar saldos"}
           >
-            {hideBalances ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4 text-brand-cerulean" />}
+            {hideBalances ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4 text-emerald-400" />}
           </button>
 
-          <div className="w-8 h-8 rounded-xl bg-brand-cerulean text-white font-black text-xs flex items-center justify-center shadow-md">
+          <div className="w-8 h-8 rounded-xl bg-white text-black font-black text-xs flex items-center justify-center shadow-md">
             FC
           </div>
         </div>
@@ -228,13 +228,13 @@ export default function LukasMobileView({
 
       {/* 2. Buscador Rápido por Nombre o Categoría */}
       <div className="relative">
-        <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-400" />
+        <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-zinc-500" />
         <input
           type="text"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           placeholder="Buscar por comercio, concepto o categoría..."
-          className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-[#0F1626] border border-slate-200 dark:border-white/10 rounded-xl text-xs font-semibold text-slate-900 dark:text-white placeholder:text-slate-400 focus:ring-2 focus:ring-brand-cerulean focus:outline-none shadow-sm"
+          className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-[#0A0A0C] border border-slate-200 dark:border-white/[0.08] rounded-xl text-xs font-semibold text-slate-900 dark:text-white placeholder:text-zinc-500 focus:ring-1 focus:ring-white/40 focus:outline-none shadow-sm"
         />
       </div>
 
@@ -242,11 +242,11 @@ export default function LukasMobileView({
       <div className="space-y-3">
         {groupedByDay.length === 0 ? (
           <div className="surface-card rounded-2xl p-6 text-center space-y-2">
-            <Receipt className="w-8 h-8 mx-auto text-slate-400 dark:text-slate-500 stroke-1" />
-            <p className="text-xs font-bold text-slate-800 dark:text-slate-200">
+            <Receipt className="w-8 h-8 mx-auto text-slate-400 dark:text-zinc-600 stroke-1" />
+            <p className="text-xs font-bold text-slate-800 dark:text-zinc-300">
               No hay movimientos en {MONTH_NAMES[selectedMonth]} {selectedYear}
             </p>
-            <p className="text-[11px] text-slate-500 dark:text-slate-400">
+            <p className="text-[11px] text-slate-500 dark:text-zinc-500">
               Usa los botones de abajo para registrar tu primer gasto o ingreso.
             </p>
           </div>
@@ -255,18 +255,18 @@ export default function LukasMobileView({
             <div key={idx} className="space-y-1.5">
               {/* Encabezado del Día */}
               <div className="flex items-center justify-between px-2 pt-1">
-                <span className="text-[11px] font-black capitalize tracking-wider text-slate-600 dark:text-slate-300">
+                <span className="text-[11px] font-black capitalize tracking-wider text-slate-600 dark:text-zinc-400">
                   {group.dateLabel}
                 </span>
                 <span className={`text-[11px] font-black ${
-                  group.totalDay >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-slate-700 dark:text-slate-300"
+                  group.totalDay >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-slate-700 dark:text-zinc-300"
                 }`}>
                   {formatCurrency(group.totalDay)}
                 </span>
               </div>
 
               {/* Lista de Transacciones del Día */}
-              <div className="surface-card rounded-2xl divide-y divide-slate-100 dark:divide-white/5 overflow-hidden">
+              <div className="surface-card rounded-2xl divide-y divide-slate-100 dark:divide-white/[0.06] overflow-hidden">
                 {group.items.map((item) => {
                   const Icon = getConceptIcon(item.concept);
                   return (
@@ -277,8 +277,8 @@ export default function LukasMobileView({
                       <div className="flex items-center gap-3 min-w-0">
                         <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
                           item.type === "income"
-                            ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
-                            : "bg-slate-100 dark:bg-[#151E32] text-slate-700 dark:text-slate-200"
+                            ? "bg-emerald-500/15 text-emerald-400"
+                            : "bg-slate-100 dark:bg-[#141418] text-slate-700 dark:text-slate-200"
                         }`}>
                           <Icon className="w-4 h-4" />
                         </div>
@@ -287,11 +287,11 @@ export default function LukasMobileView({
                             {item.concept}
                           </h4>
                           <div className="flex items-center gap-2 mt-0.5">
-                            <span className="text-[10px] font-medium text-slate-500 dark:text-slate-400 truncate">
+                            <span className="text-[10px] font-medium text-slate-500 dark:text-zinc-400 truncate">
                               {item.categoryName}
                             </span>
                             {item.status === "pending" && (
-                              <span className="text-[9px] font-black px-1.5 py-0.5 rounded-md bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+                              <span className="text-[9px] font-black px-1.5 py-0.5 rounded-md bg-amber-500/15 text-amber-400 border border-amber-500/20">
                                 Pendiente
                               </span>
                             )}
@@ -302,7 +302,7 @@ export default function LukasMobileView({
                       <div className="text-right shrink-0">
                         <p className={`text-xs font-black tracking-tight ${
                           item.type === "income"
-                            ? "text-emerald-600 dark:text-emerald-400"
+                            ? "text-emerald-400"
                             : "text-slate-900 dark:text-white"
                         }`}>
                           {item.type === "income" ? "+" : "-"} {formatCurrency(item.amount)}
@@ -317,29 +317,29 @@ export default function LukasMobileView({
         )}
       </div>
 
-      {/* 4. Tarjeta Flotante: Asistente Inteligente (Inspirada en Lukas) */}
+      {/* 4. Tarjeta Flotante: Asistente Inteligente */}
       <div 
         onClick={() => setIsDetectorOpen(true)}
-        className="surface-card rounded-2xl p-4 border border-brand-cerulean/30 shadow-md bg-[#0F1626] text-white cursor-pointer active:scale-98 transition flex items-center justify-between gap-3 group"
+        className="surface-card rounded-2xl p-4 shadow-md bg-white dark:bg-[#0A0A0C] text-slate-900 dark:text-white cursor-pointer active:scale-98 transition flex items-center justify-between gap-3 group border border-slate-200 dark:border-white/[0.08]"
       >
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-brand-cerulean text-white flex items-center justify-center shadow-md">
-            <Sparkles className="w-5 h-5" />
+          <div className="w-10 h-10 rounded-xl bg-white/10 dark:bg-white/10 text-white flex items-center justify-center shadow-md">
+            <Sparkles className="w-5 h-5 text-amber-400" />
           </div>
           <div>
-            <h4 className="text-xs font-black text-white flex items-center gap-1.5">
+            <h4 className="text-xs font-black text-slate-900 dark:text-white flex items-center gap-1.5">
               Asistente Rápido
-              <span className="text-[9px] font-bold bg-brand-cerulean/25 text-sky-300 px-1.5 py-0.5 rounded-md border border-brand-cerulean/40">
+              <span className="text-[9px] font-bold bg-white/10 text-slate-700 dark:text-zinc-300 px-1.5 py-0.5 rounded-md border border-white/10">
                 IA
               </span>
             </h4>
-            <p className="text-[11px] text-slate-300 mt-0.5">
+            <p className="text-[11px] text-slate-500 dark:text-zinc-400 mt-0.5">
               Pega un SMS de tu banco, escanea un ticket o captura tu gasto
             </p>
           </div>
         </div>
 
-        <ChevronRight className="w-5 h-5 text-slate-400 group-hover:text-white group-hover:translate-x-0.5 transition" />
+        <ChevronRight className="w-5 h-5 text-slate-400 dark:text-zinc-500 group-hover:text-white group-hover:translate-x-0.5 transition" />
       </div>
 
       {/* 5. Dos Botones de Acción Ergonómicos en la Parte Inferior (Expense / Income) */}

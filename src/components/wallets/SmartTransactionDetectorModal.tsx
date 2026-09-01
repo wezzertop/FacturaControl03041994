@@ -193,8 +193,8 @@ export default function SmartTransactionDetectorModal({
   };
 
   return (
-    <div className="fixed inset-0 z-[100] bg-slate-950/75 backdrop-blur-md flex items-center justify-center p-4">
-      <div className="surface-card rounded-2xl p-6 max-w-lg w-full border border-slate-200 dark:border-white/10 shadow-2xl relative animate-slide-up max-h-[90vh] overflow-y-auto custom-scrollbar bg-white dark:bg-[#080C14]">
+    <div className="fixed inset-0 z-[100] bg-black/75 backdrop-blur-md flex items-center justify-center p-4">
+      <div className="surface-card rounded-2xl p-6 max-w-lg w-full border border-slate-200 dark:border-white/[0.08] shadow-2xl relative animate-slide-up max-h-[90vh] overflow-y-auto custom-scrollbar bg-white dark:bg-[#000000]">
         <button
           onClick={onClose}
           className="absolute top-4 right-4 text-slate-400 hover:text-slate-900 dark:hover:text-white p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-white/10 transition"
@@ -203,14 +203,14 @@ export default function SmartTransactionDetectorModal({
         </button>
 
         <div className="flex items-center gap-3 mb-4">
-          <div className="w-10 h-10 rounded-xl bg-brand-cerulean text-white flex items-center justify-center shadow-md">
-            <Sparkles className="w-5 h-5" />
+          <div className="w-10 h-10 rounded-xl bg-white/10 text-white flex items-center justify-center shadow-md">
+            <Sparkles className="w-5 h-5 text-amber-400" />
           </div>
           <div>
             <h3 className="text-base font-black text-slate-900 dark:text-white tracking-tight">
               Detector Inteligente de Compras
             </h3>
-            <p className="text-xs text-slate-600 dark:text-slate-300">
+            <p className="text-xs text-slate-600 dark:text-zinc-400">
               Pega el SMS o notificación de tu banco (BBVA, Nu, Santander, etc.)
             </p>
           </div>
@@ -235,7 +235,7 @@ export default function SmartTransactionDetectorModal({
           <button
             type="button"
             onClick={handlePasteClipboard}
-            className="w-full py-2.5 px-4 bg-brand-cerulean/10 hover:bg-brand-cerulean/15 border border-brand-cerulean/30 text-brand-cerulean font-bold text-xs rounded-xl transition flex items-center justify-center gap-2 min-h-[40px]"
+            className="w-full py-2.5 px-4 bg-white/10 hover:bg-white/15 border border-white/20 text-white font-bold text-xs rounded-xl transition flex items-center justify-center gap-2 min-h-[40px]"
           >
             <Clipboard className="w-4 h-4" />
             Pegar Notificación del Portapapeles (1 Toque)
@@ -246,13 +246,13 @@ export default function SmartTransactionDetectorModal({
             value={rawText}
             onChange={(e) => parseBankNotification(e.target.value)}
             placeholder="Ejemplo: BBVA: Compra por $420.00 en STARBUCKS con tarjeta *1234 el 30/Ago/2026."
-            className="w-full px-3 py-2 bg-slate-50 dark:bg-[#0F1626] border border-slate-200 dark:border-white/10 rounded-xl text-xs text-slate-900 dark:text-white placeholder:text-slate-400 focus:ring-2 focus:ring-brand-cerulean focus:outline-none"
+            className="w-full px-3 py-2 bg-slate-50 dark:bg-[#0A0A0C] border border-slate-200 dark:border-white/[0.08] rounded-xl text-xs text-slate-900 dark:text-white placeholder:text-zinc-500 focus:ring-1 focus:ring-white/40 focus:outline-none"
           />
         </div>
 
         {detectedBank && (
-          <div className="mb-4 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-brand-cerulean/15 text-brand-cerulean text-[11px] font-black border border-brand-cerulean/30">
-            <Zap className="w-3.5 h-3.5" />
+          <div className="mb-4 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/10 text-white text-[11px] font-black border border-white/20">
+            <Zap className="w-3.5 h-3.5 text-amber-400" />
             Banco Detectado: {detectedBank}
           </div>
         )}
@@ -260,19 +260,19 @@ export default function SmartTransactionDetectorModal({
         <form onSubmit={handleSave} className="space-y-3.5">
           {/* Monto Extraído */}
           <div>
-            <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
+            <label className="text-xs font-bold text-slate-700 dark:text-zinc-300 block mb-1">
               Monto del Gasto (MXN)
             </label>
             <CurrencyInput
               value={amount}
               onChange={(val) => setAmount(val)}
-              className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-[#0F1626] border border-slate-200 dark:border-white/10 rounded-xl text-base font-black text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-cerulean focus:outline-none"
+              className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-[#0A0A0C] border border-slate-200 dark:border-white/[0.08] rounded-xl text-base font-black text-slate-900 dark:text-white focus:ring-1 focus:ring-white/40 focus:outline-none"
             />
           </div>
 
           {/* Comercio / Concepto */}
           <div>
-            <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
+            <label className="text-xs font-bold text-slate-700 dark:text-zinc-300 block mb-1">
               Comercio o Concepto
             </label>
             <input
@@ -281,22 +281,22 @@ export default function SmartTransactionDetectorModal({
               value={concept}
               onChange={(e) => setConcept(e.target.value)}
               placeholder="Ej. STARBUCKS, OXXO, UBER"
-              className="w-full px-3 py-2 bg-slate-50 dark:bg-[#0F1626] border border-slate-200 dark:border-white/10 rounded-xl text-xs font-bold text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-cerulean focus:outline-none"
+              className="w-full px-3 py-2 bg-slate-50 dark:bg-[#0A0A0C] border border-slate-200 dark:border-white/[0.08] rounded-xl text-xs font-bold text-slate-900 dark:text-white focus:ring-1 focus:ring-white/40 focus:outline-none"
             />
           </div>
 
           {/* Cartera de Pago */}
           <div>
-            <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
+            <label className="text-xs font-bold text-slate-700 dark:text-zinc-300 block mb-1">
               Cartera o Tarjeta
             </label>
             <select
               value={selectedWalletId}
               onChange={(e) => setSelectedWalletId(e.target.value)}
-              className="w-full px-3 py-2 bg-slate-50 dark:bg-[#0F1626] border border-slate-200 dark:border-white/10 rounded-xl text-xs font-bold text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-cerulean focus:outline-none cursor-pointer"
+              className="w-full px-3 py-2 bg-slate-50 dark:bg-[#0A0A0C] border border-slate-200 dark:border-white/[0.08] rounded-xl text-xs font-bold text-slate-900 dark:text-white focus:ring-1 focus:ring-white/40 focus:outline-none cursor-pointer"
             >
               {wallets.map((w) => (
-                <option key={w.id} value={w.id} className="bg-slate-900 text-white">
+                <option key={w.id} value={w.id} className="bg-neutral-900 text-white">
                   {w.name} ({w.type === "credit" ? "Tarjeta de Crédito" : "Débito / Efectivo"})
                 </option>
               ))}
@@ -305,19 +305,19 @@ export default function SmartTransactionDetectorModal({
 
           {/* Categoría */}
           <div>
-            <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
+            <label className="text-xs font-bold text-slate-700 dark:text-zinc-300 block mb-1">
               Categoría
             </label>
             <select
               value={selectedCategoryId}
               onChange={(e) => setSelectedCategoryId(e.target.value)}
-              className="w-full px-3 py-2 bg-slate-50 dark:bg-[#0F1626] border border-slate-200 dark:border-white/10 rounded-xl text-xs font-bold text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-cerulean focus:outline-none cursor-pointer"
+              className="w-full px-3 py-2 bg-slate-50 dark:bg-[#0A0A0C] border border-slate-200 dark:border-white/[0.08] rounded-xl text-xs font-bold text-slate-900 dark:text-white focus:ring-1 focus:ring-white/40 focus:outline-none cursor-pointer"
             >
-              <option value="" className="bg-slate-900 text-white">
+              <option value="" className="bg-neutral-900 text-white">
                 Sin categoría (General)
               </option>
               {categories.map((c) => (
-                <option key={c.id} value={c.id} className="bg-slate-900 text-white">
+                <option key={c.id} value={c.id} className="bg-neutral-900 text-white">
                   {c.name}
                 </option>
               ))}
@@ -327,7 +327,7 @@ export default function SmartTransactionDetectorModal({
           <button
             type="submit"
             disabled={isPending || success}
-            className="w-full py-3 bg-brand-cerulean hover:bg-sky-600 disabled:opacity-50 text-white font-black text-xs rounded-xl transition shadow-md flex items-center justify-center gap-2 min-h-[40px]"
+            className="w-full py-3 bg-white hover:bg-neutral-200 disabled:opacity-50 text-black font-extrabold text-xs rounded-xl transition shadow-md flex items-center justify-center gap-2 min-h-[40px]"
           >
             {isPending ? "Guardando..." : "Confirmar y Registrar Movimiento ⚡"}
           </button>

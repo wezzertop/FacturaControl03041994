@@ -191,16 +191,16 @@ export default function VisualCardCarousel({
         {onAddWalletClick && (
           <button
             onClick={onAddWalletClick}
-            className="snap-center shrink-0 w-[240px] h-[180px] rounded-2xl p-5 border-2 border-dashed border-slate-300 dark:border-white/15 hover:border-brand-cerulean bg-slate-50/60 dark:bg-[#0F1626]/50 flex flex-col items-center justify-center gap-2.5 text-slate-500 dark:text-slate-400 hover:text-brand-cerulean transition group"
+            className="snap-center shrink-0 w-[240px] h-[180px] rounded-2xl p-5 border-2 border-dashed border-slate-300 dark:border-white/[0.08] hover:border-white/40 bg-slate-50/60 dark:bg-[#0A0A0C] flex flex-col items-center justify-center gap-2.5 text-slate-500 dark:text-zinc-400 hover:text-white transition group"
           >
-            <div className="w-10 h-10 rounded-xl bg-slate-200/80 dark:bg-[#151E32] group-hover:bg-brand-cerulean group-hover:text-white flex items-center justify-center transition">
+            <div className="w-10 h-10 rounded-xl bg-slate-200/80 dark:bg-[#141418] group-hover:bg-white group-hover:text-black flex items-center justify-center transition">
               <PlusCircle className="w-5 h-5" />
             </div>
             <div className="text-center">
               <span className="text-xs font-bold block text-slate-900 dark:text-white">
                 Nueva Cartera
               </span>
-              <span className="text-[10px] text-slate-500 dark:text-slate-400">
+              <span className="text-[10px] text-slate-500 dark:text-zinc-500">
                 Banco, Débito o Crédito
               </span>
             </div>

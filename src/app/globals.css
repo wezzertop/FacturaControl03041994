@@ -7,48 +7,50 @@
   --color-brand-smoke: #F8FAFC;
   --color-brand-cerulean: #0284C7;
   --color-brand-cerulean-hover: #0369A1;
-  --color-brand-graphite: #334155;
-  --color-brand-carbon: #080C14;
-  --color-brand-surface-dark: #0F1626;
-  --color-brand-surface-elevated: #162035;
-  --color-brand-ink: #0F172A;
-  --color-brand-mint: #059669;
-  --color-brand-amber: #D97706;
-  --color-brand-rose: #E11D48;
+  --color-brand-graphite: #27272A;
+  --color-brand-carbon: #000000;
+  --color-brand-surface-dark: #0A0A0C;
+  --color-brand-surface-elevated: #141418;
+  --color-brand-ink: #000000;
+  --color-brand-mint: #10B981;
+  --color-brand-amber: #F59E0B;
+  --color-brand-rose: #F43F5E;
 }
 
 :root {
   --background: #F8FAFC;
-  --foreground: #0F172A;
+  --foreground: #09090B;
   --card-bg: #FFFFFF;
-  --card-border: #E2E8F0;
-  --card-muted: #F1F5F9;
-  --text-primary: #0F172A;
-  --text-secondary: #475569;
-  --text-muted: #64748B;
+  --card-border: #E4E4E7;
+  --card-muted: #F4F4F5;
+  --text-primary: #09090B;
+  --text-secondary: #52525B;
+  --text-muted: #71717A;
 }
 
 .dark {
-  --background: #080C14;
-  --foreground: #F8FAFC;
-  --card-bg: #0F1626;
+  --background: #000000;
+  --foreground: #FAFAFA;
+  --card-bg: #0A0A0C;
   --card-border: rgba(255, 255, 255, 0.08);
-  --card-muted: #151E32;
+  --card-muted: #121216;
+  --card-elevated: #18181D;
   --text-primary: #FFFFFF;
-  --text-secondary: #CBD5E1;
-  --text-muted: #94A3B8;
+  --text-secondary: #A1A1AA;
+  --text-muted: #71717A;
 }
 
 @media (prefers-color-scheme: dark) {
   :root:not(.light) {
-    --background: #080C14;
-    --foreground: #F8FAFC;
-    --card-bg: #0F1626;
+    --background: #000000;
+    --foreground: #FAFAFA;
+    --card-bg: #0A0A0C;
     --card-border: rgba(255, 255, 255, 0.08);
-    --card-muted: #151E32;
+    --card-muted: #121216;
+    --card-elevated: #18181D;
     --text-primary: #FFFFFF;
-    --text-secondary: #CBD5E1;
-    --text-muted: #94A3B8;
+    --text-secondary: #A1A1AA;
+    --text-muted: #71717A;
   }
 }
 
@@ -77,22 +79,22 @@ html {
 }
 
 ::selection {
-  background-color: #0284C7;
-  color: #FFFFFF;
+  background-color: #FFFFFF;
+  color: #000000;
 }
 
 input, textarea, select {
-  caret-color: #0284C7;
+  caret-color: #FFFFFF;
 }
 
 *:focus-visible {
-  outline: 2px solid #0284C7;
+  outline: 2px solid rgba(255, 255, 255, 0.4);
   outline-offset: 2px;
 }
 
 .custom-scrollbar {
   scrollbar-width: thin;
-  scrollbar-color: rgba(148, 163, 184, 0.3) transparent;
+  scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
 }
 
 .custom-scrollbar::-webkit-scrollbar {
@@ -101,15 +103,15 @@ input, textarea, select {
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: rgba(148, 163, 184, 0.25);
+  background: rgba(255, 255, 255, 0.15);
   border-radius: 999px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: rgba(148, 163, 184, 0.45);
+  background: rgba(255, 255, 255, 0.3);
 }
 
-/* Luxury Unified Surface Card Token */
+/* Dark Premium Unified Surface Card Token */
 .surface-card {
   background: var(--card-bg);
   border: 1px solid var(--card-border);
@@ -117,9 +119,9 @@ input, textarea, select {
 }
 
 .dark .surface-card {
-  background: #0F1626;
+  background: #0A0A0C;
   border-color: rgba(255, 255, 255, 0.08);
-  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.8);
 }
 
 @keyframes slideUp {

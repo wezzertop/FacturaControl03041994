@@ -90,17 +90,17 @@ export default function PinLockModal({ onUnlockSuccess }: PinLockModalProps) {
   if (!isLocked) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] bg-slate-950/80 backdrop-blur-xl flex items-center justify-center p-4">
-      <div className="surface-card rounded-2xl p-6 sm:p-7 max-w-sm w-full border border-slate-200 dark:border-white/10 shadow-2xl text-center relative animate-slide-up bg-white dark:bg-[#080C14]">
+    <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-xl flex items-center justify-center p-4">
+      <div className="surface-card rounded-2xl p-6 sm:p-7 max-w-sm w-full border border-slate-200 dark:border-white/[0.08] shadow-2xl text-center relative animate-slide-up bg-white dark:bg-[#000000]">
         {/* Encabezado */}
-        <div className="w-12 h-12 bg-brand-cerulean/15 text-brand-cerulean rounded-xl flex items-center justify-center mx-auto mb-3.5 border border-brand-cerulean/30">
-          {isSettingUp ? <KeyRound className="w-6 h-6" /> : <Lock className="w-6 h-6" />}
+        <div className="w-12 h-12 bg-white/10 text-white rounded-xl flex items-center justify-center mx-auto mb-3.5 border border-white/20">
+          {isSettingUp ? <KeyRound className="w-6 h-6 text-amber-400" /> : <Lock className="w-6 h-6 text-white" />}
         </div>
 
         <h3 className="text-lg font-black text-slate-900 dark:text-white tracking-tight">
           {isSettingUp ? "Crea tu PIN de Seguridad" : "FacturaControl Bloqueado"}
         </h3>
-        <p className="text-xs text-slate-600 dark:text-slate-300 mt-1 leading-relaxed font-medium">
+        <p className="text-xs text-slate-600 dark:text-zinc-400 mt-1 leading-relaxed font-medium">
           {isSettingUp
             ? "Configura un PIN de 4 a 6 dígitos para proteger tus datos financieros."
             : "Ingresa tu PIN de seguridad para acceder a tus carteras y facturas."}
@@ -113,8 +113,8 @@ export default function PinLockModal({ onUnlockSuccess }: PinLockModalProps) {
               key={idx}
               className={`w-3.5 h-3.5 rounded-full transition-all duration-200 ${
                 idx < pin.length
-                  ? "bg-brand-cerulean scale-110 shadow-sm shadow-brand-cerulean/50"
-                  : "bg-slate-200 dark:bg-[#151E32] border border-slate-300 dark:border-white/10"
+                  ? "bg-white scale-110 shadow-sm"
+                  : "bg-slate-200 dark:bg-[#141418] border border-slate-300 dark:border-white/[0.08]"
               }`}
             />
           ))}
@@ -130,26 +130,26 @@ export default function PinLockModal({ onUnlockSuccess }: PinLockModalProps) {
             <button
               key={num}
               onClick={() => handleKeyPress(num)}
-              className="py-3 bg-slate-100 dark:bg-[#0F1626] hover:bg-slate-200 dark:hover:bg-[#151E32] border border-slate-200/80 dark:border-white/10 active:scale-95 text-slate-900 dark:text-white font-black text-base rounded-xl transition-all shadow-sm"
+              className="py-3 bg-slate-100 dark:bg-[#141418] hover:bg-slate-200 dark:hover:bg-white/10 border border-slate-200/80 dark:border-white/[0.06] active:scale-95 text-slate-900 dark:text-white font-black text-base rounded-xl transition-all shadow-sm"
             >
               {num}
             </button>
           ))}
           <button
             onClick={handleClear}
-            className="py-3 bg-slate-100/60 dark:bg-[#0F1626]/60 hover:bg-slate-200 dark:hover:bg-[#151E32] text-slate-600 dark:text-slate-400 font-bold text-xs rounded-xl transition-all"
+            className="py-3 bg-slate-100/60 dark:bg-[#141418]/60 hover:bg-slate-200 dark:hover:bg-white/10 text-slate-600 dark:text-zinc-400 font-bold text-xs rounded-xl transition-all"
           >
             Borrar
           </button>
           <button
             onClick={() => handleKeyPress("0")}
-            className="py-3 bg-slate-100 dark:bg-[#0F1626] hover:bg-slate-200 dark:hover:bg-[#151E32] border border-slate-200/80 dark:border-white/10 active:scale-95 text-slate-900 dark:text-white font-black text-base rounded-xl transition-all shadow-sm"
+            className="py-3 bg-slate-100 dark:bg-[#141418] hover:bg-slate-200 dark:hover:bg-white/10 border border-slate-200/80 dark:border-white/[0.06] active:scale-95 text-slate-900 dark:text-white font-black text-base rounded-xl transition-all shadow-sm"
           >
             0
           </button>
           <button
             onClick={handleDelete}
-            className="py-3 bg-slate-100/60 dark:bg-[#0F1626]/60 hover:bg-slate-200 dark:hover:bg-[#151E32] text-slate-600 dark:text-slate-400 font-bold text-xs rounded-xl transition-all flex items-center justify-center"
+            className="py-3 bg-slate-100/60 dark:bg-[#141418]/60 hover:bg-slate-200 dark:hover:bg-white/10 text-slate-600 dark:text-zinc-400 font-bold text-xs rounded-xl transition-all flex items-center justify-center"
           >
             <Delete className="w-5 h-5" />
           </button>
@@ -159,10 +159,9 @@ export default function PinLockModal({ onUnlockSuccess }: PinLockModalProps) {
         <button
           onClick={handleSubmit}
           disabled={pin.length < 4}
-          className="w-full py-3.5 bg-brand-cerulean hover:bg-brand-cerulean/90 disabled:opacity-40 text-white font-extrabold text-sm rounded-2xl transition-all shadow-lg shadow-brand-cerulean/20 flex items-center justify-center gap-2"
+          className="w-full py-3.5 bg-white text-black font-extrabold text-xs rounded-xl hover:bg-neutral-200 disabled:opacity-40 transition shadow-lg flex items-center justify-center gap-2 min-h-[44px]"
         >
-          <ShieldCheck className="w-4 h-4" />
-          {isSettingUp ? "Guardar PIN de Seguridad" : "Desbloquear FacturaControl"}
+          {isSettingUp ? "Guardar y Activar PIN" : "Desbloquear FacturaControl"}
         </button>
       </div>
     </div>

@@ -107,26 +107,26 @@ export default function BottomNavigation() {
       {/* Slide-over Drawer Móvil Completo */}
       <div
         className={cn(
-          "fixed inset-x-0 bottom-0 z-50 flex max-h-[92vh] flex-col rounded-t-[32px] border-t border-slate-200/80 bg-white/95 backdrop-blur-2xl transition-transform duration-300 dark:border-zinc-800/80 dark:bg-zinc-950/95 md:hidden shadow-2xl overflow-hidden",
+          "fixed inset-x-0 bottom-0 z-50 flex max-h-[92vh] flex-col rounded-t-2xl border-t border-slate-200/80 bg-white/95 backdrop-blur-2xl transition-transform duration-300 dark:border-white/[0.08] dark:bg-[#050505]/98 md:hidden shadow-2xl overflow-hidden",
           isMenuOpen ? "translate-y-0" : "translate-y-full pointer-events-none"
         )}
       >
         {/* Indicador táctil superior */}
         <div className="flex justify-center pt-3 pb-1">
-          <div className="w-12 h-1.5 rounded-full bg-slate-200 dark:bg-zinc-800" />
+          <div className="w-10 h-1 rounded-full bg-slate-200 dark:bg-white/20" />
         </div>
 
         {/* Header del Drawer Móvil */}
-        <div className="flex items-center justify-between px-6 py-3 border-b border-slate-100 dark:border-zinc-900 shrink-0">
+        <div className="flex items-center justify-between px-6 py-3 border-b border-slate-100 dark:border-white/[0.08] shrink-0">
           <div className="flex items-center gap-3">
-            <div className="grid h-10 w-10 place-items-center rounded-xl bg-gradient-to-br from-brand-cerulean to-blue-600 text-white shadow-md shadow-brand-cerulean/20">
-              <Zap className="h-5 w-5" />
+            <div className="grid h-10 w-10 place-items-center rounded-xl bg-white text-black shadow-md">
+              <Zap className="h-5 w-5 fill-current" />
             </div>
             <div>
               <p className="text-base font-extrabold text-slate-900 dark:text-white tracking-tight">
-                Factura<span className="text-brand-cerulean">Control</span>
+                Factura<span className="text-white">Control</span>
               </p>
-              <p className="text-[10px] font-bold uppercase tracking-wider text-brand-cerulean">Plan Pro SAT</p>
+              <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-500">Plan Pro SAT</p>
             </div>
           </div>
 
@@ -134,18 +134,18 @@ export default function BottomNavigation() {
             <button
               type="button"
               onClick={() => setTheme(nextTheme)}
-              className="grid h-10 w-10 place-items-center rounded-2xl border border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800 transition"
+              className="grid h-9 w-9 place-items-center rounded-xl border border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100 dark:border-white/10 dark:bg-[#0A0A0C] dark:text-white dark:hover:bg-white/10 transition"
               title="Cambiar tema"
               suppressHydrationWarning
             >
-              {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
+              {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
             </button>
             <button
               type="button"
               onClick={() => setIsMenuOpen(false)}
-              className="grid h-10 w-10 place-items-center rounded-2xl bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 transition"
+              className="grid h-9 w-9 place-items-center rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-[#0A0A0C] dark:text-white dark:hover:bg-white/10 transition"
             >
-              <X className="h-5 w-5" />
+              <X className="h-4 w-4" />
             </button>
           </div>
         </div>
@@ -162,27 +162,27 @@ export default function BottomNavigation() {
               <Link
                 href="/upload"
                 onClick={() => setIsMenuOpen(false)}
-                className="flex flex-col items-center justify-center p-3 rounded-2xl bg-brand-cerulean/10 text-brand-cerulean border border-brand-cerulean/20 active:scale-95 transition text-center"
+                className="flex flex-col items-center justify-center p-3 rounded-xl bg-slate-100 dark:bg-[#0A0A0C] text-slate-900 dark:text-white border border-slate-200/80 dark:border-white/[0.08] active:scale-95 transition text-center"
               >
-                <UploadCloud className="h-6 w-6 mb-1.5" />
+                <UploadCloud className="h-5 w-5 mb-1.5 text-slate-300" />
                 <span className="text-[11px] font-bold leading-tight">Subir XML</span>
               </Link>
 
               <Link
                 href="/wallets?triggerOcr=true"
                 onClick={handleOcrClick}
-                className="flex flex-col items-center justify-center p-3 rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 active:scale-95 transition text-center"
+                className="flex flex-col items-center justify-center p-3 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 active:scale-95 transition text-center"
               >
-                <Camera className="h-6 w-6 mb-1.5" />
+                <Camera className="h-5 w-5 mb-1.5" />
                 <span className="text-[11px] font-bold leading-tight">Escanear</span>
               </Link>
 
               <Link
                 href="/wallets?triggerTx=true"
                 onClick={handleTxClick}
-                className="flex flex-col items-center justify-center p-3 rounded-2xl bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20 active:scale-95 transition text-center"
+                className="flex flex-col items-center justify-center p-3 rounded-xl bg-slate-100 dark:bg-[#0A0A0C] text-slate-900 dark:text-white border border-slate-200/80 dark:border-white/[0.08] active:scale-95 transition text-center"
               >
-                <PlusCircle className="h-6 w-6 mb-1.5" />
+                <PlusCircle className="h-5 w-5 mb-1.5 text-slate-300" />
                 <span className="text-[11px] font-bold leading-tight">Movimiento</span>
               </Link>
             </div>
@@ -207,23 +207,23 @@ export default function BottomNavigation() {
                       className={cn(
                         "flex items-center gap-3.5 p-3 rounded-xl transition-all active:scale-[0.98]",
                         isActive
-                          ? "bg-brand-cerulean text-white shadow-md shadow-brand-cerulean/20 font-semibold"
-                          : "bg-slate-100/80 dark:bg-[#0F1626] text-slate-900 dark:text-white border border-slate-200/60 dark:border-white/10"
+                          ? "bg-white text-black font-extrabold shadow-md"
+                          : "bg-slate-100/80 dark:bg-[#0A0A0C] text-slate-900 dark:text-white border border-slate-200/60 dark:border-white/[0.08]"
                       )}
                     >
                       <div
                         className={cn(
-                          "grid h-9 w-9 shrink-0 place-items-center rounded-lg",
-                          isActive ? "bg-white/20 text-white" : "bg-brand-cerulean/15 text-brand-cerulean"
+                          "grid h-8 w-8 shrink-0 place-items-center rounded-lg",
+                          isActive ? "bg-black/10 text-black" : "bg-white/10 text-white"
                         )}
                       >
-                        <Icon className="h-5 w-5" />
+                        <Icon className="h-4 w-4" />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className={cn("text-xs font-black truncate", isActive ? "text-white" : "text-slate-900 dark:text-white")}>
+                        <p className={cn("text-xs font-black truncate", isActive ? "text-black" : "text-slate-900 dark:text-white")}>
                           {item.name}
                         </p>
-                        <p className={cn("text-[11px] truncate mt-0.5", isActive ? "text-white/85" : "text-slate-600 dark:text-slate-300")}>
+                        <p className={cn("text-[11px] truncate mt-0.5", isActive ? "text-black/70" : "text-slate-600 dark:text-slate-400")}>
                           {item.desc}
                         </p>
                       </div>
@@ -249,7 +249,7 @@ export default function BottomNavigation() {
       </div>
 
       {/* Dock Inferior Fijo para Celular con Soporte de Safe Areas para iPhone y Android */}
-      <div className="fixed bottom-0 left-0 z-40 grid w-full grid-cols-5 border-t border-slate-200/80 bg-white/95 px-2 pb-[env(safe-area-inset-bottom,0px)] h-[calc(3.75rem+env(safe-area-inset-bottom,0px))] shadow-lg backdrop-blur-xl dark:border-white/10 dark:bg-[#080C14]/95 md:hidden">
+      <div className="fixed bottom-0 left-0 z-40 grid w-full grid-cols-5 border-t border-slate-200/80 bg-white/95 px-2 pb-[env(safe-area-inset-bottom,0px)] h-[calc(3.75rem+env(safe-area-inset-bottom,0px))] shadow-lg backdrop-blur-xl dark:border-white/[0.08] dark:bg-[#000000]/95 md:hidden">
         {mainDockItems.map((item) => {
           const isActive = pathname === item.href;
           const Icon = item.icon;
@@ -264,10 +264,10 @@ export default function BottomNavigation() {
               className="flex flex-col items-center justify-center gap-0.5 transition active:scale-90"
             >
               <Icon
-                className={cn("h-5 w-5 transition-transform", isActive ? "text-brand-cerulean scale-110" : "text-slate-500 dark:text-slate-400")}
-                strokeWidth={isActive ? 2.5 : 2}
+                className={cn("h-5 w-5 transition-transform", isActive ? "text-white scale-110" : "text-zinc-500 dark:text-zinc-500")}
+                strokeWidth={isActive ? 2.5 : 1.8}
               />
-              <span className={cn("text-[10px] font-bold", isActive ? "text-brand-cerulean" : "text-slate-600 dark:text-slate-300")}>
+              <span className={cn("text-[10px] font-bold", isActive ? "text-white" : "text-zinc-500 dark:text-zinc-400")}>
                 {item.name}
               </span>
             </Link>

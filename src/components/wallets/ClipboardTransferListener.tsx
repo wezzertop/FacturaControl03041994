@@ -76,19 +76,19 @@ export default function ClipboardTransferListener({
   return (
     <>
       <div className="fixed bottom-20 left-4 right-4 z-40 animate-slide-up">
-        <div className="surface-card rounded-2xl p-3.5 border border-brand-cerulean/50 shadow-2xl bg-[#0F1626] text-white flex items-center justify-between gap-3">
+        <div className="surface-card rounded-2xl p-3.5 border border-white/15 shadow-2xl bg-[#0A0A0C] text-white flex items-center justify-between gap-3">
           <div className="flex items-center gap-2.5 min-w-0">
-            <div className="w-9 h-9 rounded-xl bg-brand-cerulean text-white flex items-center justify-center shrink-0 shadow-md">
-              <Zap className="w-4 h-4 text-amber-300 fill-current" />
+            <div className="w-9 h-9 rounded-xl bg-white/10 text-white flex items-center justify-center shrink-0 shadow-md">
+              <Zap className="w-4 h-4 text-amber-400 fill-current" />
             </div>
             <div className="min-w-0">
               <h5 className="text-xs font-bold text-white truncate flex items-center gap-1.5">
                 Transferencia Copiada
-                <span className="text-[9px] font-black bg-brand-cerulean/30 text-sky-300 px-1.5 py-0.5 rounded-md">
+                <span className="text-[9px] font-black bg-white/15 text-white px-1.5 py-0.5 rounded-md">
                   1-Toque
                 </span>
               </h5>
-              <p className="text-[11px] text-slate-300 truncate mt-0.5">
+              <p className="text-[11px] text-zinc-300 truncate mt-0.5">
                 ${detectedAmount} en {detectedMerchant}
               </p>
             </div>
@@ -97,7 +97,7 @@ export default function ClipboardTransferListener({
           <div className="flex items-center gap-1.5 shrink-0">
             <button
               onClick={() => setIsModalOpen(true)}
-              className="px-3 py-1.5 rounded-lg bg-brand-cerulean hover:bg-sky-600 text-white text-xs font-black transition active:scale-95 shadow-md flex items-center gap-1"
+              className="px-3 py-1.5 rounded-lg bg-white hover:bg-neutral-200 text-black text-xs font-black transition active:scale-95 shadow-md flex items-center gap-1"
             >
               Registrar
               <ArrowRight className="w-3.5 h-3.5" />

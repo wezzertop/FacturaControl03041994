@@ -75,7 +75,7 @@ export default function SidebarNavigation() {
   return (
     <aside
       className={cn(
-        "relative hidden h-screen shrink-0 flex-col border-r border-slate-200/80 bg-white/95 backdrop-blur-xl transition-all duration-300 dark:border-white/10 dark:bg-[#080C14] md:flex",
+        "relative hidden h-screen shrink-0 flex-col border-r border-slate-200/80 bg-white/95 backdrop-blur-xl transition-all duration-300 dark:border-white/[0.08] dark:bg-[#000000] md:flex",
         collapsed ? "w-20" : "w-72",
       )}
     >
@@ -83,23 +83,23 @@ export default function SidebarNavigation() {
       <button
         type="button"
         onClick={() => setCollapsed(!collapsed)}
-        className="absolute -right-3.5 top-7 z-20 grid h-7 w-7 place-items-center rounded-full border border-slate-200 bg-white text-slate-700 shadow-md transition hover:border-brand-cerulean hover:bg-brand-cerulean hover:text-white dark:border-white/15 dark:bg-[#0F1626] dark:text-slate-200"
+        className="absolute -right-3.5 top-7 z-20 grid h-7 w-7 place-items-center rounded-full border border-slate-200 bg-white text-slate-700 shadow-md transition hover:border-white/30 hover:bg-neutral-800 hover:text-white dark:border-white/15 dark:bg-[#0A0A0C] dark:text-slate-200"
         title={collapsed ? "Expandir menú" : "Contraer menú"}
       >
         {collapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
       </button>
 
       {/* Header del Sidebar */}
-      <div className="flex h-20 items-center gap-3.5 px-5 border-b border-slate-200/80 dark:border-white/10 shrink-0">
-        <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-brand-cerulean text-white shadow-md shadow-brand-cerulean/25">
-          <Zap className="h-5 w-5" />
+      <div className="flex h-20 items-center gap-3.5 px-5 border-b border-slate-200/80 dark:border-white/[0.08] shrink-0">
+        <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-white text-black shadow-md">
+          <Zap className="h-5 w-5 fill-current" />
         </div>
         {!collapsed ? (
           <div className="min-w-0">
             <p className="truncate text-base font-black text-slate-900 dark:text-white tracking-tight">
-              Factura<span className="text-brand-cerulean">Control</span>
+              Factura<span className="text-white">Control</span>
             </p>
-            <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Panel Financiero</p>
+            <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-500">Panel Financiero</p>
           </div>
         ) : null}
       </div>
@@ -109,7 +109,7 @@ export default function SidebarNavigation() {
         {navGroups.map((group) => (
           <div key={group.title} className="space-y-1">
             {!collapsed && (
-              <p className="px-3 text-[10px] font-extrabold uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1.5">
+              <p className="px-3 text-[10px] font-extrabold uppercase tracking-widest text-slate-500 dark:text-zinc-500 mb-1.5">
                 {group.title}
               </p>
             )}
@@ -127,14 +127,14 @@ export default function SidebarNavigation() {
                       "group flex h-10 items-center gap-3 rounded-xl px-3 text-sm font-semibold transition-all duration-150",
                       collapsed && "justify-center px-0 h-11",
                       isActive
-                        ? "bg-brand-cerulean text-white shadow-md shadow-brand-cerulean/20 font-semibold"
-                        : "text-slate-700 hover:bg-slate-100 hover:text-slate-950 dark:text-slate-300 dark:hover:bg-[#0F1626] dark:hover:text-white",
+                        ? "bg-white text-black font-extrabold shadow-sm"
+                        : "text-slate-700 hover:bg-slate-100 hover:text-slate-950 dark:text-slate-300 dark:hover:bg-[#0A0A0C] dark:hover:text-white",
                     )}
                     title={collapsed ? item.name : undefined}
                   >
                     <Icon
-                      className={cn("h-4.5 w-4.5 shrink-0 transition-transform group-hover:scale-105", isActive ? "text-white" : "text-slate-500 dark:text-slate-400")}
-                      strokeWidth={isActive ? 2.4 : 2}
+                      className={cn("h-4.5 w-4.5 shrink-0 transition-transform group-hover:scale-105", isActive ? "text-black" : "text-slate-500 dark:text-slate-400")}
+                      strokeWidth={isActive ? 2.4 : 1.8}
                     />
                     {!collapsed ? <span className="truncate">{item.name}</span> : null}
                   </Link>
@@ -146,20 +146,20 @@ export default function SidebarNavigation() {
       </nav>
 
       {/* Footer del Sidebar: Plan + Cambiador de Tema + Logout */}
-      <div className="space-y-2.5 border-t border-slate-200/80 p-3.5 dark:border-white/10 shrink-0">
+      <div className="space-y-2.5 border-t border-slate-200/80 p-3.5 dark:border-white/[0.08] shrink-0">
         <div
           className={cn(
-            "rounded-xl border border-slate-200/80 bg-slate-50/80 p-3 dark:border-white/10 dark:bg-[#0F1626]",
+            "rounded-xl border border-slate-200/80 bg-slate-50/80 p-3 dark:border-white/[0.08] dark:bg-[#0A0A0C]",
             collapsed && "p-2 text-center",
           )}
         >
           {collapsed ? (
             <div className="grid place-items-center gap-2">
-              <Sparkles className="h-5 w-5 text-brand-cerulean" />
+              <Sparkles className="h-5 w-5 text-amber-400" />
               <button
                 type="button"
                 onClick={() => setTheme(nextTheme)}
-                className="grid h-8 w-8 place-items-center rounded-lg text-slate-600 hover:bg-white hover:text-brand-cerulean dark:text-slate-300 dark:hover:bg-white/10 transition"
+                className="grid h-8 w-8 place-items-center rounded-lg text-slate-600 hover:bg-white hover:text-white dark:text-slate-300 dark:hover:bg-white/10 transition"
                 title="Cambiar tema"
                 suppressHydrationWarning
               >
@@ -170,7 +170,7 @@ export default function SidebarNavigation() {
             <>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
-                  <div className="grid h-8 w-8 place-items-center rounded-lg bg-brand-cerulean/15 text-brand-cerulean">
+                  <div className="grid h-8 w-8 place-items-center rounded-lg bg-emerald-500/15 text-emerald-400">
                     <Sparkles className="h-4 w-4" />
                   </div>
                   <div>
@@ -182,7 +182,7 @@ export default function SidebarNavigation() {
                 <button
                   type="button"
                   onClick={() => setTheme(nextTheme)}
-                  className="grid h-8 w-8 place-items-center rounded-lg border border-slate-200 bg-white text-slate-700 hover:border-brand-cerulean hover:text-brand-cerulean dark:border-white/10 dark:bg-[#151E32] dark:text-slate-300 transition"
+                  className="grid h-8 w-8 place-items-center rounded-lg border border-slate-200 bg-white text-slate-700 hover:border-white/40 hover:text-white dark:border-white/10 dark:bg-[#141418] dark:text-zinc-300 transition"
                   title="Cambiar tema"
                   suppressHydrationWarning
                 >

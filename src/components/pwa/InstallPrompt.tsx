@@ -77,7 +77,7 @@ export default function InstallPrompt() {
 
   return (
     <div className="fixed bottom-20 left-4 right-4 z-40 md:hidden animate-slide-up">
-      <div className="surface-card rounded-2xl p-4 border border-brand-cerulean/40 shadow-2xl bg-[#0F1626] text-white backdrop-blur-xl relative">
+      <div className="surface-card rounded-2xl p-4 border border-white/[0.08] shadow-2xl bg-[#000000] text-white backdrop-blur-xl relative">
         <button
           onClick={handleDismiss}
           className="absolute top-3 right-3 text-slate-400 hover:text-white p-1 rounded-lg hover:bg-white/10 transition"
@@ -87,52 +87,52 @@ export default function InstallPrompt() {
         </button>
 
         <div className="flex items-start gap-3 pr-6">
-          <div className="w-10 h-10 rounded-xl bg-brand-cerulean text-white flex items-center justify-center shrink-0 shadow-md">
+          <div className="w-10 h-10 rounded-xl bg-white text-black flex items-center justify-center shrink-0 shadow-md">
             <Smartphone className="w-5 h-5" />
           </div>
 
           <div className="flex-1 min-w-0">
             <h4 className="text-xs font-black tracking-tight text-white flex items-center gap-1.5">
               Instalar FacturaControl
-              <span className="text-[10px] font-bold bg-brand-cerulean/25 text-sky-300 px-2 py-0.5 rounded-md border border-brand-cerulean/35">
+              <span className="text-[10px] font-bold bg-white/15 text-white px-2 py-0.5 rounded-md border border-white/20">
                 App Móvil
               </span>
             </h4>
 
             {isIos ? (
-              <div className="text-[11px] text-slate-300 mt-1.5 leading-relaxed space-y-1">
+              <div className="text-[11px] text-zinc-300 mt-1.5 leading-relaxed space-y-1">
                 <p>Instala la app en tu iPhone sin tiendas:</p>
-                <div className="flex items-center gap-1.5 font-semibold text-sky-400">
+                <div className="flex items-center gap-1.5 font-semibold text-emerald-400">
                   1. Toca <Share className="w-3.5 h-3.5 inline" /> <b>Compartir</b> en Safari
                 </div>
-                <div className="flex items-center gap-1.5 font-semibold text-sky-400">
+                <div className="flex items-center gap-1.5 font-semibold text-emerald-400">
                   2. Elige <PlusSquare className="w-3.5 h-3.5 inline" /> <b>"Agregar a Inicio"</b>
                 </div>
               </div>
             ) : isAndroid ? (
-              <div className="text-[11px] text-slate-300 mt-1.5 leading-relaxed space-y-1.5">
+              <div className="text-[11px] text-zinc-300 mt-1.5 leading-relaxed space-y-1.5">
                 <p>Instala la app en tu Android:</p>
                 {deferredPrompt ? (
                   <button
                     onClick={handleInstallClick}
-                    className="w-full py-2 bg-brand-cerulean hover:bg-sky-600 text-white font-extrabold text-xs rounded-xl transition shadow-md flex items-center justify-center gap-1.5 mt-1"
+                    className="w-full py-2 bg-white hover:bg-neutral-200 text-black font-extrabold text-xs rounded-xl transition shadow-md flex items-center justify-center gap-1.5 mt-1"
                   >
                     <Download className="w-3.5 h-3.5" />
                     Instalar en 1 Clic 📲
                   </button>
                 ) : (
-                  <div className="space-y-1 text-slate-300">
-                    <div className="flex items-center gap-1.5 font-semibold text-sky-400">
+                  <div className="space-y-1 text-zinc-300">
+                    <div className="flex items-center gap-1.5 font-semibold text-emerald-400">
                       1. Toca los 3 puntos <MoreVertical className="w-3.5 h-3.5 inline" /> en Chrome
                     </div>
-                    <div className="flex items-center gap-1.5 font-semibold text-sky-400">
+                    <div className="flex items-center gap-1.5 font-semibold text-emerald-400">
                       2. Elige <Download className="w-3.5 h-3.5 inline" /> <b>"Instalar aplicación"</b> o <b>"Agregar a pantalla principal"</b>
                     </div>
                   </div>
                 )}
               </div>
             ) : (
-              <p className="text-[11px] text-slate-300 mt-1 leading-relaxed">
+              <p className="text-[11px] text-zinc-300 mt-1 leading-relaxed">
                 Instala la aplicación en tu pantalla de inicio para acceder en 1 toque a pantalla completa.
               </p>
             )}

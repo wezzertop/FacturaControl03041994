@@ -135,26 +135,26 @@ export default function TactileTransactionModal({
   };
 
   return (
-    <div className="fixed inset-0 z-[100] bg-slate-950/75 backdrop-blur-md flex items-end sm:items-center justify-center p-0 sm:p-4">
-      <div className="w-full max-w-lg bg-white dark:bg-[#080C14] rounded-t-2xl sm:rounded-2xl border-t sm:border border-slate-200 dark:border-white/10 shadow-2xl overflow-hidden flex flex-col max-h-[92vh] animate-slide-up safe-bottom">
+    <div className="fixed inset-0 z-[100] bg-black/75 backdrop-blur-md flex items-end sm:items-center justify-center p-0 sm:p-4">
+      <div className="w-full max-w-lg bg-white dark:bg-[#000000] rounded-t-2xl sm:rounded-2xl border-t sm:border border-slate-200 dark:border-white/[0.08] shadow-2xl overflow-hidden flex flex-col max-h-[92vh] animate-slide-up safe-bottom">
         
         {/* Header del Modal */}
-        <div className="p-3.5 border-b border-slate-200/80 dark:border-white/10 flex items-center justify-between">
+        <div className="p-3.5 border-b border-slate-200/80 dark:border-white/[0.08] flex items-center justify-between">
           <button
             onClick={onClose}
-            className="flex items-center gap-1 text-xs font-bold text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
+            className="flex items-center gap-1 text-xs font-bold text-slate-700 dark:text-zinc-300 hover:text-slate-900 dark:hover:text-white"
           >
             <ChevronLeft className="w-4 h-4" />
             Volver
           </button>
 
-          <div className="flex items-center gap-1 bg-slate-100 dark:bg-[#151E32] p-1 rounded-lg border border-slate-200/60 dark:border-white/5">
+          <div className="flex items-center gap-1 bg-slate-100 dark:bg-[#141418] p-1 rounded-lg border border-slate-200/60 dark:border-white/[0.06]">
             <button
               onClick={() => setType("expense")}
               className={`px-3 py-1 rounded-md text-xs font-black transition ${
                 type === "expense"
                   ? "bg-rose-600 text-white shadow-sm"
-                  : "text-slate-700 dark:text-slate-300"
+                  : "text-slate-700 dark:text-zinc-300"
               }`}
             >
               Gasto
@@ -164,7 +164,7 @@ export default function TactileTransactionModal({
               className={`px-3 py-1 rounded-md text-xs font-black transition ${
                 type === "income"
                   ? "bg-emerald-600 text-white shadow-sm"
-                  : "text-slate-700 dark:text-slate-300"
+                  : "text-slate-700 dark:text-zinc-300"
               }`}
             >
               Ingreso
@@ -173,7 +173,7 @@ export default function TactileTransactionModal({
 
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
+            className="p-1.5 rounded-lg text-slate-500 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-white"
           >
             <X className="w-5 h-5" />
           </button>
@@ -204,8 +204,8 @@ export default function TactileTransactionModal({
             </div>
 
             {/* Fecha Selector Pill */}
-            <div className="mt-1.5 inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-slate-100 dark:bg-[#151E32] text-xs font-bold text-slate-700 dark:text-slate-300 border border-slate-200/80 dark:border-white/10">
-              <CalendarIcon className="w-3.5 h-3.5 text-brand-cerulean" />
+            <div className="mt-1.5 inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-slate-100 dark:bg-[#141418] text-xs font-bold text-slate-700 dark:text-zinc-300 border border-slate-200/80 dark:border-white/[0.08]">
+              <CalendarIcon className="w-3.5 h-3.5 text-zinc-400" />
               <input
                 type="date"
                 value={date}
@@ -217,7 +217,7 @@ export default function TactileTransactionModal({
 
           {/* Campo Concepto / ¿En qué gastaste? */}
           <div className="space-y-1">
-            <label className="text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300">
+            <label className="text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-zinc-400">
               Descripción / Comercio
             </label>
             <input
@@ -226,23 +226,23 @@ export default function TactileTransactionModal({
               value={concept}
               onChange={(e) => setConcept(e.target.value)}
               placeholder={type === "expense" ? "¿En qué gastaste? (ej. Netflix, Starbucks, OXXO)" : "¿De dónde proviene? (ej. Nómina, Venta)"}
-              className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-[#0F1626] border border-slate-200 dark:border-white/10 rounded-xl text-xs font-bold text-slate-900 dark:text-white placeholder:text-slate-400 focus:ring-2 focus:ring-brand-cerulean focus:outline-none"
+              className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-[#0A0A0C] border border-slate-200 dark:border-white/[0.08] rounded-xl text-xs font-bold text-slate-900 dark:text-white placeholder:text-zinc-500 focus:ring-1 focus:ring-white/40 focus:outline-none"
             />
           </div>
 
           {/* Fila Doble: Cartera y Categoría */}
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1">
-              <label className="text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300">
+              <label className="text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-zinc-400">
                 Cartera / Tarjeta
               </label>
               <select
                 value={selectedWalletId}
                 onChange={(e) => setSelectedWalletId(e.target.value)}
-                className="w-full px-3 py-2 bg-slate-50 dark:bg-[#0F1626] border border-slate-200 dark:border-white/10 rounded-lg text-xs font-bold text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-cerulean focus:outline-none cursor-pointer"
+                className="w-full px-3 py-2 bg-slate-50 dark:bg-[#0A0A0C] border border-slate-200 dark:border-white/[0.08] rounded-lg text-xs font-bold text-slate-900 dark:text-white focus:ring-1 focus:ring-white/40 focus:outline-none cursor-pointer"
               >
                 {wallets.map((w) => (
-                  <option key={w.id} value={w.id} className="bg-slate-900 text-white">
+                  <option key={w.id} value={w.id} className="bg-neutral-900 text-white">
                     {w.name}
                   </option>
                 ))}
@@ -250,19 +250,19 @@ export default function TactileTransactionModal({
             </div>
 
             <div className="space-y-1">
-              <label className="text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300">
+              <label className="text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-zinc-400">
                 Categoría
               </label>
               <select
                 value={selectedCategoryId}
                 onChange={(e) => setSelectedCategoryId(e.target.value)}
-                className="w-full px-3 py-2 bg-slate-50 dark:bg-[#0F1626] border border-slate-200 dark:border-white/10 rounded-lg text-xs font-bold text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-cerulean focus:outline-none cursor-pointer"
+                className="w-full px-3 py-2 bg-slate-50 dark:bg-[#0A0A0C] border border-slate-200 dark:border-white/[0.08] rounded-lg text-xs font-bold text-slate-900 dark:text-white focus:ring-1 focus:ring-white/40 focus:outline-none cursor-pointer"
               >
-                <option value="" className="bg-slate-900 text-white">
+                <option value="" className="bg-neutral-900 text-white">
                   Sin Categoría
                 </option>
                 {categories.map((c) => (
-                  <option key={c.id} value={c.id} className="bg-slate-900 text-white">
+                  <option key={c.id} value={c.id} className="bg-neutral-900 text-white">
                     {c.name}
                   </option>
                 ))}
@@ -272,7 +272,7 @@ export default function TactileTransactionModal({
 
           {/* Status Pills */}
           <div className="space-y-1">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-zinc-400">
               Estado del Pago
             </span>
             <div className="grid grid-cols-3 gap-2">
@@ -282,7 +282,7 @@ export default function TactileTransactionModal({
                 className={`py-2 rounded-lg text-xs font-black transition ${
                   status === "paid"
                     ? "bg-emerald-600 text-white shadow-sm"
-                    : "bg-slate-100 dark:bg-[#151E32] text-slate-700 dark:text-slate-300 border border-slate-200/60 dark:border-white/5"
+                    : "bg-slate-100 dark:bg-[#141418] text-slate-700 dark:text-zinc-300 border border-slate-200/60 dark:border-white/[0.06]"
                 }`}
               >
                 Pagado
@@ -293,7 +293,7 @@ export default function TactileTransactionModal({
                 className={`py-2 rounded-lg text-xs font-black transition ${
                   status === "pending"
                     ? "bg-amber-500 text-white shadow-sm"
-                    : "bg-slate-100 dark:bg-[#151E32] text-slate-700 dark:text-slate-300 border border-slate-200/60 dark:border-white/5"
+                    : "bg-slate-100 dark:bg-[#141418] text-slate-700 dark:text-zinc-300 border border-slate-200/60 dark:border-white/[0.06]"
                 }`}
               >
                 Pendiente
@@ -303,8 +303,8 @@ export default function TactileTransactionModal({
                 onClick={() => setStatus("planned")}
                 className={`py-2 rounded-lg text-xs font-black transition ${
                   status === "planned"
-                    ? "bg-blue-600 text-white shadow-sm"
-                    : "bg-slate-100 dark:bg-[#151E32] text-slate-700 dark:text-slate-300 border border-slate-200/60 dark:border-white/5"
+                    ? "bg-neutral-700 text-white shadow-sm"
+                    : "bg-slate-100 dark:bg-[#141418] text-slate-700 dark:text-zinc-300 border border-slate-200/60 dark:border-white/[0.06]"
                 }`}
               >
                 Programado
@@ -319,8 +319,8 @@ export default function TactileTransactionModal({
               onClick={() => setShowNoteField(!showNoteField)}
               className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition ${
                 showNoteField
-                  ? "bg-brand-cerulean/15 border-brand-cerulean text-brand-cerulean"
-                  : "border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-300"
+                  ? "bg-white/10 border-white/40 text-white"
+                  : "border-slate-200 dark:border-white/[0.08] text-slate-700 dark:text-zinc-300"
               }`}
             >
               + Agregar Nota
@@ -331,8 +331,8 @@ export default function TactileTransactionModal({
               onClick={() => setIsRecurring(!isRecurring)}
               className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition flex items-center gap-1.5 ${
                 isRecurring
-                  ? "bg-purple-500/15 border-purple-500 text-purple-600 dark:text-purple-400"
-                  : "border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-300"
+                  ? "bg-purple-500/15 border-purple-500 text-purple-400"
+                  : "border-slate-200 dark:border-white/[0.08] text-slate-700 dark:text-zinc-300"
               }`}
             >
               <Repeat className="w-3.5 h-3.5" />
@@ -346,19 +346,19 @@ export default function TactileTransactionModal({
               value={note}
               onChange={(e) => setNote(e.target.value)}
               placeholder="Escribe notas adicionales o detalles del movimiento..."
-              className="w-full px-3 py-2 bg-slate-50 dark:bg-[#0F1626] border border-slate-200 dark:border-white/10 rounded-lg text-xs text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none"
+              className="w-full px-3 py-2 bg-slate-50 dark:bg-[#0A0A0C] border border-slate-200 dark:border-white/[0.08] rounded-lg text-xs text-slate-900 dark:text-white placeholder:text-zinc-500 focus:outline-none"
             />
           )}
 
           {/* Teclado Numérico Táctil Integrado */}
-          <div className="p-2.5 bg-slate-100 dark:bg-[#0F1626] rounded-xl border border-slate-200/80 dark:border-white/10">
+          <div className="p-2.5 bg-slate-100 dark:bg-[#0A0A0C] rounded-xl border border-slate-200/80 dark:border-white/[0.08]">
             <div className="grid grid-cols-3 gap-2">
               {["1", "2", "3", "4", "5", "6", "7", "8", "9", ".", "0", "backspace"].map((key) => (
                 <button
                   key={key}
                   type="button"
                   onClick={() => handleKeypadPress(key)}
-                  className="h-11 rounded-lg bg-white dark:bg-[#151E32] text-slate-900 dark:text-white font-black text-base shadow-sm border border-slate-200/60 dark:border-white/5 hover:bg-slate-50 dark:hover:bg-white/10 active:scale-95 transition flex items-center justify-center"
+                  className="h-11 rounded-lg bg-white dark:bg-[#141418] text-slate-900 dark:text-white font-black text-base shadow-sm border border-slate-200/60 dark:border-white/[0.06] hover:bg-slate-50 dark:hover:bg-white/10 active:scale-95 transition flex items-center justify-center"
                 >
                   {key === "backspace" ? <Delete className="w-5 h-5" /> : key}
                 </button>
