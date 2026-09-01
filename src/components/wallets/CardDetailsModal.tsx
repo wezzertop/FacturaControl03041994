@@ -24,7 +24,8 @@ interface CardDetailsModalProps {
   onClose: () => void;
   wallet: any | null;
   transactions: any[];
-  onOpenNewTx?: (type: "expense" | "income", walletId: string) => void;
+  onOpenNewTx?: (type: "expense" | "income" | "transfer", walletId: string) => void;
+  onEditTx?: (tx: any) => void;
 }
 
 export default function CardDetailsModal({
@@ -33,6 +34,7 @@ export default function CardDetailsModal({
   wallet,
   transactions,
   onOpenNewTx,
+  onEditTx,
 }: CardDetailsModalProps) {
   if (!isOpen || !wallet) return null;
 
@@ -99,54 +101,46 @@ export default function CardDetailsModal({
                   {wallet.name}
                 </h4>
               </div>
-              <div className="flex items-center gap-2">
-                <Wifi className="w-3.5 h-3.5 opacity-75 rotate-90" />
-                <div className={`w-7 h-5 rounded-md ${theme.chipColor} border border-white/40 shadow-inner`} />
-              </div>
+              <Wifi className="w-5 h-5 opacity-70 rotate-90" />
             </div>
 
             <div className="relative z-10">
-              <span className="text-[10px] uppercase font-bold tracking-wider opacity-75 block">
-                {isCredit ? "Crédito Disponible" : "Saldo Actual"}
+              <span className="text-[10px] uppercase tracking-wider opacity-75 font-semibold">
+                {isCredit ? "Saldo Deudor" : "Saldo Disponible"}
               </span>
-              <p className="text-2xl font-black tracking-tight drop-shadow-md">
-                {formatCurrency(isCredit ? availableCredit : wallet.balance)}
+              <p className="text-2xl font-black tracking-tight">
+                {formatCurrency(isCredit ? debt : wallet.balance)}
               </p>
             </div>
 
-            <div className="flex items-end justify-between relative z-10 pt-1 border-t border-white/10 text-xs font-mono">
-              <span>•••• •••• •••• {wallet.name.match(/\d{4}/)?.[0] || "4589"}</span>
-              <span className="font-sans font-black italic">{theme.network}</span>
+            <div className="flex items-center justify-between text-[11px] font-bold opacity-85 relative z-10">
+              <span>•••• {wallet.name.slice(-4)}</span>
+              <span>{isCredit ? `Corte día ${cutOff}` : "Débito / Efectivo"}</span>
             </div>
           </div>
 
-          {/* Estadísticas de la Tarjeta */}
+          {/* Estadísticas de Crédito o Débito */}
           {isCredit ? (
-            <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-[#0A0A0C] border border-slate-200/60 dark:border-white/[0.08] space-y-2.5">
-              <div className="flex justify-between items-center text-xs font-bold">
-                <span className="text-slate-600 dark:text-zinc-400">Límite de Crédito:</span>
-                <span className="text-slate-900 dark:text-white font-extrabold">{formatCurrency(creditLimit)}</span>
-              </div>
-              <div className="flex justify-between items-center text-xs font-bold">
-                <span className="text-slate-600 dark:text-zinc-400">Deuda / Saldo Utilizado:</span>
-                <span className="text-rose-600 dark:text-rose-400 font-extrabold">{formatCurrency(debt)} ({usedPct.toFixed(0)}%)</span>
-              </div>
-
-              <div className="w-full bg-slate-200 dark:bg-[#141418] h-2 rounded-full overflow-hidden">
-                <div
-                  className={`h-full rounded-full transition-all ${
-                    usedPct > 80 ? "bg-rose-500" : usedPct > 50 ? "bg-amber-400" : "bg-emerald-500"
-                  }`}
-                  style={{ width: `${usedPct}%` }}
-                />
-              </div>
-
-              <div className="pt-2 border-t border-slate-200/60 dark:border-white/[0.06] flex justify-between items-center text-xs font-semibold">
-                <div className="flex items-center gap-1.5 text-slate-700 dark:text-zinc-300">
-                  <Clock className="w-4 h-4 text-zinc-400" />
-                  <span>Corte: día {cutOff} • Pago: día {due}</span>
+            <div className="grid grid-cols-2 gap-2.5">
+              <div className="p-3 rounded-xl bg-slate-50 dark:bg-[#0A0A0C] border border-slate-200/60 dark:border-white/[0.08]">
+                <span className="text-[10px] uppercase font-bold text-slate-500 dark:text-zinc-500">Crédito Disponible</span>
+                <p className="text-sm font-black text-emerald-600 dark:text-emerald-400 mt-0.5">
+                  {formatCurrency(availableCredit)}
+                </p>
+                <div className="w-full h-1.5 rounded-full bg-slate-200 dark:bg-white/10 overflow-hidden mt-1.5">
+                  <div 
+                    className={`h-full rounded-full ${usedPct > 80 ? "bg-rose-500" : "bg-emerald-500"}`} 
+                    style={{ width: `${usedPct}%` }}
+                  />
                 </div>
-                <span className={`px-2 py-0.5 rounded-md text-[10px] font-black ${
+              </div>
+
+              <div className="p-3 rounded-xl bg-slate-50 dark:bg-[#0A0A0C] border border-slate-200/60 dark:border-white/[0.08]">
+                <span className="text-[10px] uppercase font-bold text-slate-500 dark:text-zinc-500">Fecha Límite Pago</span>
+                <p className="text-sm font-black text-slate-900 dark:text-white mt-0.5">
+                  Día {due}
+                </p>
+                <span className={`inline-block text-[10px] font-extrabold px-1.5 py-0.5 rounded-md mt-1 ${
                   daysToDue <= 3 ? "bg-rose-500/15 text-rose-600 dark:text-rose-400" : "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
                 }`}>
                   {daysToDue === 0 ? "Paga hoy" : `En ${daysToDue} días`}
@@ -167,16 +161,16 @@ export default function CardDetailsModal({
           )}
 
           {/* Botones de Acción Rápida para esta Tarjeta */}
-          <div className="grid grid-cols-2 gap-2.5">
+          <div className="grid grid-cols-3 gap-2">
             <button
               onClick={() => {
                 onClose();
                 if (onOpenNewTx) onOpenNewTx("expense", wallet.id);
               }}
-              className="py-2.5 px-3 bg-rose-500/10 hover:bg-rose-500/15 text-rose-600 dark:text-rose-400 font-bold text-xs rounded-xl border border-rose-500/25 transition flex items-center justify-center gap-1.5 min-h-[40px]"
+              className="py-2.5 px-2 bg-rose-500/10 hover:bg-rose-500/15 text-rose-600 dark:text-rose-400 font-bold text-xs rounded-xl border border-rose-500/25 transition flex flex-col items-center justify-center gap-1 min-h-[44px]"
             >
               <ArrowDownLeft className="w-4 h-4" />
-              Registrar Gasto
+              Gasto
             </button>
 
             <button
@@ -184,10 +178,21 @@ export default function CardDetailsModal({
                 onClose();
                 if (onOpenNewTx) onOpenNewTx("income", wallet.id);
               }}
-              className="py-2.5 px-3 bg-emerald-500/10 hover:bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-bold text-xs rounded-xl border border-emerald-500/25 transition flex items-center justify-center gap-1.5 min-h-[40px]"
+              className="py-2.5 px-2 bg-emerald-500/10 hover:bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-bold text-xs rounded-xl border border-emerald-500/25 transition flex flex-col items-center justify-center gap-1 min-h-[44px]"
             >
               <ArrowUpRight className="w-4 h-4" />
-              {isCredit ? "Abonar / Pagar" : "Nuevo Ingreso"}
+              {isCredit ? "Abono" : "Ingreso"}
+            </button>
+
+            <button
+              onClick={() => {
+                onClose();
+                if (onOpenNewTx) onOpenNewTx("transfer", wallet.id);
+              }}
+              className="py-2.5 px-2 bg-white/5 hover:bg-white/10 text-white font-bold text-xs rounded-xl border border-white/10 transition flex flex-col items-center justify-center gap-1 min-h-[44px]"
+            >
+              <CreditCard className="w-4 h-4" />
+              Transferir
             </button>
           </div>
 
@@ -211,7 +216,11 @@ export default function CardDetailsModal({
                 {walletTransactions.map((tx) => (
                   <div
                     key={tx.id}
-                    className="p-3 rounded-xl bg-slate-50 dark:bg-[#0A0A0C] border border-slate-200/60 dark:border-white/[0.06] flex items-center justify-between"
+                    onClick={() => {
+                      onClose();
+                      if (onEditTx) onEditTx(tx);
+                    }}
+                    className="p-3 rounded-xl bg-slate-50 dark:bg-[#0A0A0C] border border-slate-200/60 dark:border-white/[0.06] hover:border-white/20 active:bg-white/5 cursor-pointer transition flex items-center justify-between"
                   >
                     <div className="min-w-0 flex-1">
                       <p className="text-xs font-bold text-slate-900 dark:text-white truncate">

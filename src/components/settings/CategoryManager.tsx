@@ -135,7 +135,11 @@ interface Category {
   name: string;
   color: string;
   icon: string;
+  monthly_budget?: number | null;
+  type?: 'expense' | 'income' | 'savings' | null;
   user_id: string | null;
+  spent?: number;
+  percent?: number;
 }
 
 interface CategoryManagerProps {
@@ -145,13 +149,16 @@ interface CategoryManagerProps {
 export default function CategoryManager({ initialCategories }: CategoryManagerProps) {
   const [categories, setCategories] = useState<Category[]>(initialCategories);
   const [name, setName] = useState('');
-  const [selectedColor, setSelectedColor] = useState('bg-brand-cerulean');
+  const [selectedColor, setSelectedColor] = useState('bg-emerald-500');
   const [selectedIcon, setSelectedIcon] = useState('ShoppingCart');
+  const [monthlyBudget, setMonthlyBudget] = useState<string>('');
+  const [categoryType, setCategoryType] = useState<'expense' | 'income' | 'savings'>('expense');
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   
   // Filtros y Buscador
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilterTab, setActiveFilterTab] = useState<'all' | 'custom' | 'system'>('all');
+  const [selectedTypeFilter, setSelectedTypeFilter] = useState<'all' | 'expense' | 'income' | 'savings'>('all');
   const [selectedIconFamilyIndex, setSelectedIconFamilyIndex] = useState(0);
 
   const [isPending, startTransition] = useTransition();
@@ -178,24 +185,39 @@ export default function CategoryManager({ initialCategories }: CategoryManagerPr
 
     setErrorMessage(null);
     setSuccessMessage(null);
+    const parsedBudget = parseFloat(monthlyBudget.replace(/[^0-9.-]+/g, '')) || 0;
 
     startTransition(async () => {
       if (editingCategory) {
-        const res = await updateCategory(editingCategory.id, name.trim(), selectedColor, selectedIcon);
+        const res = await updateCategory(
+          editingCategory.id, 
+          name.trim(), 
+          selectedColor, 
+          selectedIcon,
+          parsedBudget,
+          categoryType
+        );
         if (res.success && res.category) {
-          setCategories(categories.map(c => c.id === editingCategory.id ? (res.category as Category) : c));
+          setCategories(categories.map(c => c.id === editingCategory.id ? { ...res.category, monthly_budget: parsedBudget, type: categoryType } : c));
           setSuccessMessage(`Categoría "${name}" actualizada correctamente.`);
           handleCancelEdit();
         } else {
           setErrorMessage(res.error || 'No se pudo actualizar la categoría.');
         }
       } else {
-        const res = await createCategory(name.trim(), selectedColor, selectedIcon);
+        const res = await createCategory(
+          name.trim(), 
+          selectedColor, 
+          selectedIcon,
+          parsedBudget,
+          categoryType
+        );
         if (res.success && res.category) {
-          setCategories([...categories, res.category as Category]);
+          setCategories([...categories, { ...res.category, monthly_budget: parsedBudget, type: categoryType }]);
           setSuccessMessage(`Categoría "${name}" creada correctamente.`);
           setName('');
-          setSelectedColor('bg-brand-cerulean');
+          setMonthlyBudget('');
+          setSelectedColor('bg-emerald-500');
           setSelectedIcon('ShoppingCart');
         } else {
           setErrorMessage(res.error || 'No se pudo crear la categoría.');
@@ -215,6 +237,8 @@ export default function CategoryManager({ initialCategories }: CategoryManagerPr
     setName(cat.name);
     setSelectedColor(cat.color);
     setSelectedIcon(cat.icon);
+    setMonthlyBudget(cat.monthly_budget ? cat.monthly_budget.toString() : '');
+    setCategoryType(cat.type || 'expense');
     setErrorMessage(null);
     setSuccessMessage(null);
   };
@@ -222,14 +246,16 @@ export default function CategoryManager({ initialCategories }: CategoryManagerPr
   const handleCancelEdit = () => {
     setEditingCategory(null);
     setName('');
-    setSelectedColor('bg-brand-cerulean');
+    setMonthlyBudget('');
+    setSelectedColor('bg-emerald-500');
     setSelectedIcon('ShoppingCart');
+    setCategoryType('expense');
     setErrorMessage(null);
     setSuccessMessage(null);
   };
 
   const handleDelete = async (id: string, catName: string) => {
-    if (!confirm(`¿Estás seguro de eliminar la categoría personalizada "${catName}"?`)) return;
+    if (!confirm(`¿Estás seguro de eliminar la categoría "${catName}"?`)) return;
 
     startTransition(async () => {
       const res = await deleteCategory(id);
@@ -247,14 +273,13 @@ export default function CategoryManager({ initialCategories }: CategoryManagerPr
 
   // Filtrado dinámico
   const customCategoriesCount = categories.filter(c => c.user_id !== null).length;
-  const systemCategoriesCount = categories.filter(c => c.user_id === null).length;
+  const totalBudget = categories.reduce((sum, c) => sum + Number(c.monthly_budget || 0), 0);
 
   const filteredCategories = categories.filter(cat => {
-    // Filtro por tipo
     if (activeFilterTab === 'custom' && cat.user_id === null) return false;
     if (activeFilterTab === 'system' && cat.user_id !== null) return false;
+    if (selectedTypeFilter !== 'all' && (cat.type || 'expense') !== selectedTypeFilter) return false;
 
-    // Buscador por texto
     if (searchQuery.trim()) {
       return cat.name.toLowerCase().includes(searchQuery.toLowerCase().trim());
     }
@@ -268,36 +293,38 @@ export default function CategoryManager({ initialCategories }: CategoryManagerPr
 
       {/* Tarjetas KPI de Resumen */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="surface-card rounded-2xl p-5 border border-slate-200/80 dark:border-white/10 flex items-center justify-between shadow-sm">
+        <div className="surface-card rounded-2xl p-5 border border-slate-200/80 dark:border-white/[0.08] flex items-center justify-between shadow-sm bg-white dark:bg-[#0A0A0C]">
           <div>
             <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-zinc-400">Total Categorías</p>
             <p className="text-2xl font-black text-slate-900 dark:text-white mt-1">{categories.length}</p>
-            <p className="text-[10px] text-slate-400 mt-0.5">Grupos disponibles</p>
+            <p className="text-[10px] text-zinc-500 mt-0.5">Clasificadores activos</p>
           </div>
-          <div className="w-10 h-10 rounded-2xl bg-brand-cerulean/10 text-brand-cerulean flex items-center justify-center">
+          <div className="w-10 h-10 rounded-2xl bg-white/10 text-white flex items-center justify-center">
             <Tag className="w-5 h-5" />
           </div>
         </div>
 
-        <div className="surface-card rounded-2xl p-5 border border-slate-200/80 dark:border-white/10 flex items-center justify-between shadow-sm">
+        <div className="surface-card rounded-2xl p-5 border border-slate-200/80 dark:border-white/[0.08] flex items-center justify-between shadow-sm bg-white dark:bg-[#0A0A0C]">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-zinc-400">Personalizadas</p>
-            <p className="text-2xl font-black text-brand-cerulean mt-1">{customCategoriesCount}</p>
-            <p className="text-[10px] text-slate-400 mt-0.5">Creadas por ti</p>
+            <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-zinc-400">Presupuesto Mensual</p>
+            <p className="text-2xl font-black text-emerald-600 dark:text-emerald-400 mt-1">
+              ${totalBudget.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+            </p>
+            <p className="text-[10px] text-zinc-500 mt-0.5">Límite mensual total asignado</p>
           </div>
-          <div className="w-10 h-10 rounded-2xl bg-brand-cerulean/10 text-brand-cerulean flex items-center justify-center">
-            <Sparkles className="w-5 h-5" />
+          <div className="w-10 h-10 rounded-2xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center">
+            <DollarSign className="w-5 h-5" />
           </div>
         </div>
 
-        <div className="surface-card rounded-2xl p-5 border border-slate-200/80 dark:border-white/10 flex items-center justify-between shadow-sm">
+        <div className="surface-card rounded-2xl p-5 border border-slate-200/80 dark:border-white/[0.08] flex items-center justify-between shadow-sm bg-white dark:bg-[#0A0A0C]">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-zinc-400">Del Sistema</p>
-            <p className="text-2xl font-black text-emerald-600 dark:text-emerald-400 mt-1">{systemCategoriesCount}</p>
-            <p className="text-[10px] text-slate-400 mt-0.5">Estándar preconfiguradas</p>
+            <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-zinc-400">Personalizadas</p>
+            <p className="text-2xl font-black text-white mt-1">{customCategoriesCount}</p>
+            <p className="text-[10px] text-zinc-500 mt-0.5">Creadas a tu medida</p>
           </div>
-          <div className="w-10 h-10 rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
-            <Layers className="w-5 h-5" />
+          <div className="w-10 h-10 rounded-2xl bg-white/10 text-white flex items-center justify-center">
+            <Sparkles className="w-5 h-5 text-amber-400" />
           </div>
         </div>
       </div>
@@ -305,35 +332,35 @@ export default function CategoryManager({ initialCategories }: CategoryManagerPr
       {/* Alertas de Notificación */}
       {successMessage && (
         <div className="bg-emerald-500/15 border border-emerald-500/30 rounded-2xl p-4 flex items-center gap-3 animate-in fade-in zoom-in-95">
-          <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
-          <p className="text-sm font-bold text-emerald-800 dark:text-emerald-300">{successMessage}</p>
+          <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
+          <p className="text-sm font-bold text-emerald-300">{successMessage}</p>
         </div>
       )}
 
       {errorMessage && (
         <div className="bg-rose-500/15 border border-rose-500/30 rounded-2xl p-4 flex items-center gap-3 animate-in fade-in zoom-in-95">
-          <AlertCircle className="w-5 h-5 text-rose-600 dark:text-rose-400 shrink-0" />
-          <p className="text-sm font-bold text-rose-800 dark:text-rose-300">{errorMessage}</p>
+          <AlertCircle className="w-5 h-5 text-rose-400 shrink-0" />
+          <p className="text-sm font-bold text-rose-300">{errorMessage}</p>
         </div>
       )}
 
-      {/* Cuadrícula Principal Responsiva: Formulario + Lista de Categorías */}
+      {/* Cuadrícula Principal: Formulario + Listado con Presupuestos */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
 
-        {/* --- COLUMNA IZQUIERDA (4 cols): FORMULARIO DE CREACIÓN & PREVISUALIZACIÓN --- */}
+        {/* --- COLUMNA IZQUIERDA (5 cols): FORMULARIO DE CATEGORÍA & PRESUPUESTO --- */}
         <div className="lg:col-span-5 space-y-6">
-          <div className="surface-card rounded-2xl border border-slate-200/80 dark:border-white/10 p-5 sm:p-6 shadow-sm space-y-5">
+          <div className="surface-card rounded-2xl border border-slate-200/80 dark:border-white/[0.08] p-5 sm:p-6 shadow-sm space-y-5 bg-white dark:bg-[#0A0A0C]">
             
-            <div className="flex items-center justify-between border-b border-slate-200/80 dark:border-zinc-800 pb-3">
+            <div className="flex items-center justify-between border-b border-slate-200/80 dark:border-white/[0.08] pb-3">
               <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                {editingCategory ? <Edit2 className="w-4 h-4 text-brand-cerulean" /> : <Plus className="w-4 h-4 text-brand-cerulean" />}
-                {editingCategory ? 'Editar Categoría' : 'Nueva Categoría'}
+                {editingCategory ? <Edit2 className="w-4 h-4 text-emerald-400" /> : <Plus className="w-4 h-4 text-white" />}
+                {editingCategory ? 'Editar Categoría & Presupuesto' : 'Nueva Categoría'}
               </h3>
               {editingCategory && (
                 <button
                   type="button"
                   onClick={handleCancelEdit}
-                  className="text-xs font-bold text-rose-500 hover:underline"
+                  className="text-xs font-bold text-rose-400 hover:underline"
                 >
                   Cancelar Edición
                 </button>
@@ -341,38 +368,98 @@ export default function CategoryManager({ initialCategories }: CategoryManagerPr
             </div>
 
             {/* PREVISUALIZACIÓN EN TIEMPO REAL */}
-            <div className="p-4 rounded-2xl bg-slate-50 dark:bg-zinc-900/80 border border-slate-200/80 dark:border-zinc-800 flex items-center justify-between">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-zinc-500">Previsualización:</span>
-              <div className="flex items-center gap-3 px-3 py-2 rounded-xl bg-white dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 shadow-sm">
+            <div className="p-4 rounded-2xl bg-slate-50 dark:bg-[#141418] border border-slate-200/80 dark:border-white/[0.06] flex items-center justify-between">
+              <span className="text-xs font-bold uppercase tracking-wider text-zinc-500">Vista Previa:</span>
+              <div className="flex items-center gap-3 px-3 py-2 rounded-xl bg-white dark:bg-[#000000] border border-slate-200 dark:border-white/[0.08] shadow-sm">
                 <div className={`w-8 h-8 rounded-lg ${selectedColor} text-white flex items-center justify-center shadow-sm`}>
                   <PreviewIconComp className="w-4 h-4" />
                 </div>
-                <span className="text-sm font-extrabold text-slate-900 dark:text-white">
-                  {name.trim() ? name : 'Nombre Categoría'}
-                </span>
+                <div>
+                  <span className="text-sm font-extrabold text-slate-900 dark:text-white block">
+                    {name.trim() ? name : 'Nombre Categoría'}
+                  </span>
+                  {monthlyBudget && (
+                    <span className="text-[10px] font-bold text-emerald-400">
+                      Límite: ${parseFloat(monthlyBudget || '0').toLocaleString('es-MX', { minimumFractionDigits: 2 })}/mes
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
 
             {/* FORMULARIO */}
             <form onSubmit={handleSubmit} className="space-y-4">
               
+              {/* Tipo de Categoría */}
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-zinc-400">Tipo de Clasificación</label>
+                <div className="grid grid-cols-3 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setCategoryType('expense')}
+                    className={`py-2 px-2 rounded-xl text-xs font-bold border transition ${
+                      categoryType === 'expense'
+                        ? 'bg-rose-500/20 text-rose-400 border-rose-500/40 font-extrabold'
+                        : 'bg-slate-50 dark:bg-[#141418] text-zinc-400 border-slate-200 dark:border-white/[0.06]'
+                    }`}
+                  >
+                    🔴 Egreso
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCategoryType('income')}
+                    className={`py-2 px-2 rounded-xl text-xs font-bold border transition ${
+                      categoryType === 'income'
+                        ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40 font-extrabold'
+                        : 'bg-slate-50 dark:bg-[#141418] text-zinc-400 border-slate-200 dark:border-white/[0.06]'
+                    }`}
+                  >
+                    🟢 Ingreso
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCategoryType('savings')}
+                    className={`py-2 px-2 rounded-xl text-xs font-bold border transition ${
+                      categoryType === 'savings'
+                        ? 'bg-indigo-500/20 text-indigo-400 border-indigo-500/40 font-extrabold'
+                        : 'bg-slate-50 dark:bg-[#141418] text-zinc-400 border-slate-200 dark:border-white/[0.06]'
+                    }`}
+                  >
+                    🏦 Ahorro
+                  </button>
+                </div>
+              </div>
+
               {/* Campo Nombre */}
               <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-700 dark:text-zinc-300">Nombre de la Categoría</label>
+                <label className="text-xs font-bold text-zinc-400">Nombre de la Categoría</label>
                 <input 
                   type="text"
                   required
                   maxLength={30}
-                  placeholder="Ej. Suscripciones, Regalos, Mascotas"
+                  placeholder="Ej. Supermercado, Restaurantes, Mascota"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="w-full bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-xl px-3.5 py-2.5 text-sm text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-cerulean transition-all"
+                  className="w-full bg-slate-50 dark:bg-[#141418] border border-slate-200 dark:border-white/[0.08] rounded-xl px-3.5 py-2.5 text-sm text-slate-900 dark:text-white placeholder-zinc-500 focus:outline-none focus:ring-1 focus:ring-white/40"
                 />
               </div>
 
-              {/* Selector de Colores (14 opciones) */}
+              {/* Presupuesto Mensual */}
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-zinc-400">Presupuesto / Límite Mensual (Opcional)</label>
+                <input 
+                  type="number"
+                  step="0.01"
+                  placeholder="Ej. 3500.00"
+                  value={monthlyBudget}
+                  onChange={(e) => setMonthlyBudget(e.target.value)}
+                  className="w-full bg-slate-50 dark:bg-[#141418] border border-slate-200 dark:border-white/[0.08] rounded-xl px-3.5 py-2.5 text-sm font-bold text-slate-900 dark:text-white placeholder-zinc-500 focus:outline-none focus:ring-1 focus:ring-white/40"
+                />
+              </div>
+
+              {/* Selector de Colores */}
               <div className="space-y-2">
-                <label className="text-xs font-bold text-slate-700 dark:text-zinc-300 block">Color de Etiqueta</label>
+                <label className="text-xs font-bold text-zinc-400 block">Color de Etiqueta</label>
                 <div className="flex flex-wrap gap-2.5">
                   {ColorPalette.map((color) => (
                     <button
@@ -380,7 +467,7 @@ export default function CategoryManager({ initialCategories }: CategoryManagerPr
                       type="button"
                       onClick={() => setSelectedColor(color.class)}
                       className={`w-7 h-7 rounded-full flex items-center justify-center transition-all ${color.class} hover:scale-110 active:scale-95 ${
-                        selectedColor === color.class ? 'ring-2 ring-slate-900 dark:ring-white scale-110 shadow-md' : 'opacity-85'
+                        selectedColor === color.class ? 'ring-2 ring-white scale-110 shadow-md' : 'opacity-80'
                       }`}
                       title={color.name}
                     >
@@ -390,11 +477,11 @@ export default function CategoryManager({ initialCategories }: CategoryManagerPr
                 </div>
               </div>
 
-              {/* Selector de Iconos Organizado por Familias */}
+              {/* Selector de Iconos */}
               <div className="space-y-2">
-                <label className="text-xs font-bold text-slate-700 dark:text-zinc-300 block">Selecciona un Icono</label>
+                <label className="text-xs font-bold text-zinc-400 block">Selecciona un Icono</label>
                 
-                {/* Pestañas de Familias de Iconos */}
+                {/* Pestañas de Familias */}
                 <div className="flex items-center gap-1 overflow-x-auto pb-1 custom-scrollbar">
                   {ICON_CATEGORIES.map((fam, idx) => (
                     <button
@@ -403,8 +490,8 @@ export default function CategoryManager({ initialCategories }: CategoryManagerPr
                       onClick={() => setSelectedIconFamilyIndex(idx)}
                       className={`px-2.5 py-1 rounded-lg text-[11px] font-bold whitespace-nowrap transition ${
                         selectedIconFamilyIndex === idx
-                          ? 'bg-brand-cerulean text-white'
-                          : 'bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-zinc-400 hover:bg-slate-200'
+                          ? 'bg-white text-black'
+                          : 'bg-slate-100 dark:bg-[#141418] text-zinc-400 hover:text-white'
                       }`}
                     >
                       {fam.category.split(' ')[0]}
@@ -412,8 +499,8 @@ export default function CategoryManager({ initialCategories }: CategoryManagerPr
                   ))}
                 </div>
 
-                {/* Grid de Iconos de la Familia Seleccionada */}
-                <div className="grid grid-cols-4 sm:grid-cols-6 gap-2 p-2.5 rounded-2xl bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800">
+                {/* Grid de Iconos */}
+                <div className="grid grid-cols-4 sm:grid-cols-6 gap-2 p-2.5 rounded-2xl bg-slate-50 dark:bg-[#141418] border border-slate-200 dark:border-white/[0.06]">
                   {ICON_CATEGORIES[selectedIconFamilyIndex].icons.map((item) => {
                     const IconComp = item.icon;
                     const isSelected = selectedIcon === item.name;
@@ -425,8 +512,8 @@ export default function CategoryManager({ initialCategories }: CategoryManagerPr
                         onClick={() => setSelectedIcon(item.name)}
                         className={`p-2.5 rounded-xl border flex flex-col items-center justify-center gap-1 transition-all ${
                           isSelected
-                            ? 'border-brand-cerulean bg-brand-cerulean/15 text-brand-cerulean font-bold shadow-sm scale-105'
-                            : 'border-slate-200 dark:border-zinc-800 text-slate-600 dark:text-zinc-400 hover:bg-slate-100 dark:hover:bg-zinc-800'
+                            ? 'border-white bg-white/20 text-white font-bold scale-105'
+                            : 'border-slate-200 dark:border-white/[0.04] text-zinc-400 hover:bg-white/10 hover:text-white'
                         }`}
                         title={item.label}
                       >
@@ -438,11 +525,11 @@ export default function CategoryManager({ initialCategories }: CategoryManagerPr
                 </div>
               </div>
 
-              {/* Botón de Envió */}
+              {/* Botón de Guardar */}
               <button
                 type="submit"
                 disabled={isPending || !name.trim()}
-                className="w-full py-3 px-4 bg-brand-cerulean hover:bg-blue-600 text-white font-extrabold text-xs rounded-xl shadow-md shadow-brand-cerulean/20 transition flex items-center justify-center gap-2 disabled:opacity-50"
+                className="w-full py-3.5 px-4 bg-white hover:bg-neutral-200 text-black font-extrabold text-xs rounded-xl shadow-lg transition flex items-center justify-center gap-2 disabled:opacity-50 min-h-[44px]"
               >
                 {isPending ? (
                   <RefreshCw className="w-4 h-4 animate-spin" />
@@ -456,10 +543,10 @@ export default function CategoryManager({ initialCategories }: CategoryManagerPr
             </form>
           </div>
 
-          {/* Plantillas Rápidas de Un Clic */}
-          <div className="surface-card rounded-2xl border border-slate-200/80 dark:border-white/10 p-4 sm:p-5 space-y-3">
-            <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-zinc-500 flex items-center gap-1.5">
-              <Sparkles className="w-3.5 h-3.5 text-amber-500" /> Plantillas Rápidas
+          {/* Plantillas Rápidas */}
+          <div className="surface-card rounded-2xl border border-slate-200/80 dark:border-white/[0.08] p-4 sm:p-5 space-y-3 bg-white dark:bg-[#0A0A0C]">
+            <h4 className="text-xs font-bold uppercase tracking-wider text-zinc-400 flex items-center gap-1.5">
+              <Sparkles className="w-3.5 h-3.5 text-amber-400" /> Plantillas Rápidas
             </h4>
             <div className="flex flex-wrap gap-2">
               {QUICK_TEMPLATES.map((tpl) => (
@@ -467,7 +554,7 @@ export default function CategoryManager({ initialCategories }: CategoryManagerPr
                   key={tpl.name}
                   type="button"
                   onClick={() => handleApplyTemplate(tpl)}
-                  className="px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 text-xs font-bold text-slate-700 dark:text-zinc-300 hover:border-brand-cerulean hover:text-brand-cerulean transition flex items-center gap-1.5"
+                  className="px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-[#141418] border border-slate-200 dark:border-white/[0.06] text-xs font-bold text-slate-700 dark:text-zinc-300 hover:border-white/30 hover:text-white transition flex items-center gap-1.5"
                 >
                   <span className={`w-2 h-2 rounded-full ${tpl.color}`} />
                   <span>{tpl.name}</span>
@@ -477,52 +564,46 @@ export default function CategoryManager({ initialCategories }: CategoryManagerPr
           </div>
         </div>
 
-        {/* --- COLUMNA DERECHA (7 cols): GESTIÓN Y LISTADO DE CATEGORÍAS --- */}
+        {/* --- COLUMNA DERECHA (7 cols): LISTADO DE CATEGORÍAS CON BARRAS DE PRESUPUESTO --- */}
         <div className="lg:col-span-7 space-y-4">
-          <div className="surface-card rounded-2xl border border-slate-200/80 dark:border-white/10 p-5 sm:p-6 space-y-4 shadow-sm">
+          <div className="surface-card rounded-2xl border border-slate-200/80 dark:border-white/[0.08] p-5 sm:p-6 space-y-4 shadow-sm bg-white dark:bg-[#0A0A0C]">
             
             {/* Barra Superior: Buscador y Filtros */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200/80 dark:border-zinc-800 pb-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200/80 dark:border-white/[0.08] pb-4">
               
               {/* Filtros de Pestaña */}
-              <div className="inline-flex p-1 rounded-xl bg-slate-200/70 dark:bg-zinc-800 text-xs font-bold shrink-0">
+              <div className="inline-flex p-1 rounded-xl bg-slate-100 dark:bg-[#141418] border border-slate-200 dark:border-white/[0.06] text-xs font-bold shrink-0">
                 <button
                   onClick={() => setActiveFilterTab('all')}
-                  className={`px-3 py-1.5 rounded-lg transition ${activeFilterTab === 'all' ? 'bg-white dark:bg-zinc-900 text-brand-cerulean shadow-sm' : 'text-slate-600 dark:text-zinc-400'}`}
+                  className={`px-3 py-1.5 rounded-lg transition ${activeFilterTab === 'all' ? 'bg-white text-black font-extrabold shadow-sm' : 'text-zinc-400'}`}
                 >
                   Todas ({categories.length})
                 </button>
                 <button
                   onClick={() => setActiveFilterTab('custom')}
-                  className={`px-3 py-1.5 rounded-lg transition ${activeFilterTab === 'custom' ? 'bg-white dark:bg-zinc-900 text-purple-600 shadow-sm' : 'text-slate-600 dark:text-zinc-400'}`}
+                  className={`px-3 py-1.5 rounded-lg transition ${activeFilterTab === 'custom' ? 'bg-white text-black font-extrabold shadow-sm' : 'text-zinc-400'}`}
                 >
                   Personalizadas ({customCategoriesCount})
-                </button>
-                <button
-                  onClick={() => setActiveFilterTab('system')}
-                  className={`px-3 py-1.5 rounded-lg transition ${activeFilterTab === 'system' ? 'bg-white dark:bg-zinc-900 text-emerald-600 shadow-sm' : 'text-slate-600 dark:text-zinc-400'}`}
-                >
-                  Sistema ({systemCategoriesCount})
                 </button>
               </div>
 
               {/* Buscador de Categorías */}
               <div className="relative shrink-0 w-full sm:w-56">
-                <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
+                <Search className="w-4 h-4 absolute left-3 top-2.5 text-zinc-500" />
                 <input
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Buscar categoría..."
-                  className="w-full pl-9 pr-3 py-1.5 bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-xl text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-cerulean"
+                  className="w-full pl-9 pr-3 py-1.5 bg-slate-50 dark:bg-[#141418] border border-slate-200 dark:border-white/[0.08] rounded-xl text-xs text-slate-900 dark:text-white placeholder-zinc-500 focus:outline-none focus:ring-1 focus:ring-white/40"
                 />
               </div>
             </div>
 
             {/* Listado de Tarjetas de Categorías */}
             {filteredCategories.length === 0 ? (
-              <div className="py-12 text-center text-slate-400 dark:text-zinc-500">
-                <Tag className="w-10 h-10 mx-auto text-slate-300 dark:text-zinc-700 mb-2" />
+              <div className="py-12 text-center text-zinc-500">
+                <Tag className="w-10 h-10 mx-auto text-zinc-700 mb-2" />
                 <p className="text-sm font-medium">No se encontraron categorías con ese criterio.</p>
               </div>
             ) : (
@@ -530,50 +611,69 @@ export default function CategoryManager({ initialCategories }: CategoryManagerPr
                 {filteredCategories.map((cat) => {
                   const IconComp = ALL_ICONS_MAP[cat.icon] || Tag;
                   const isSystem = cat.user_id === null;
+                  const budget = Number(cat.monthly_budget || 0);
 
                   return (
                     <div
                       key={cat.id}
-                      className="p-3.5 rounded-2xl border border-slate-200/80 dark:border-zinc-800/80 bg-slate-50/60 dark:bg-zinc-900/40 hover:border-brand-cerulean/40 transition flex items-center justify-between group"
+                      className="p-4 rounded-2xl border border-slate-200/80 dark:border-white/[0.08] bg-slate-50/60 dark:bg-[#141418] hover:border-white/20 transition flex flex-col justify-between gap-3 group"
                     >
-                      <div className="flex items-center gap-3 min-w-0">
-                        <div className={`w-10 h-10 rounded-xl ${cat.color} text-white flex items-center justify-center shrink-0 shadow-sm`}>
-                          <IconComp className="w-5 h-5" />
+                      <div className="flex items-start justify-between gap-3 min-w-0">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className={`w-10 h-10 rounded-xl ${cat.color} text-white flex items-center justify-center shrink-0 shadow-sm`}>
+                            <IconComp className="w-5 h-5" />
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-sm font-bold text-slate-900 dark:text-white truncate">
+                              {cat.name}
+                            </p>
+                            <div className="flex items-center gap-1.5 mt-0.5">
+                              <span className="text-[10px] font-bold text-zinc-400">
+                                {cat.type === 'income' ? '🟢 Ingreso' : cat.type === 'savings' ? '🏦 Ahorro' : '🔴 Egreso'}
+                              </span>
+                              <span className="text-zinc-600">•</span>
+                              <span className="text-[10px] text-zinc-400 font-medium">
+                                {isSystem ? 'Sistema' : 'Creada'}
+                              </span>
+                            </div>
+                          </div>
                         </div>
-                        <div className="min-w-0">
-                          <p className="text-sm font-bold text-slate-900 dark:text-white truncate">
-                            {cat.name}
-                          </p>
-                          <span className={`inline-block text-[9px] font-extrabold uppercase tracking-wider px-1.5 py-0.5 rounded mt-0.5 ${
-                            isSystem 
-                              ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' 
-                              : 'bg-purple-500/10 text-purple-600 dark:text-purple-400'
-                          }`}>
-                            {isSystem ? 'Sistema' : 'Personalizada'}
-                          </span>
-                        </div>
-                      </div>
 
-                      {!isSystem && (
                         <div className="flex items-center gap-1 shrink-0">
                           <button
                             type="button"
                             onClick={() => handleStartEdit(cat)}
                             disabled={isPending}
-                            className="p-2 rounded-xl text-slate-400 hover:text-brand-cerulean hover:bg-brand-cerulean/10 transition"
+                            className="p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-white/10 transition"
                             title="Editar Categoría"
                           >
                             <Edit2 className="w-4 h-4" />
                           </button>
-                          <button
-                            type="button"
-                            onClick={() => handleDelete(cat.id, cat.name)}
-                            disabled={isPending}
-                            className="p-2 rounded-xl text-slate-500 dark:text-zinc-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-500/10 transition"
-                            title="Eliminar Categoría"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
+                          {!isSystem && (
+                            <button
+                              type="button"
+                              onClick={() => handleDelete(cat.id, cat.name)}
+                              disabled={isPending}
+                              className="p-1.5 rounded-lg text-zinc-400 hover:text-rose-400 hover:bg-rose-500/10 transition"
+                              title="Eliminar Categoría"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Presupuesto y Progreso */}
+                      {budget > 0 ? (
+                        <div className="pt-2 border-t border-slate-200/60 dark:border-white/[0.04]">
+                          <div className="flex items-center justify-between text-[11px] mb-1 font-bold">
+                            <span className="text-zinc-400">Presupuesto Mensual:</span>
+                            <span className="text-white">${budget.toLocaleString('es-MX', { minimumFractionDigits: 2 })}</span>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="pt-2 border-t border-slate-200/60 dark:border-white/[0.04]">
+                          <span className="text-[10px] text-zinc-500 italic">Sin límite mensual asignado</span>
                         </div>
                       )}
                     </div>

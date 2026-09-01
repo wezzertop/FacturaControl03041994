@@ -90,7 +90,13 @@ export async function getCategories() {
 /**
  * Crea una nueva categoría personalizada para el usuario.
  */
-export async function createCategory(name: string, color: string, icon: string): Promise<{ success: boolean; category?: any; error?: string }> {
+export async function createCategory(
+  name: string, 
+  color: string, 
+  icon: string, 
+  monthly_budget: number = 0,
+  type: 'expense' | 'income' | 'savings' = 'expense'
+): Promise<{ success: boolean; category?: any; error?: string }> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
@@ -104,14 +110,15 @@ export async function createCategory(name: string, color: string, icon: string):
   }
 
   // Insertar la categoría con el user_id del usuario para que sea privada
-  const { data, error } = await supabase
-    .from('categories')
+  const { data, error } = await (supabase.from('categories') as any)
     .insert({
       name: cleanName,
       color,
       icon,
+      monthly_budget: Number(monthly_budget) || 0,
+      type,
       user_id: user.id
-    } as any)
+    })
     .select()
     .single();
 
@@ -120,9 +127,10 @@ export async function createCategory(name: string, color: string, icon: string):
     if (error.code === '23505') {
       return { success: false, error: 'Ya existe una categoría con ese nombre' };
     }
-    return { success: false, error: 'Error al crear la categoría. Asegúrate de haber ejecutado la migración de base de datos.' };
+    return { success: false, error: 'Error al crear la categoría.' };
   }
 
+  revalidatePath('/categories');
   revalidatePath('/wallets');
   revalidatePath('/settings');
   revalidatePath('/analytics');
@@ -153,6 +161,7 @@ export async function deleteCategory(id: string): Promise<{ success: boolean; er
     return { success: false, error: 'No se pudo eliminar la categoría' };
   }
 
+  revalidatePath('/categories');
   revalidatePath('/wallets');
   revalidatePath('/settings');
   revalidatePath('/analytics');
@@ -163,7 +172,14 @@ export async function deleteCategory(id: string): Promise<{ success: boolean; er
 /**
  * Actualiza una categoría personalizada existente.
  */
-export async function updateCategory(id: string, name: string, color: string, icon: string): Promise<{ success: boolean; category?: any; error?: string }> {
+export async function updateCategory(
+  id: string, 
+  name: string, 
+  color: string, 
+  icon: string, 
+  monthly_budget: number = 0,
+  type: 'expense' | 'income' | 'savings' = 'expense'
+): Promise<{ success: boolean; category?: any; error?: string }> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
@@ -180,7 +196,9 @@ export async function updateCategory(id: string, name: string, color: string, ic
     .update({
       name: cleanName,
       color,
-      icon
+      icon,
+      monthly_budget: Number(monthly_budget) || 0,
+      type
     })
     .eq('id', id)
     .eq('user_id', user.id)
@@ -195,9 +213,60 @@ export async function updateCategory(id: string, name: string, color: string, ic
     return { success: false, error: 'No se pudo actualizar la categoría' };
   }
 
+  revalidatePath('/categories');
   revalidatePath('/wallets');
   revalidatePath('/settings');
   revalidatePath('/analytics');
   revalidatePath('/');
   return { success: true, category: data };
+}
+
+/**
+ * Obtiene el reporte de presupuestos vs gasto real del mes actual por categoría
+ */
+export async function getCategoryBudgetReport() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) return [];
+
+  // 1. Obtener categorías
+  const categories = await getCategories();
+
+  // 2. Obtener gastos del mes actual
+  const now = new Date();
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+  const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59).toISOString();
+
+  const { data: transactions } = await (supabase.from('transactions') as any)
+    .select('amount, category_id, type')
+    .eq('user_id', user.id)
+    .eq('type', 'expense')
+    .gte('date', startOfMonth)
+    .lte('date', endOfMonth);
+
+  // 3. Mapear gasto por categoría
+  const spendMap: Record<string, number> = {};
+  (transactions || []).forEach((t: any) => {
+    if (t.category_id) {
+      spendMap[t.category_id] = (spendMap[t.category_id] || 0) + Number(t.amount || 0);
+    }
+  });
+
+  return categories.map((cat: any) => {
+    const spent = spendMap[cat.id] || 0;
+    const budget = Number(cat.monthly_budget) || 0;
+    const percent = budget > 0 ? Math.min(Math.round((spent / budget) * 100), 100) : 0;
+    const isExceeded = budget > 0 && spent > budget;
+    const remaining = budget > 0 ? Math.max(budget - spent, 0) : 0;
+
+    return {
+      ...cat,
+      spent,
+      budget,
+      percent,
+      isExceeded,
+      remaining
+    };
+  });
 }

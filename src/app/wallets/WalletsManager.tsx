@@ -19,6 +19,7 @@ import CurrencyInput from '@/components/ui/CurrencyInput';
 import VisualCardCarousel from '@/components/wallets/VisualCardCarousel';
 import SmartTransactionDetectorModal from '@/components/wallets/SmartTransactionDetectorModal';
 import ClipboardTransferListener from '@/components/wallets/ClipboardTransferListener';
+import TransferModal from '@/components/wallets/TransferModal';
 
 // Mapeo simple de iconos para la creación de categorías en la modal
 const InlineIconMap: Record<string, any> = {
@@ -220,6 +221,8 @@ export default function WalletsManager({
   const [showTxModal, setShowTxModal] = useState(false);
   const [showLinkModal, setShowLinkModal] = useState(false);
   const [showSmartDetectorModal, setShowSmartDetectorModal] = useState(false);
+  const [showTransferModal, setShowTransferModal] = useState(false);
+  const [transferFromWalletId, setTransferFromWalletId] = useState('');
 
   // Estados para edición de transacciones
   const [showEditTxModal, setShowEditTxModal] = useState(false);
@@ -918,9 +921,14 @@ export default function WalletsManager({
             setActiveWalletFilter(wId === activeWalletFilter ? null : wId);
           }}
           onOpenNewTx={(type, walletId) => {
-            setTxWalletId(walletId);
-            setTxType(type);
-            setShowTxModal(true);
+            if (type === "transfer") {
+              setTransferFromWalletId(walletId);
+              setShowTransferModal(true);
+            } else {
+              setTxWalletId(walletId);
+              setTxType(type);
+              setShowTxModal(true);
+            }
           }}
           selectedWalletId={activeWalletFilter || undefined}
         />
@@ -2042,14 +2050,13 @@ export default function WalletsManager({
         </div>
       )}
 
-      {/* Modal Inteligente para Detectar Notificaciones de Bancos y SMS */}
-      <SmartTransactionDetectorModal
-        isOpen={showSmartDetectorModal}
-        onClose={() => setShowSmartDetectorModal(false)}
+      {/* Modal de Transferencia entre Carteras */}
+      <TransferModal
+        isOpen={showTransferModal}
+        onClose={() => setShowTransferModal(false)}
         wallets={wallets}
-        categories={categories}
-        onTransactionCreated={() => {
-          // Re-trigger refresh or update
+        defaultFromWalletId={transferFromWalletId || undefined}
+        onSuccess={() => {
           window.location.reload();
         }}
       />

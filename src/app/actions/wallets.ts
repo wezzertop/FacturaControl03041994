@@ -1212,3 +1212,194 @@ export async function resetXMLData() {
   revalidatePath('/');
   return { success: true };
 }
+
+/**
+ * Realiza una transferencia atómica entre dos carteras (de Cartera Origen a Cartera Destino).
+ */
+export async function transferBetweenWallets(
+  fromWalletId: string,
+  toWalletId: string,
+  amount: number,
+  concept?: string,
+  date?: string
+) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { success: false, error: 'Usuario no autenticado' };
+  }
+
+  const parsedAmount = Math.abs(Number(amount) || 0);
+  if (parsedAmount <= 0) {
+    return { success: false, error: 'El monto a transferir debe ser mayor a $0.00' };
+  }
+
+  if (fromWalletId === toWalletId) {
+    return { success: false, error: 'La cartera de origen y destino deben ser distintas' };
+  }
+
+  // 1. Obtener nombres y tipos de las carteras
+  const { data: fromWallet } = await (supabase.from('wallets') as any)
+    .select('name, type')
+    .eq('id', fromWalletId)
+    .eq('user_id', user.id)
+    .single();
+
+  const { data: toWallet } = await (supabase.from('wallets') as any)
+    .select('name, type')
+    .eq('id', toWalletId)
+    .eq('user_id', user.id)
+    .single();
+
+  if (!fromWallet || !toWallet) {
+    return { success: false, error: 'No se encontraron las carteras especificadas' };
+  }
+
+  const txDate = date || new Date().toISOString();
+  const baseConcept = concept && concept.trim() ? concept.trim() : 'Transferencia entre carteras';
+
+  const outConcept = `${baseConcept} ➔ Enviado a ${toWallet.name}`;
+  const inConcept = toWallet.type === 'credit' 
+    ? `Abono / Pago de Tarjeta ➔ Recibido de ${fromWallet.name}`
+    : `${baseConcept} ➔ Recibido de ${fromWallet.name}`;
+
+  // 2. Insertar débito/egreso en cartera origen
+  const { error: outError } = await (supabase.from('transactions') as any)
+    .insert({
+      user_id: user.id,
+      wallet_id: fromWalletId,
+      type: 'expense',
+      amount: parsedAmount,
+      concept: outConcept,
+      date: txDate
+    });
+
+  if (outError) {
+    console.error('Error al registrar egreso de transferencia:', outError);
+    return { success: false, error: 'Error al retirar saldo de la cartera de origen' };
+  }
+
+  // 3. Insertar crédito/ingreso en cartera destino
+  const { error: inError } = await (supabase.from('transactions') as any)
+    .insert({
+      user_id: user.id,
+      wallet_id: toWalletId,
+      type: 'income',
+      amount: parsedAmount,
+      concept: inConcept,
+      date: txDate
+    });
+
+  if (inError) {
+    console.error('Error al registrar ingreso de transferencia:', inError);
+    return { success: false, error: 'Error al depositar saldo en la cartera de destino' };
+  }
+
+  revalidatePath('/wallets');
+  revalidatePath('/calendar');
+  revalidatePath('/analytics');
+  revalidatePath('/');
+  return { success: true };
+}
+
+/**
+ * Ejecuta y registra manualmente un pago recurrente en este momento sin esperar a la fecha programada.
+ */
+export async function executeRecurringPaymentNow(paymentId: string) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { success: false, error: 'Usuario no autenticado' };
+  }
+
+  const { data: payment, error } = await (supabase.from('recurring_payments') as any)
+    .select('*')
+    .eq('id', paymentId)
+    .eq('user_id', user.id)
+    .single();
+
+  if (error || !payment) {
+    return { success: false, error: 'No se encontró el pago recurrente' };
+  }
+
+  // 1. Crear transacción
+  const { error: txError } = await (supabase.from('transactions') as any)
+    .insert({
+      user_id: user.id,
+      wallet_id: payment.wallet_id,
+      type: payment.type,
+      amount: payment.amount,
+      concept: `[Recurrente] ${payment.concept}`,
+      category_id: payment.category_id,
+      date: new Date().toISOString()
+    });
+
+  if (txError) {
+    return { success: false, error: 'Error al registrar el movimiento recurrente' };
+  }
+
+  // 2. Calcular la siguiente fecha de ejecución
+  const currentDate = new Date(payment.next_execution_date || payment.start_date || new Date());
+  let nextDate = new Date(currentDate);
+
+  switch (payment.frequency) {
+    case 'weekly':
+      nextDate.setDate(nextDate.getDate() + 7);
+      break;
+    case 'days_14':
+      nextDate.setDate(nextDate.getDate() + 14);
+      break;
+    case 'days_15':
+      nextDate.setDate(nextDate.getDate() + 15);
+      break;
+    case 'monthly':
+      nextDate.setMonth(nextDate.getMonth() + 1);
+      break;
+    case 'yearly':
+      nextDate.setFullYear(nextDate.getFullYear() + 1);
+      break;
+    default:
+      nextDate.setMonth(nextDate.getMonth() + 1);
+  }
+
+  await (supabase.from('recurring_payments') as any)
+    .update({
+      next_execution_date: nextDate.toISOString().split('T')[0]
+    })
+    .eq('id', paymentId)
+    .eq('user_id', user.id);
+
+  revalidatePath('/recurring');
+  revalidatePath('/wallets');
+  revalidatePath('/calendar');
+  revalidatePath('/');
+  return { success: true };
+}
+
+/**
+ * Pausa o reactiva un pago recurrente / suscripción.
+ */
+export async function toggleRecurringPaymentActive(paymentId: string, isActive: boolean) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { success: false, error: 'Usuario no autenticado' };
+  }
+
+  const { error } = await (supabase.from('recurring_payments') as any)
+    .update({ is_active: isActive })
+    .eq('id', paymentId)
+    .eq('user_id', user.id);
+
+  if (error) {
+    return { success: false, error: 'No se pudo actualizar el estado de la suscripción' };
+  }
+
+  revalidatePath('/recurring');
+  revalidatePath('/calendar');
+  revalidatePath('/');
+  return { success: true };
+}

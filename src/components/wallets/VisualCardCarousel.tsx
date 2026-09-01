@@ -34,7 +34,7 @@ interface VisualCardCarouselProps {
   transactions?: any[];
   onSelectWallet?: (walletId: string) => void;
   onAddWalletClick?: () => void;
-  onOpenNewTx?: (type: "expense" | "income", walletId: string) => void;
+  onOpenNewTx?: (type: "expense" | "income" | "transfer", walletId: string) => void;
   selectedWalletId?: string;
 }
 

@@ -61,7 +61,8 @@ export default function LukasMobileView({
 
   // Modales
   const [tactileModalOpen, setTactileModalOpen] = useState(false);
-  const [tactileModalType, setTactileModalType] = useState<"expense" | "income">("expense");
+  const [tactileModalType, setTactileModalType] = useState<"expense" | "income" | "transfer">("expense");
+  const [selectedTransactionToEdit, setSelectedTransactionToEdit] = useState<any | null>(null);
   const [isDetectorOpen, setIsDetectorOpen] = useState(false);
 
   const prevMonth = () => {
@@ -100,6 +101,18 @@ export default function LukasMobileView({
     return Receipt;
   };
 
+  const openTactileModal = (mode: "expense" | "income" | "transfer") => {
+    setSelectedTransactionToEdit(null);
+    setTactileModalType(mode);
+    setTactileModalOpen(true);
+  };
+
+  const handleEditTransaction = (tx: any) => {
+    setSelectedTransactionToEdit(tx);
+    setTactileModalType(tx.type || "expense");
+    setTactileModalOpen(true);
+  };
+
   // Combinar transacciones manuales y facturas CFDI
   const allItems = useMemo(() => {
     const combined: Array<{
@@ -110,6 +123,7 @@ export default function LukasMobileView({
       type: "income" | "expense";
       date: string;
       status: "paid" | "pending";
+      rawTransaction?: any;
     }> = [];
 
     // Transacciones
@@ -122,6 +136,7 @@ export default function LukasMobileView({
         type: tx.type === "income" ? "income" : "expense",
         date: tx.date || new Date().toISOString(),
         status: (tx.concept || "").toLowerCase().includes("pendiente") ? "pending" : "paid",
+        rawTransaction: tx,
       });
     });
 
@@ -179,11 +194,6 @@ export default function LukasMobileView({
 
     return Object.values(groups);
   }, [filteredItems]);
-
-  const openTactileModal = (mode: "expense" | "income") => {
-    setTactileModalType(mode);
-    setTactileModalOpen(true);
-  };
 
   return (
     <div className="space-y-4">
@@ -272,7 +282,8 @@ export default function LukasMobileView({
                   return (
                     <div
                       key={item.id}
-                      className="p-3.5 flex items-center justify-between gap-3 hover:bg-slate-50 dark:hover:bg-white/[0.02] transition"
+                      onClick={() => item.rawTransaction && handleEditTransaction(item.rawTransaction)}
+                      className="p-3.5 flex items-center justify-between gap-3 hover:bg-slate-50 dark:hover:bg-white/[0.04] active:bg-slate-100 dark:active:bg-white/[0.08] cursor-pointer transition"
                     >
                       <div className="flex items-center gap-3 min-w-0">
                         <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
@@ -342,48 +353,54 @@ export default function LukasMobileView({
         <ChevronRight className="w-5 h-5 text-slate-400 dark:text-zinc-500 group-hover:text-white group-hover:translate-x-0.5 transition" />
       </div>
 
-      {/* 5. Dos Botones de Acción Ergonómicos en la Parte Inferior (Expense / Income) */}
-      <div className="grid grid-cols-2 gap-3 pt-1">
+      {/* 5. Botones de Acción Ergonómicos: Gasto / Ingreso / Transferencia */}
+      <div className="grid grid-cols-3 gap-2.5 pt-1">
         <button
           onClick={() => openTactileModal("expense")}
-          className="p-3.5 rounded-2xl bg-rose-500/10 hover:bg-rose-500/15 border border-rose-500/25 active:scale-95 transition flex items-center gap-3 group text-left"
+          className="p-3 rounded-2xl bg-rose-500/10 hover:bg-rose-500/15 border border-rose-500/25 active:scale-95 transition flex flex-col items-center justify-center text-center gap-1.5"
         >
-          <div className="w-10 h-10 rounded-xl bg-rose-600 text-white flex items-center justify-center shadow-md shadow-rose-600/30">
-            <ArrowDownLeft className="w-5 h-5" />
+          <div className="w-8 h-8 rounded-xl bg-rose-600 text-white flex items-center justify-center shadow-md shadow-rose-600/30">
+            <ArrowDownLeft className="w-4 h-4" />
           </div>
-          <div>
-            <p className="text-xs font-black text-rose-600 dark:text-rose-400 leading-tight">
-              Gasto
-            </p>
-            <p className="text-[10px] font-semibold text-slate-500 dark:text-slate-400">
-              Manual
-            </p>
-          </div>
+          <p className="text-[11px] font-black text-rose-400 leading-tight">
+            Gasto
+          </p>
         </button>
 
         <button
           onClick={() => openTactileModal("income")}
-          className="p-3.5 rounded-2xl bg-emerald-500/10 hover:bg-emerald-500/15 border border-emerald-500/25 active:scale-95 transition flex items-center gap-3 group text-left"
+          className="p-3 rounded-2xl bg-emerald-500/10 hover:bg-emerald-500/15 border border-emerald-500/25 active:scale-95 transition flex flex-col items-center justify-center text-center gap-1.5"
         >
-          <div className="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center shadow-md shadow-emerald-600/30">
-            <ArrowUpRight className="w-5 h-5" />
+          <div className="w-8 h-8 rounded-xl bg-emerald-600 text-white flex items-center justify-center shadow-md shadow-emerald-600/30">
+            <ArrowUpRight className="w-4 h-4" />
           </div>
-          <div>
-            <p className="text-xs font-black text-emerald-600 dark:text-emerald-400 leading-tight">
-              Ingreso
-            </p>
-            <p className="text-[10px] font-semibold text-slate-500 dark:text-slate-400">
-              Manual
-            </p>
+          <p className="text-[11px] font-black text-emerald-400 leading-tight">
+            Ingreso
+          </p>
+        </button>
+
+        <button
+          onClick={() => openTactileModal("transfer")}
+          className="p-3 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 active:scale-95 transition flex flex-col items-center justify-center text-center gap-1.5"
+        >
+          <div className="w-8 h-8 rounded-xl bg-white text-black flex items-center justify-center shadow-md">
+            <Repeat className="w-4 h-4" />
           </div>
+          <p className="text-[11px] font-black text-white leading-tight">
+            Transferir
+          </p>
         </button>
       </div>
 
       {/* Modales Montados */}
       <TactileTransactionModal
         isOpen={tactileModalOpen}
-        onClose={() => setTactileModalOpen(false)}
+        onClose={() => {
+          setTactileModalOpen(false);
+          setSelectedTransactionToEdit(null);
+        }}
         initialType={tactileModalType}
+        transaction={selectedTransactionToEdit}
         wallets={wallets}
         categories={categories}
         onSuccess={onRefresh}
